@@ -211,12 +211,12 @@ export default function AccessApp() {
   const callHuggingFaceAPI = async (prompt, system) => {
     if (!aiSettings.hfToken) throw new Error("HuggingFace Token missing");
     
-    const fullPrompt = \`<s>[INST] \${system}\\n\\nContext Material:\\n\${courseMaterial.text}\\n\\nTask:\\n\${prompt} [/INST]\`;
+    const fullPrompt = `<s>[INST] ${system}\n\nContext Material:\n${courseMaterial.text}\n\nTask:\n${prompt} [/INST]`;
     
-    const res = await fetch(\`https://api-inference.huggingface.co/models/\${aiSettings.hfModelId}\`, {
+    const res = await fetch(`https://api-inference.huggingface.co/models/${aiSettings.hfModelId}`, {
       method: 'POST',
       headers: {
-        'Authorization': \`Bearer \${aiSettings.hfToken}\`,
+        'Authorization': `Bearer ${aiSettings.hfToken}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -235,7 +235,7 @@ export default function AccessApp() {
   };
 
   const markSubmission = async (assessment, answers) => {
-    const systemPrompt = \`You are an expert academic grader. Grade the student's answers based ONLY on the provided course material. Return a JSON array of objects, one for each question, in this EXACT format:
+    const systemPrompt = `You are an expert academic grader. Grade the student's answers based ONLY on the provided course material. Return a JSON array of objects, one for each question, in this EXACT format:
 [
   {
     "questionId": "id",
@@ -246,11 +246,11 @@ export default function AccessApp() {
     "improvements": ["improvement 1"]
   }
 ]
-No markdown wrapping, just raw JSON.\`;
+No markdown wrapping, just raw JSON.`;
 
-    const promptText = \`Assessment Title: \${assessment.title}
+    const promptText = `Assessment Title: ${assessment.title}
 Questions and Answers:
-\${assessment.questions.map((q, i) => \`Q\${i+1} (ID: \${q.id}) [Max \${q.maxMarks}]: \${q.text}\\nStudent Answer: \${answers[q.id] || 'No answer'}\`).join('\\n\\n')}\`;
+${assessment.questions.map((q, i) => `Q${i+1} (ID: ${q.id}) [Max ${q.maxMarks}]: ${q.text}\nStudent Answer: ${answers[q.id] || 'No answer'}`).join('\n\n')}`;
 
     let resultText = '';
     if (aiSettings.provider === 'anthropic') {
@@ -260,7 +260,7 @@ Questions and Answers:
     }
 
     try {
-      const cleaned = resultText.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim();
+      const cleaned = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(cleaned);
     } catch (e) {
       console.error("Failed to parse AI response:", resultText);
@@ -317,7 +317,7 @@ Questions and Answers:
           <h2 style={{ margin: '0 0 24px 0', textAlign: 'center' }}>Select your portal</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '40px' }}>
             {['Student', 'Lecturer', 'Admin'].map(r => (
-              <div key={r} className={\`role-card \${selectedRole === r ? 'active' : ''}\`} onClick={() => setSelectedRole(r)}>
+              <div key={r} className={`role-card ${selectedRole === r ? 'active' : ''}`} onClick={() => setSelectedRole(r)}>
                 {r === 'Student' && <Book size={32} color={selectedRole === r ? 'var(--primary)' : 'var(--text-muted)'} style={{ marginBottom: '16px' }}/>}
                 {r === 'Lecturer' && <FileBadge size={32} color={selectedRole === r ? 'var(--primary)' : 'var(--text-muted)'} style={{ marginBottom: '16px' }}/>}
                 {r === 'Admin' && <ShieldCheck size={32} color={selectedRole === r ? 'var(--primary)' : 'var(--text-muted)'} style={{ marginBottom: '16px' }}/>}
@@ -450,9 +450,9 @@ Questions and Answers:
     return (
       <div>
         <div style={{ display: 'flex', borderBottom: '1px solid var(--panel-border)', marginBottom: '32px' }}>
-          <div className={\`nav-tab \${tab === 'material' ? 'active' : ''}\`} onClick={() => setTab('material')}>Course Material</div>
-          <div className={\`nav-tab \${tab === 'build' ? 'active' : ''}\`} onClick={() => setTab('build')}>Create Assessment</div>
-          <div className={\`nav-tab \${tab === 'results' ? 'active' : ''}\`} onClick={() => setTab('results')}>Results & Override</div>
+          <div className={`nav-tab ${tab === 'material' ? 'active' : ''}`} onClick={() => setTab('material')}>Course Material</div>
+          <div className={`nav-tab ${tab === 'build' ? 'active' : ''}`} onClick={() => setTab('build')}>Create Assessment</div>
+          <div className={`nav-tab ${tab === 'results' ? 'active' : ''}`} onClick={() => setTab('results')}>Results & Override</div>
         </div>
 
         {tab === 'material' && (
@@ -485,7 +485,7 @@ Questions and Answers:
               value={courseMaterial.text}
               onChange={e => setCourseMaterial({...courseMaterial, text: e.target.value})}
             />
-            {showCam && <CameraModal onClose={() => setShowCam(false)} onExtract={(text) => setCourseMaterial(prev => ({...prev, text: prev.text + '\\n' + text}))} />}
+            {showCam && <CameraModal onClose={() => setShowCam(false)} onExtract={(text) => setCourseMaterial(prev => ({...prev, text: prev.text + '\n' + text}))} />}
           </div>
         )}
 
@@ -547,9 +547,9 @@ Questions and Answers:
                   {sub.results.map((r, idx) => {
                     const q = ass.questions.find(qx => qx.id === r.questionId) || {};
                     return (
-                      <div key={idx} style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', marginBottom: '16px', borderLeft: \`4px solid \${r.score === q.maxMarks ? 'var(--success)' : 'var(--warning)'}\` }}>
+                      <div key={idx} style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', marginBottom: '16px', borderLeft: `4px solid ${r.score === q.maxMarks ? 'var(--success)' : 'var(--warning)'}` }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                          <strong>{q.title || \`Q\${idx+1}\`}</strong>
+                          <strong>{q.title || `Q${idx+1}`}</strong>
                           <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{r.score} / {q.maxMarks}</span>
                         </div>
                         <p style={{ fontSize: '0.9rem', margin: '0 0 12px 0' }}><em>Ans: {sub.answers[r.questionId]}</em></p>
@@ -616,7 +616,7 @@ Questions and Answers:
             {activeAss.questions.map((q, i) => (
               <div key={q.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '24px', borderRadius: '12px', border: '1px solid var(--panel-border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <h3 style={{ margin: 0, color: 'var(--primary)' }}>{q.title || \`Question \${i+1}\`}</h3>
+                  <h3 style={{ margin: 0, color: 'var(--primary)' }}>{q.title || `Question ${i+1}`}</h3>
                   <span style={{ background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: '99px', fontSize: '0.8rem' }}>{q.maxMarks} Marks</span>
                 </div>
                 <p style={{ marginBottom: '16px', lineHeight: '1.6' }}>{q.text}</p>
@@ -630,7 +630,7 @@ Questions and Answers:
             <div style={{ padding: '24px', textAlign: 'center', background: 'rgba(59,130,246,0.1)', borderRadius: '12px', border: '1px solid rgba(59,130,246,0.3)' }}>
               <Activity className="animate-spin" color="var(--primary)" style={{ marginBottom: '16px' }} />
               <h3 style={{ margin: '0 0 16px 0' }}>AI is grading your work...</h3>
-              <div className="progress-bar-bg"><div className="progress-bar-fill" style={{ width: \`\${markingProgress}%\` }}></div></div>
+              <div className="progress-bar-bg"><div className="progress-bar-fill" style={{ width: `${markingProgress}%` }}></div></div>
             </div>
           ) : (
             <button className="btn btn-primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem' }} onClick={handleSubmit}>
@@ -644,8 +644,8 @@ Questions and Answers:
     return (
       <div>
         <div style={{ display: 'flex', borderBottom: '1px solid var(--panel-border)', marginBottom: '32px' }}>
-          <div className={\`nav-tab \${tab === 'assessments' ? 'active' : ''}\`} onClick={() => setTab('assessments')}>Available Assessments</div>
-          <div className={\`nav-tab \${tab === 'results' ? 'active' : ''}\`} onClick={() => setTab('results')}>My Results</div>
+          <div className={`nav-tab ${tab === 'assessments' ? 'active' : ''}`} onClick={() => setTab('assessments')}>Available Assessments</div>
+          <div className={`nav-tab ${tab === 'results' ? 'active' : ''}`} onClick={() => setTab('results')}>My Results</div>
         </div>
 
         {tab === 'assessments' && (
@@ -708,7 +708,7 @@ Questions and Answers:
                       return (
                         <div key={idx} style={{ background: 'rgba(0,0,0,0.2)', padding: '24px', borderRadius: '12px', border: '1px solid var(--panel-border)' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
-                            <h4 style={{ margin: 0, fontSize: '1.1rem' }}>{q.title || \`Q\${idx+1}\`}</h4>
+                            <h4 style={{ margin: 0, fontSize: '1.1rem' }}>{q.title || `Q${idx+1}`}</h4>
                             <span style={{ background: 'rgba(59,130,246,0.1)', color: 'var(--primary)', padding: '4px 12px', borderRadius: '99px', fontWeight: 'bold' }}>
                               {r.score} / {q.maxMarks}
                             </span>
@@ -830,7 +830,3 @@ Questions and Answers:
     </>
   );
 }
-
-  );
-}
-
