@@ -144,7 +144,10 @@ export default function AccessApp() {
   }, [assessments, submissions, aiSettings]);
 
   const callGeminiAPI = async (prompt, system, files = []) => {
-    if (!aiSettings.geminiKey) throw new Error("Gemini Key Required");
+    if (!aiSettings.geminiKey) {
+      setShowSettings(true);
+      throw new Error("Gemini API Key Required. I've opened the 'Engine Setup' for you - please paste your key there!");
+    }
     const contents = [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }];
     files.forEach(f => contents[0].parts.push({ inline_data: { mime_type: f.mime, data: f.base64 } }));
     
@@ -461,7 +464,11 @@ export default function AccessApp() {
             <div style={{ width: '1px', height: '24px', background: 'var(--panel-border)', margin: '0 8px' }}></div>
             <span className="badge badge-primary">{role}</span>
           </div>
-          <div className="header-actions" style={{ display: 'flex', gap: '16px' }}>
+          <div className="header-actions" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: aiSettings.geminiKey ? 'var(--success)' : 'var(--danger)', background: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: '99px', border: '1px solid var(--panel-border)' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: aiSettings.geminiKey ? 'var(--success)' : 'var(--danger)', boxShadow: aiSettings.geminiKey ? '0 0 10px var(--success)' : 'none' }}></div>
+              {aiSettings.geminiKey ? 'API Connected' : 'Key Required'}
+            </div>
             <button className="btn btn-outline" onClick={() => setShowSettings(true)}><Sliders size={18} /> <span className="btn-text">Engine</span></button>
             <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} onClick={() => setRole(null)}><LogOut size={18}/> <span className="btn-text">Exit</span></button>
           </div>
