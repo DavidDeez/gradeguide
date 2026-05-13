@@ -147,31 +147,48 @@ export default function AccessApp() {
   const callGeminiAPI = async (prompt, system, files = []) => {
     if (!aiSettings.geminiKey) {
       setShowSettings(true);
-      throw new Error("Gemini API Key Required. I've opened the 'Engine Setup' for you - please paste your key there!");
+      throw new Error("Gemini API Key Required.");
     }
-    const contents = [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }];
-    files.forEach(f => contents[0].parts.push({ inline_data: { mime_type: f.mime, data: f.base64 } }));
     
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${aiSettings.geminiModel}:generateContent?key=${aiSettings.geminiKey}`, {
+    // Construct the contents following the standard Gemini 1.5 schema
+    const contents = [{
+      role: "user",
+      parts: files.map(f => ({
+        inline_data: { mime_type: f.mime, data: f.base64 }
+      }))
+    }];
+    
+    // Add the text prompt as the last part
+    contents[0].parts.push({ text: prompt });
+
+    const body = { contents };
+    
+    // Use the official system_instruction field for Gemini 1.5
+    if (system) {
+      body.system_instruction = {
+        parts: [{ text: system }]
+      };
+    }
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiSettings.geminiModel}:generateContent?key=${aiSettings.geminiKey}`;
+    
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents })
+      body: JSON.stringify(body)
     });
+    
     const data = await res.json();
     if (data.error) {
-      if (data.error.message.includes('v1')) {
-         // Fallback to v1beta if v1 fails for some models
-         const retry = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${aiSettings.geminiModel}:generateContent?key=${aiSettings.geminiKey}`, {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({ contents })
-         });
-         const retryData = await retry.json();
-         if (retryData.error) throw new Error(retryData.error.message);
-         return retryData.candidates[0].content.parts[0].text;
-      }
-      throw new Error(data.error.message);
+      console.error("Gemini API Error Response:", data.error);
+      throw new Error(`Gemini Error: ${data.error.message} (Code: ${data.error.code})`);
     }
+    
+    if (!data.candidates || !data.candidates[0].content) {
+      console.error("Unexpected Gemini Response:", data);
+      throw new Error("Gemini returned an empty response. Check safety settings or prompt length.");
+    }
+
     return data.candidates[0].content.parts[0].text;
   };
 
