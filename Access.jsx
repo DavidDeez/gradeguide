@@ -115,6 +115,7 @@ export default function AccessApp() {
   const [aiSettings, setAiSettings] = useState({
     provider: 'gemini',
     geminiKey: '',
+    geminiModel: 'gemini-1.5-flash',
     anthropicKey: '',
     hfToken: '',
     hfModelId: 'mistralai/Mistral-7B-Instruct-v0.3'
@@ -151,13 +152,26 @@ export default function AccessApp() {
     const contents = [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }];
     files.forEach(f => contents[0].parts.push({ inline_data: { mime_type: f.mime, data: f.base64 } }));
     
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${aiSettings.geminiKey}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${aiSettings.geminiModel}:generateContent?key=${aiSettings.geminiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents })
     });
     const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
+    if (data.error) {
+      if (data.error.message.includes('v1')) {
+         // Fallback to v1beta if v1 fails for some models
+         const retry = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${aiSettings.geminiModel}:generateContent?key=${aiSettings.geminiKey}`, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({ contents })
+         });
+         const retryData = await retry.json();
+         if (retryData.error) throw new Error(retryData.error.message);
+         return retryData.candidates[0].content.parts[0].text;
+      }
+      throw new Error(data.error.message);
+    }
     return data.candidates[0].content.parts[0].text;
   };
 
@@ -238,6 +252,16 @@ export default function AccessApp() {
             <option value="huggingface">HuggingFace Inference</option>
           </select>
         </div>
+
+        {aiSettings.provider === 'gemini' && (
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Gemini Model Version</label>
+            <select className="input-field" value={aiSettings.geminiModel} onChange={e => setAiSettings({...aiSettings, geminiModel: e.target.value})}>
+              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Free & Fast)</option>
+              <option value="gemini-1.5-pro">Gemini 1.5 Pro (Complex Analysis)</option>
+            </select>
+          </div>
+        )}
 
         <div style={{ marginBottom: '32px' }}>
           <label style={{ display: 'block', marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
