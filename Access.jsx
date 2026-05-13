@@ -831,11 +831,6 @@ Questions and Answers:
   );
 }
 
-// Auto-mount if running in standalone browser environment
-if (typeof window !== 'undefined' && document.getElementById('root')) {
-  import('react-dom/client').then(({ createRoot }) => {
-    const root = createRoot(document.getElementById('root'));
-    root.render(<AccessApp />);
-  }).catch(e => console.error("Auto-mount failed:", e));
+  );
 }
 

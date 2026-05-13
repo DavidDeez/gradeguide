@@ -1,37 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AccessAI</title>
-  
-  <!-- Babel -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AccessAI</title>
+    
+    <!-- Babel for on-the-fly JSX transpilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Import Map -->
-  <script type="importmap">
+    <!-- Import Map for ESM support in browser -->
+    <script type="importmap">
     {
       "imports": {
-        "react": "https://esm.sh/react@18.2.0?dev",
-        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client?dev",
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
         "lucide-react": "https://esm.sh/lucide-react@0.292.0?deps=react@18.2.0"
       }
     }
-  </script>
+    </script>
 
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #0a0f1c;
-      color: white;
-    }
-  </style>
+    <style>
+        body { margin: 0; background: #0a0f1c; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        #loading { font-size: 1.2rem; color: #3b82f6; display: flex; align-items: center; gap: 12px; }
+        .spinner { width: 24px; height: 24px; border: 3px solid rgba(59, 130, 246, 0.2); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-  <div id="root"></div>
+    <div id="root">
+        <div id="loading">
+            <div class="spinner"></div>
+            <span>Initializing AccessAI...</span>
+        </div>
+    </div>
 
-  <!-- Execute the JSX file directly -->
-  <script type="text/babel" data-type="module" src="./Access.jsx"></script>
+    <script type="text/babel" data-type="module">
+        import React from 'react';
+        import { createRoot } from 'react-dom/client';
+
+        async function startApp() {
+            try {
+                // Fetch the JSX source code
+                const response = await fetch('./Access.jsx');
+                if (!response.ok) throw new Error(`Failed to load Access.jsx: ${response.statusText}`);
+                const code = await response.text();
+
+                // Transpile JSX to JS
+                // We wrap the code to handle the 'export default' and ensure AccessApp is available
+                const transpiledCode = Babel.transform(code, {
+                    presets: ['react'],
+                    filename: 'Access.jsx'
+                }).code;
+
+                // Create a module blob to execute the transpiled code as an ES module
+                const blob = new Blob([transpiledCode], { type: 'application/javascript' });
+                const url = URL.createObjectURL(blob);
+                
+                // Import the newly created module
+                const module = await import(url);
+                const AccessApp = module.default;
+
+                // Render the application
+                const root = createRoot(document.getElementById('root'));
+                root.render(<AccessApp />);
+                
+                // Clean up
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error("AccessAI Startup Error:", error);
+                document.getElementById('root').innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; background: rgba(239, 68, 68, 0.05);">
+                        <h2 style="margin-top: 0;">Startup Failed</h2>
+                        <p>${error.message}</p>
+                        <p style="font-size: 0.9rem; color: #94a3b8;">Check the browser console for details.</p>
+                    </div>
+                `;
+            }
+        }
+
+        startApp();
+    </script>
 </body>
 </html>
