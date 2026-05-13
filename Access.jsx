@@ -122,7 +122,7 @@ export default function AccessApp() {
     anthropicKey: '',
     hfToken: '',
     hfModelId: 'mistralai/Mistral-7B-Instruct-v0.3',
-    geminiKey: '',
+    geminiKey: 'AIzaSyD5xglhc3fmMk5Sm50t2ru3MzttEh0iHhI',
     hfMaxTokens: 1024
   });
   
