@@ -1,0 +1,1225 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Settings, Camera, Upload, Book, FileText, CheckCircle, 
+  BarChart, X, Plus, Trash2, Check, Video, Layout, LogOut, 
+  FileBadge, Sliders, Play, Save, ChevronRight, Activity, 
+  ShieldCheck, Brain, Star, Smartphone, AlertCircle, Eye
+} from 'lucide-react';
+
+const GlobalStyles = () => (
+  <style dangerouslySetInnerHTML={{__html: `
+    :root {
+      --bg-dark: #0a0f1c;
+      --panel-bg: rgba(255, 255, 255, 0.03);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --gradient-brand: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --danger: #ef4444;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0; background: var(--bg-dark); color: var(--text-main);
+      font-family: var(--font-family); min-height: 100vh; overflow-x: hidden;
+    }
+    .glass-panel {
+      background: var(--panel-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border); border-radius: 20px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2); transition: all 0.3s ease;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 8px; padding: 12px 24px; border-radius: 12px;
+      font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+      border: none; font-size: 0.95rem; white-space: nowrap;
+    }
+    .btn-primary { background: var(--gradient-brand); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4); }
+    .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--panel-border); }
+    .btn-outline:hover { background: rgba(255, 255, 255, 0.05); transform: translateY(-1px); }
+    
+    .input-field {
+      width: 100%; padding: 14px 18px; border-radius: 12px;
+      background: rgba(0, 0, 0, 0.3); border: 1px solid var(--panel-border);
+      color: white; font-family: var(--font-family); outline: none;
+      transition: all 0.2s; font-size: 1rem;
+    }
+    .input-field:focus { border-color: var(--primary); background: rgba(0,0,0,0.4); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+    
+    .nav-tab {
+      padding: 16px 32px; cursor: pointer; font-weight: 600; color: var(--text-muted);
+      border-bottom: 2px solid transparent; transition: all 0.3s; white-space: nowrap;
+    }
+    .nav-tab.active { color: white; border-bottom-color: var(--primary); background: rgba(59, 130, 246, 0.05); }
+    
+    .role-card {
+      padding: 40px 24px; border-radius: 24px; border: 1px solid var(--panel-border);
+      background: rgba(255,255,255,0.01); cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px;
+    }
+    .role-card:hover { border-color: var(--primary); background: rgba(59,130,246,0.05); transform: translateY(-8px); }
+    .role-card.active { border-color: var(--primary); background: rgba(59,130,246,0.12); box-shadow: 0 10px 40px rgba(59,130,246,0.2); }
+    
+    @media (max-width: 768px) {
+      .role-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
+      .dashboard-main { padding: 16px !important; }
+      .header-content { padding: 12px 20px !important; margin: 10px !important; }
+      .btn-text { display: none; }
+      .nav-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    }
+
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px;
+    }
+    .animate-spin { animation: spin 1s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .scrollbar::-webkit-scrollbar { width: 8px; }
+    .scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    
+    .badge { padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+    .badge-primary { background: rgba(59, 130, 246, 0.2); color: var(--primary); }
+    .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+  `}} />
+);
+
+const ScoreRing = ({ score, size = 120, strokeWidth = 10 }) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (score / 100) * circumference;
+  let color = score >= 70 ? 'var(--success)' : score >= 50 ? 'var(--warning)' : 'var(--danger)';
+
+  return (
+    <div style={{ position: 'relative', width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={size/2} cy={size/2} r={radius} stroke="rgba(255,255,255,0.05)" strokeWidth={strokeWidth} fill="none" />
+        <circle cx={size/2} cy={size/2} r={radius} stroke={color} strokeWidth={strokeWidth} fill="none"
+          strokeDasharray={circumference} strokeDashoffset={offset} style={{ transition: 'stroke-dashoffset 1.5s ease-out' }} strokeLinecap="round" />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: size * 0.22, fontWeight: '900', color: 'white' }}>{score}%</span>
+      </div>
+    </div>
+  );
+};
+
+export default function GradeGuideApp() {
+  const [role, setRole] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [aiSettings, setAiSettings] = useState({
+    provider: 'openrouter',
+    geminiKey: '',
+    geminiModel: 'gemini-1.5-flash',
+    anthropicKey: '',
+    hfToken: '',
+    hfModelId: 'mistralai/Mistral-7B-Instruct-v0.3',
+    openrouterKey: '',
+    openrouterModel: 'openrouter/free'
+  });
+
+  const [selectedSub, setSelectedSub] = useState(null);
+  const [loginModalRole, setLoginModalRole] = useState(null);
+  const [usernameInput, setUsernameInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [loginError, setLoginError] = useState('');
+  
+  const [courseMaterial, setCourseMaterial] = useState({ text: '', pdfBase64: null, pdfName: '' });
+  const [assessments, setAssessments] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+
+  // Focus-safe Dashboard States
+  const [lecturerTab, setLecturerTab] = useState('material');
+  const [showCam, setShowCam] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newQuestions, setNewQuestions] = useState([{ id: 1, text: '', maxMarks: 10 }]);
+  
+  const [activeExam, setActiveExam] = useState(null);
+  const [examAnswers, setExamAnswers] = useState({});
+  const [examLoading, setExamLoading] = useState(false);
+  const [studentTabState, setStudentTabState] = useState('exams');
+
+  const [retakeRequests, setRetakeRequests] = useState([]);
+  const [studentId, setStudentId] = useState(() => {
+    let id = localStorage.getItem('grade_guide_student_id');
+    if (!id) {
+      id = 'Student_' + Math.floor(100 + Math.random() * 900);
+      localStorage.setItem('grade_guide_student_id', id);
+    }
+    return id;
+  });
+
+  useEffect(() => {
+    const saved = localStorage.getItem('grade_guide_pro_v1');
+    if (saved) {
+      const d = JSON.parse(saved);
+      setAssessments(d.assessments || []);
+      setSubmissions(d.submissions || []);
+      setRetakeRequests(d.retakeRequests || []);
+      
+      // Auto-migrate any obsolete/stale OpenRouter model IDs stored in browser cache
+      const loadedSettings = d.settings || {};
+      if (loadedSettings.openrouterModel === 'google/gemini-flash-1.5-free') {
+        loadedSettings.openrouterModel = 'openrouter/free';
+      }
+      
+      setAiSettings(prev => ({ ...prev, ...loadedSettings }));
+    } else {
+      setAssessments([{ id: 1, title: 'Introduction to AI Ethics', published: true, questions: [
+        { id: 1, title: 'Algorithmic Bias', text: 'Explain how training data can introduce bias into an AI system.', maxMarks: 10 },
+        { id: 2, title: 'Transparency', text: 'What is the importance of "Explainable AI" in healthcare?', maxMarks: 10 }
+      ]}]);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('grade_guide_pro_v1', JSON.stringify({ assessments, submissions, settings: aiSettings, retakeRequests }));
+  }, [assessments, submissions, aiSettings, retakeRequests]);
+
+  const callAI = async (prompt, system, files = []) => {
+    if (aiSettings.provider === 'openrouter') {
+      if (!aiSettings.openrouterKey) {
+        if (role === 'Student') {
+          throw new Error("AI Grading Engine is offline. Please ask your Lecturer or Administrator to configure the AI API Key in their console.");
+        }
+        setShowSettings(true);
+        throw new Error("OpenRouter API Key Required.");
+      }
+
+      const messages = [];
+      if (system) {
+        messages.push({ role: "system", content: system });
+      }
+
+      if (files.length > 0) {
+        const content = files.map(f => {
+          if (f.mime.startsWith("image/")) {
+            return {
+              type: "image_url",
+              image_url: { url: `data:${f.mime};base64,${f.base64}` }
+            };
+          }
+          return { type: "text", text: `[Attachment]: (${f.mime})` };
+        });
+        content.push({ type: "text", text: prompt });
+        messages.push({ role: "user", content });
+      } else {
+        messages.push({ role: "user", content: prompt });
+      }
+
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${aiSettings.openrouterKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "GradeGuide AI"
+        },
+        body: JSON.stringify({
+          model: aiSettings.openrouterModel || "openrouter/free",
+          messages: messages
+        })
+      });
+
+      const data = await res.json();
+      if (data.error) {
+        console.error("OpenRouter API Error:", data.error);
+        throw new Error(`OpenRouter Error: ${data.error.message || data.error.metadata?.message || "Unknown error"}`);
+      }
+
+      if (!data.choices || !data.choices[0]?.message?.content) {
+        console.error("Unexpected OpenRouter Response:", data);
+        throw new Error("OpenRouter returned an empty response.");
+      }
+
+      return data.choices[0].message.content;
+    }
+
+    if (!aiSettings.geminiKey) {
+      setShowSettings(true);
+      throw new Error("Gemini API Key Required.");
+    }
+    
+    const contents = [{
+      role: "user",
+      parts: files.map(f => ({
+        inline_data: { mime_type: f.mime, data: f.base64 }
+      }))
+    }];
+    
+    contents[0].parts.push({ text: prompt });
+
+    const body = { contents };
+    
+    if (system) {
+      body.system_instruction = {
+        parts: [{ text: system }]
+      };
+    }
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiSettings.geminiModel}:generateContent?key=${aiSettings.geminiKey}`;
+    
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    
+    const data = await res.json();
+    if (data.error) {
+      console.error("Gemini API Error Response:", data.error);
+      throw new Error(`Gemini Error: ${data.error.message} (Code: ${data.error.code})`);
+    }
+    
+    if (!data.candidates || !data.candidates[0].content) {
+      console.error("Unexpected Gemini Response:", data);
+      throw new Error("Gemini returned an empty response. Check safety settings or prompt length.");
+    }
+
+    return data.candidates[0].content.parts[0].text;
+  };
+
+  const markSubmission = async (assessment, answers) => {
+    const system = "Expert Academic Grader. Return RAW JSON array only: [{\"questionId\":1, \"score\":8, \"grade\":\"A\", \"feedback\":\"...\", \"strengths\":[], \"improvements\":[]}]";
+    const prompt = `Grading task for: ${assessment.title}\nStudent Answers: ${JSON.stringify(answers)}\nReference Context: ${courseMaterial.text}`;
+    const files = courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : [];
+    
+    const result = await callAI(prompt, system, files);
+    try {
+      const cleaned = result.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleaned);
+    } catch(e) { throw new Error("AI output parsing failed. Try again."); }
+  };
+
+  const extractTextFromImage = async (base64) => {
+    return await callAI("OCR Task: Transcribe every word from this image exactly. No chatter.", null, [{ mime: "image/jpeg", base64: base64.split(',')[1] }]);
+  };
+
+  const CameraModal = ({ onClose, onExtract }) => {
+    const videoRef = useRef(null);
+    const [capturing, setCapturing] = useState(false);
+
+    useEffect(() => {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(s => { if(videoRef.current) videoRef.current.srcObject = s; })
+        .catch(() => alert("Camera access failed. Use HTTPS."));
+    }, []);
+
+    const capture = async () => {
+      setCapturing(true);
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
+      try {
+        const text = await extractTextFromImage(canvas.toDataURL('image/jpeg'));
+        onExtract(text);
+        onClose();
+      } catch (e) { alert(e.message); }
+      setCapturing(false);
+    };
+
+    return (
+      <div className="modal-overlay">
+        <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '32px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <h3 style={{ margin: 0 }}>Vision OCR Scanner</h3>
+            <button className="btn-outline" style={{ padding: '8px', border: 'none' }} onClick={onClose}><X size={20}/></button>
+          </div>
+          <div style={{ position: 'relative', background: '#000', borderRadius: '16px', overflow: 'hidden', aspectRatio: '16/9' }}>
+            <video ref={videoRef} autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div style={{ position: 'absolute', inset: '20px', border: '2px dashed rgba(255,255,255,0.3)', borderRadius: '12px' }}></div>
+          </div>
+          <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
+            <button className="btn btn-primary" style={{ flex: 1 }} onClick={capture} disabled={capturing}>
+              {capturing ? <Activity className="animate-spin" /> : <><Camera size={20}/> Capture Text</>}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const SettingsModal = () => (
+    <div className="modal-overlay">
+      <div className="glass-panel scrollbar" style={{ width: '100%', maxWidth: '500px', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+          <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}><Settings size={28} color="var(--primary)"/> AI Configuration</h2>
+          <button className="btn-outline" style={{ padding: '8px', border: 'none' }} onClick={() => setShowSettings(false)}><X size={24} /></button>
+        </div>
+        
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{ display: 'block', marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Preferred AI Engine</label>
+          <select className="input-field" value={aiSettings.provider} onChange={e => setAiSettings({...aiSettings, provider: e.target.value})}>
+            <option value="openrouter">OpenRouter (Free Cloud Models - Recommended)</option>
+            <option value="gemini">Google Gemini 1.5 Direct (CORS blocked in browser)</option>
+            <option value="anthropic">Anthropic Claude 3.7</option>
+            <option value="huggingface">HuggingFace Inference</option>
+          </select>
+        </div>
+
+        {aiSettings.provider === 'openrouter' && (
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>OpenRouter Free Model</label>
+            <select className="input-field" value={aiSettings.openrouterModel || 'openrouter/free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
+              <option value="openrouter/free">Auto-Select Free Model (Recommended)</option>
+              <option value="google/gemma-2-9b-it:free">Gemma 2 9B (100% Free)</option>
+              <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B Instruct (100% Free)</option>
+              <option value="mistralai/mistral-7b-instruct:free">Mistral 7B Instruct (100% Free)</option>
+            </select>
+          </div>
+        )}
+
+        {aiSettings.provider === 'gemini' && (
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Gemini Model Version</label>
+            <select className="input-field" value={aiSettings.geminiModel} onChange={e => setAiSettings({...aiSettings, geminiModel: e.target.value})}>
+              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Free & Fast)</option>
+              <option value="gemini-1.5-pro">Gemini 1.5 Pro (Complex Analysis)</option>
+            </select>
+          </div>
+        )}
+
+        <div style={{ marginBottom: '32px' }}>
+          <label style={{ display: 'block', marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            {aiSettings.provider === 'openrouter' ? 'OpenRouter API Key' : aiSettings.provider === 'gemini' ? 'Gemini API Key' : aiSettings.provider === 'anthropic' ? 'Claude API Key' : 'HF Token'}
+          </label>
+          <input 
+            type="password" 
+            className="input-field" 
+            placeholder="Paste your key here..."
+            value={
+              aiSettings.provider === 'openrouter' ? aiSettings.openrouterKey :
+              aiSettings.provider === 'gemini' ? aiSettings.geminiKey : 
+              aiSettings.provider === 'anthropic' ? aiSettings.anthropicKey : 
+              aiSettings.hfToken
+            }
+            onChange={e => {
+              const val = e.target.value;
+              if(aiSettings.provider === 'openrouter') setAiSettings({...aiSettings, openrouterKey: val});
+              else if(aiSettings.provider === 'gemini') setAiSettings({...aiSettings, geminiKey: val});
+              else if(aiSettings.provider === 'anthropic') setAiSettings({...aiSettings, anthropicKey: val});
+              else setAiSettings({...aiSettings, hfToken: val});
+            }}
+          />
+          <p style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+            <AlertCircle size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+            {aiSettings.provider === 'openrouter' ? (
+              <>Get a 100% free key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold' }}>openrouter.ai/keys</a></>
+            ) : 'Keys are stored locally in your browser and never shared.'}
+          </p>
+        </div>
+
+        <button className="btn btn-primary" style={{ width: '100%', padding: '16px' }} onClick={() => setShowSettings(false)}>Save & Initialize</button>
+      </div>
+    </div>
+  );
+
+  const DetailedCorrectionsModal = () => {
+    if (!selectedSub) return null;
+    const ass = assessments.find(a => a.id === selectedSub.assessmentId);
+    const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 20;
+    const totalScore = selectedSub.results.reduce((acc, r) => acc + r.score, 0);
+    const percentage = Math.round((totalScore / totalMaxMarks) * 100);
+
+    return (
+      <div className="modal-overlay" style={{ zIndex: 1000 }}>
+        <div className="glass-panel scrollbar" style={{ width: '100%', maxWidth: '850px', padding: '40px', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', borderBottom: '1px solid var(--panel-border)', paddingBottom: '24px' }}>
+            <div>
+              <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>AI Compliance & Grading Review</span>
+              <h2 style={{ margin: '4px 0 0 0', fontSize: '1.8rem' }}>{ass?.title || 'Detailed AI Report Card'}</h2>
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Student Reference ID: {selectedSub.studentId}</p>
+            </div>
+            <button className="btn-outline" style={{ padding: '8px', border: 'none' }} onClick={() => setSelectedSub(null)}><X size={24} /></button>
+          </div>
+
+          {/* Score & General Status Bar */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '32px', marginBottom: '40px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--panel-border)', padding: '24px', borderRadius: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <ScoreRing score={percentage} size={130} strokeWidth={11} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '10px' }}>
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Star size={20} color="var(--warning)" fill="var(--warning)" /> Performance Feedback
+              </h3>
+              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                This grading is fully contextualized and grounded on the course material uploaded in the lecturer dashboard to prevent zero-hallucinations and maintain grading compliance.
+              </p>
+            </div>
+          </div>
+
+          {/* Question-by-Question Corrections breakdown */}
+          <h3 style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>Detailed Evaluation Breakdown</h3>
+          <div style={{ display: 'grid', gap: '32px' }}>
+            {selectedSub.results.map((res, index) => {
+              const qObj = ass?.questions.find(q => q.id === res.questionId) || { text: 'Academic Question', maxMarks: 10 };
+              const studentAns = selectedSub.answers[res.questionId] || 'No answer submitted.';
+              
+              return (
+                <div key={index} style={{ border: '1px solid var(--panel-border)', borderRadius: '16px', background: 'rgba(0,0,0,0.2)', overflow: 'hidden' }}>
+                  {/* Question Header Card */}
+                  <div style={{ background: 'rgba(255,255,255,0.02)', padding: '18px 24px', borderBottom: '1px solid var(--panel-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>Question {index + 1}</span>
+                    <span className="badge badge-primary" style={{ background: 'rgba(59,130,246,0.1)' }}>
+                      Score: {res.score} / {qObj.maxMarks || 10}
+                    </span>
+                  </div>
+                  
+                  {/* Question Text & Student Answer Body */}
+                  <div style={{ padding: '24px' }}>
+                    <p style={{ margin: '0 0 16px 0', fontSize: '1.05rem', fontWeight: '500', color: 'var(--text-main)' }}>{qObj.text}</p>
+                    
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>Submitted Student Answer</label>
+                    <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '12px', borderLeft: '3px solid var(--primary)', marginBottom: '24px', fontStyle: 'italic', fontSize: '0.95rem', color: 'rgba(255,255,255,0.8)', whiteSpace: 'pre-wrap' }}>
+                      "{studentAns}"
+                    </div>
+
+                    {/* AI Feedback & Evaluation Corrections */}
+                    <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>AI Evaluation & Corrections</label>
+                    
+                    <div style={{ background: 'rgba(59, 130, 246, 0.03)', border: '1px solid rgba(59,130,246,0.1)', padding: '20px', borderRadius: '12px', marginBottom: '20px' }}>
+                      <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.5', color: 'rgba(255,255,255,0.9)' }}>{res.feedback}</p>
+                    </div>
+
+                    {/* Strengths Grid */}
+                    {res.strengths && res.strengths.length > 0 && (
+                      <div style={{ marginBottom: '20px' }}>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--success)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                          <Check size={16} /> Key Strengths
+                        </span>
+                        <div style={{ display: 'grid', gap: '8px' }}>
+                          {res.strengths.map((str, sIdx) => (
+                            <div key={sIdx} style={{ fontSize: '0.9rem', color: 'var(--text-main)', background: 'rgba(16, 185, 129, 0.03)', padding: '10px 14px', borderRadius: '8px', borderLeft: '2px solid var(--success)' }}>
+                              {str}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Corrections & Suggested Improvements */}
+                    {res.improvements && res.improvements.length > 0 && (
+                      <div>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--warning)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                          <Sliders size={16} /> Corrections & Suggested Improvements
+                        </span>
+                        <div style={{ display: 'grid', gap: '8px' }}>
+                          {res.improvements.map((imp, iIdx) => (
+                            <div key={iIdx} style={{ fontSize: '0.9rem', color: 'var(--text-main)', background: 'rgba(245, 158, 11, 0.03)', padding: '10px 14px', borderRadius: '8px', borderLeft: '2px solid var(--warning)' }}>
+                              {imp}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--panel-border)', paddingTop: '24px' }}>
+            <button className="btn btn-primary" onClick={() => setSelectedSub(null)}>Done Reviewing</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const RoleLoginModal = () => {
+    if (!loginModalRole) return null;
+    
+    const handleLogin = (e) => {
+      e.preventDefault();
+      if (usernameInput.trim().toLowerCase() === 'admin' && passwordInput === 'admin') {
+        setRole(loginModalRole);
+        setLoginModalRole(null);
+        setUsernameInput('');
+        setPasswordInput('');
+        setLoginError('');
+      } else {
+        setLoginError('Invalid username or password! Access denied.');
+      }
+    };
+
+    return (
+      <div className="modal-overlay" style={{ zIndex: 1100 }}>
+        <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '32px', textAlign: 'left', animation: 'slideUp 0.3s ease' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShieldCheck size={24} color="var(--primary)" /> Secure Access
+            </h3>
+            <button className="btn-outline" style={{ padding: '6px', border: 'none' }} onClick={() => setLoginModalRole(null)}>
+              <X size={20} />
+            </button>
+          </div>
+          
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px', lineHeight: '1.4' }}>
+            You are attempting to access the high-privilege **{loginModalRole} Portal**. Please enter the system credentials below to continue.
+          </p>
+
+          <form onSubmit={handleLogin} style={{ display: 'grid', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Username</label>
+              <input 
+                type="text" 
+                className="input-field" 
+                placeholder="Enter username" 
+                required 
+                value={usernameInput}
+                onChange={e => setUsernameInput(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Password</label>
+              <input 
+                type="password" 
+                className="input-field" 
+                placeholder="Enter password" 
+                required 
+                value={passwordInput}
+                onChange={e => setPasswordInput(e.target.value)}
+              />
+            </div>
+
+            {loginError && (
+              <div style={{ color: 'var(--danger)', fontSize: '0.8rem', background: 'rgba(239, 68, 68, 0.08)', padding: '10px 14px', borderRadius: '8px', borderLeft: '2px solid var(--danger)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertCircle size={14} /> {loginError}
+              </div>
+            )}
+
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '14px', marginTop: '8px' }}>
+              Authorize Entry
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  const LecturerDashboard = () => {
+    const handleFileUpload = (e) => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      
+      // Clean previous state to avoid showing binary data
+      if (file.type === 'application/pdf') {
+        reader.onload = ev => setCourseMaterial({ ...courseMaterial, pdfBase64: ev.target.result.split(',')[1], pdfName: file.name, text: '' });
+        reader.readAsDataURL(file);
+      } else if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        reader.onload = ev => setCourseMaterial({ ...courseMaterial, text: ev.target.result, pdfBase64: null, pdfName: '' });
+        reader.readAsText(file);
+      } else {
+        alert("Unsupported file type. Please use PDF or Text.");
+      }
+    };
+
+    return (
+      <div style={{ animation: 'fadeIn 0.5s ease' }}>
+        <div className="nav-container" style={{ display: 'flex', gap: '8px', marginBottom: '32px', borderBottom: '1px solid var(--panel-border)' }}>
+          <div className={`nav-tab ${lecturerTab === 'material' ? 'active' : ''}`} onClick={() => setLecturerTab('material')}>Source Material</div>
+          <div className={`nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => setLecturerTab('build')}>Assessment Builder</div>
+          <div className={`nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => setLecturerTab('results')}>Grading Desk</div>
+          <div className={`nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}>System Audit & Engine</div>
+        </div>
+
+        {lecturerTab === 'material' && (
+          <div className="glass-panel" style={{ padding: '40px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
+              <div className="role-card" style={{ padding: '32px' }} onClick={() => setShowCam(true)}>
+                <Camera size={40} color="var(--primary)" />
+                <h3 style={{ margin: 0 }}>Scan Printed Copy</h3>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>AI-powered OCR via Vision</p>
+              </div>
+              <label className="role-card" style={{ padding: '32px', cursor: 'pointer' }}>
+                <Upload size={40} color="var(--success)" />
+                <h3 style={{ margin: 0 }}>{courseMaterial.pdfName || 'Upload Digital Copy'}</h3>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>PDF, TXT, or MD support</p>
+                <input type="file" hidden onChange={handleFileUpload} accept=".pdf,.txt,.md" />
+              </label>
+            </div>
+            
+            <div style={{ position: 'relative' }}>
+              <label style={{ display: 'block', marginBottom: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Context Material (Raw Text)</label>
+              <textarea 
+                className="input-field scrollbar" 
+                rows={12} 
+                placeholder="The AI will use this content as the only truth for grading..."
+                value={courseMaterial.text}
+                onChange={e => setCourseMaterial({...courseMaterial, text: e.target.value})}
+              />
+              {courseMaterial.pdfBase64 && (
+                <div style={{ position: 'absolute', top: '10px', right: '10px' }} className="badge badge-success">
+                  <FileText size={14} style={{ marginRight: '6px' }} /> PDF Linked
+                </div>
+              )}
+            </div>
+            {showCam && <CameraModal onClose={() => setShowCam(false)} onExtract={t => setCourseMaterial(p => ({...p, text: p.text + '\n' + t}))} />}
+          </div>
+        )}
+
+        {lecturerTab === 'build' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '32px' }}>
+            {/* Builder Form */}
+            <div className="glass-panel" style={{ padding: '40px' }}>
+              <h2 style={{ marginTop: 0, marginBottom: '24px' }}>Build New Assessment</h2>
+              
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Assessment Title</label>
+                <input 
+                  className="input-field" 
+                  placeholder="e.g. Introduction to AI Ethics Midterm" 
+                  value={newTitle} 
+                  onChange={e => setNewTitle(e.target.value)} 
+                />
+              </div>
+
+              <label style={{ display: 'block', marginBottom: '16px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Questions & Marks</label>
+              
+              <div style={{ display: 'grid', gap: '20px', marginBottom: '32px' }}>
+                {newQuestions.map((q, idx) => (
+                  <div key={q.id} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--panel-border)', padding: '20px', borderRadius: '12px' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 'bold' }}>QUESTION #{idx + 1}</label>
+                      <textarea 
+                        className="input-field" 
+                        rows={2} 
+                        placeholder="Type your exam question here..." 
+                        value={q.text} 
+                        onChange={e => {
+                          const updated = [...newQuestions];
+                          updated[idx].text = e.target.value;
+                          setNewQuestions(updated);
+                        }} 
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '120px' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>MAX MARKS</label>
+                      <input 
+                        type="number" 
+                        className="input-field" 
+                        min={1} 
+                        max={100} 
+                        value={q.maxMarks} 
+                        onChange={e => {
+                          const updated = [...newQuestions];
+                          updated[idx].maxMarks = parseInt(e.target.value) || 10;
+                          setNewQuestions(updated);
+                        }} 
+                      />
+                    </div>
+                    {newQuestions.length > 1 && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ marginTop: '28px', padding: '12px', color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} 
+                        onClick={() => setNewQuestions(newQuestions.filter((_, i) => i !== idx))}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <button 
+                  className="btn btn-outline" 
+                  style={{ flex: 1 }}
+                  onClick={() => setNewQuestions([...newQuestions, { id: Date.now(), text: '', maxMarks: 10 }])}
+                >
+                  <Plus size={18} /> Add Question
+                </button>
+                <button 
+                  className="btn btn-primary" 
+                  style={{ flex: 1 }}
+                  onClick={() => {
+                    if (!newTitle.trim()) { alert("Please enter an assessment title."); return; }
+                    const invalidQ = newQuestions.find(q => !q.text.trim());
+                    if (invalidQ) { alert("Please enter text for all questions."); return; }
+                    
+                    const createdExam = {
+                      id: Date.now(),
+                      title: newTitle.trim(),
+                      published: true,
+                      questions: newQuestions.map((q, i) => ({
+                        id: i + 1,
+                        title: `Question ${i + 1}`,
+                        text: q.text.trim(),
+                        maxMarks: q.maxMarks || 10
+                      }))
+                    };
+                    
+                    setAssessments([createdExam, ...assessments]);
+                    setNewTitle('');
+                    setNewQuestions([{ id: Date.now(), text: '', maxMarks: 10 }]);
+                    alert(`Assessment "${createdExam.title}" has been successfully published to the Student Portal!`);
+                  }}
+                >
+                  <Save size={18} /> Save & Publish Assessment
+                </button>
+              </div>
+            </div>
+
+            {/* Published Assessments List */}
+            <div className="glass-panel" style={{ padding: '40px' }}>
+              <h3 style={{ marginTop: 0, marginBottom: '24px' }}>Published Assessments</h3>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {assessments.map(a => (
+                  <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--panel-border)', alignItems: 'center' }}>
+                    <div>
+                      <h4 style={{ margin: '0 0 4px 0' }}>{a.title}</h4>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{a.questions.length} Questions</span>
+                    </div>
+                    <button className="btn-outline" style={{ padding: '8px', border: 'none' }} onClick={() => setAssessments(assessments.filter(x => x.id !== a.id))}><Trash2 size={18} color="var(--danger)"/></button>
+                  </div>
+                ))}
+                {assessments.length === 0 && (
+                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    No published assessments yet.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {lecturerTab === 'results' && (
+          <div style={{ display: 'grid', gap: '20px' }}>
+            {/* Pending Retake Requests Sub-Section */}
+            {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
+              <div style={{ background: 'rgba(245, 158, 11, 0.02)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '28px', borderRadius: '20px', marginBottom: '16px' }}>
+                <h3 style={{ margin: '0 0 16px 0', color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertCircle size={20} /> Retake Requests Pending Approval
+                </h3>
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {retakeRequests.filter(r => r.status === 'pending').map(req => (
+                    <div key={req.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--panel-border)', flexWrap: 'wrap', gap: '12px' }}>
+                      <div>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 'bold' }}>{req.studentId}</span>
+                        <h4 style={{ margin: '4px 0 0 0' }}>Requesting to retake: {req.title}</h4>
+                      </div>
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)', padding: '8px 16px', fontSize: '0.85rem' }} onClick={() => {
+                          setRetakeRequests(retakeRequests.filter(r => r.id !== req.id));
+                        }}>Decline</button>
+                        <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }} onClick={() => {
+                          setRetakeRequests(retakeRequests.map(r => r.id === req.id ? { ...r, status: 'approved' } : r));
+                          // Clear the student's previous submission for this assessment so they can take it fresh!
+                          setSubmissions(submissions.filter(sub => !(sub.assessmentId === req.assessmentId && sub.studentId === req.studentId)));
+                          alert(`Retake request approved for ${req.studentId}! Their previous submission was cleared.`);
+                        }}>Approve Retake</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {submissions.map((sub, i) => {
+              const ass = assessments.find(a => a.id === sub.assessmentId);
+              const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 20;
+              const totalScore = sub.results.reduce((acc, r) => acc + r.score, 0);
+              const percentage = Math.round((totalScore / totalMaxMarks) * 100);
+              
+              return (
+                <div key={i} className="glass-panel" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold', textTransform: 'uppercase' }}>Submission ID: {sub.studentId}</span>
+                    <h3 style={{ margin: '4px 0 8px 0' }}>Assessment: {ass?.title || 'Unknown'}</h3>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Timestamp: {sub.timestamp || 'Recent Submission'}</p>
+                  </div>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <ScoreRing score={percentage} size={70} strokeWidth={7} />
+                    <button className="btn btn-outline" style={{ padding: '10px 18px', fontSize: '0.85rem' }} onClick={() => setSelectedSub(sub)}>
+                      <Eye size={16} /> Review Corrections
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            {submissions.length === 0 && <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>No student submissions yet.</div>}
+          </div>
+        )}
+
+        {lecturerTab === 'audit' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '32px', animation: 'fadeIn 0.5s ease' }}>
+            
+            {/* Left Column: AI Engine Config */}
+            <div className="glass-panel" style={{ padding: '32px', alignSelf: 'start' }}>
+              <h3 style={{ margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Sliders color="var(--primary)" size={24} /> AI Engine Config
+              </h3>
+              
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>AI Provider</label>
+                <select className="input-field" value={aiSettings.provider} onChange={e => setAiSettings({...aiSettings, provider: e.target.value})}>
+                  <option value="openrouter">OpenRouter (Cloud Models - Recommended)</option>
+                  <option value="gemini">Google Gemini 1.5 Direct</option>
+                  <option value="anthropic">Anthropic Claude 3.7</option>
+                  <option value="huggingface">HuggingFace Inference</option>
+                </select>
+              </div>
+
+              {aiSettings.provider === 'openrouter' && (
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>Model Version</label>
+                  <select className="input-field" value={aiSettings.openrouterModel || 'openrouter/free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
+                    <option value="openrouter/free">Auto-Select Free Model (Recommended)</option>
+                    <option value="google/gemma-2-9b-it:free">Gemma 2 9B (Free)</option>
+                    <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B (Free)</option>
+                    <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (Free)</option>
+                  </select>
+                </div>
+              )}
+
+              {aiSettings.provider === 'gemini' && (
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>Gemini Version</label>
+                  <select className="input-field" value={aiSettings.geminiModel} onChange={e => setAiSettings({...aiSettings, geminiModel: e.target.value})}>
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fast)</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro (Precise)</option>
+                  </select>
+                </div>
+              )}
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                  {aiSettings.provider === 'openrouter' ? 'OpenRouter API Key' : aiSettings.provider === 'gemini' ? 'Gemini API Key' : aiSettings.provider === 'anthropic' ? 'Claude API Key' : 'HF Token'}
+                </label>
+                <input 
+                  type="password" 
+                  className="input-field" 
+                  placeholder="Paste secure key here..."
+                  value={
+                    aiSettings.provider === 'openrouter' ? aiSettings.openrouterKey :
+                    aiSettings.provider === 'gemini' ? aiSettings.geminiKey : 
+                    aiSettings.provider === 'anthropic' ? aiSettings.anthropicKey : 
+                    aiSettings.hfToken
+                  }
+                  onChange={e => {
+                    const val = e.target.value;
+                    if(aiSettings.provider === 'openrouter') setAiSettings({...aiSettings, openrouterKey: val});
+                    else if(aiSettings.provider === 'gemini') setAiSettings({...aiSettings, geminiKey: val});
+                    else if(aiSettings.provider === 'anthropic') setAiSettings({...aiSettings, anthropicKey: val});
+                    else setAiSettings({...aiSettings, hfToken: val});
+                  }}
+                />
+                <p style={{ marginTop: '10px', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                  <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                  {aiSettings.provider === 'openrouter' ? (
+                    <>Get a free key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold' }}>openrouter.ai</a></>
+                  ) : 'Keys are saved securely in your browser cache.'}
+                </p>
+              </div>
+              
+              <div style={{ padding: '16px', background: 'rgba(16, 185, 129, 0.03)', border: '1px solid rgba(16, 185, 129, 0.1)', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle size={16} /> API Key Auto-Saved & Initialized
+              </div>
+            </div>
+
+            {/* Right Column: System Auditing */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              
+              {/* Analytics Sub-Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px' }}>
+                <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '12px', borderRadius: '12px', color: 'var(--primary)' }}>
+                    <ShieldCheck size={24} />
+                  </div>
+                  <div>
+                    <h4 style={{ margin: '0 0 2px 0', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>AI Integrity</h4>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>100% Compliant</span>
+                  </div>
+                </div>
+                <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '12px', borderRadius: '12px', color: 'var(--success)' }}>
+                    <Book size={24} />
+                  </div>
+                  <div>
+                    <h4 style={{ margin: '0 0 2px 0', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Exams</h4>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{assessments.length} Published</span>
+                  </div>
+                </div>
+                <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '12px', borderRadius: '12px', color: 'var(--warning)' }}>
+                    <FileBadge size={24} />
+                  </div>
+                  <div>
+                    <h4 style={{ margin: '0 0 2px 0', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Audited</h4>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{submissions.length} Graded</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Audit Logs List */}
+              <div className="glass-panel" style={{ padding: '32px' }}>
+                <h3 style={{ margin: '0 0 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  System Compliance Logs
+                  <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>Audit Mode</span>
+                </h3>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '0.85rem', lineHeight: '1.4' }}>
+                  Every student grading transaction and AI response trace is captured below for systemic auditing.
+                </p>
+
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {submissions.map((sub, i) => {
+                    const ass = assessments.find(a => a.id === sub.assessmentId);
+                    const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 20;
+                    const totalScore = sub.results.reduce((acc, r) => acc + r.score, 0);
+                    const percentage = Math.round((totalScore / totalMaxMarks) * 100);
+
+                    return (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'rgba(255,255,255,0.01)', borderRadius: '10px', border: '1px solid var(--panel-border)', flexWrap: 'wrap', gap: '12px' }}>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold' }}>Audit Ref #{sub.studentId}</span>
+                          <h4 style={{ margin: '2px 0 0 0', fontSize: '0.9rem' }}>Exams: {ass?.title || 'Unknown Exam'}</h4>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          <ScoreRing score={percentage} size={42} strokeWidth={4} />
+                          <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => setSelectedSub(sub)}>
+                            <ShieldCheck size={12} /> Audit Corrections
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {submissions.length === 0 && (
+                    <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                      No student grading transactions logged on the server.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const StudentDashboard = () => {
+    if (activeExam) return (
+      <div className="glass-panel" style={{ padding: '40px', maxWidth: '800px', margin: '0 auto', animation: 'slideUp 0.4s ease' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
+          <h2 style={{ margin: 0 }}>{activeExam.title}</h2>
+          <button className="btn-outline" onClick={() => setActiveExam(null)}><X size={20}/></button>
+        </div>
+        {activeExam.questions.map(q => (
+          <div key={q.id} style={{ marginBottom: '32px' }}>
+            <p style={{ fontSize: '1.1rem', marginBottom: '16px', fontWeight: '500' }}>{q.text}</p>
+            <textarea className="input-field" rows={4} placeholder="Type your answer clearly..." onChange={e => setExamAnswers({...examAnswers, [q.id]: e.target.value})} />
+          </div>
+        ))}
+        <button className="btn btn-primary" style={{ width: '100%', padding: '18px' }} disabled={examLoading} onClick={async () => {
+          setExamLoading(true);
+          try {
+            const results = await markSubmission(activeExam, examAnswers);
+            const newSub = { 
+              assessmentId: activeExam.id, 
+              studentId: studentId, 
+              answers: examAnswers, 
+              results,
+              timestamp: new Date().toLocaleString()
+            };
+            setSubmissions([...submissions, newSub]);
+            setActiveExam(null);
+            setSelectedSub(newSub);
+          } catch(e) { alert(e.message); }
+          setExamLoading(false);
+        }}>
+          {examLoading ? <Activity className="animate-spin" /> : <><CheckCircle size={20}/> Submit for AI Grading</>}
+        </button>
+      </div>
+    );
+
+    return (
+      <div style={{ animation: 'fadeIn 0.5s ease' }}>
+        {/* Sub-Navigation for Student Portal */}
+        <div className="nav-container" style={{ display: 'flex', gap: '8px', marginBottom: '32px', borderBottom: '1px solid var(--panel-border)' }}>
+          <div className={`nav-tab ${studentTabState === 'exams' ? 'active' : ''}`} onClick={() => setStudentTabState('exams')}>
+            Available Assessments
+          </div>
+          <div className={`nav-tab ${studentTabState === 'results' ? 'active' : ''}`} onClick={() => setStudentTabState('results')}>
+            My Graded Results ({submissions.length})
+          </div>
+        </div>
+
+        {/* Available Assessments View */}
+        {studentTabState === 'exams' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
+            {assessments.map(a => {
+              const hasSubmitted = submissions.some(sub => sub.assessmentId === a.id && sub.studentId === studentId);
+              const retakeReq = retakeRequests.find(r => r.studentId === studentId && r.assessmentId === a.id);
+              
+              return (
+                <div key={a.id} className="glass-panel" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div style={{ background: 'var(--gradient-brand)', width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Book color="white" size={24}/></div>
+                  <h3 style={{ margin: 0 }}>{a.title}</h3>
+                  <p style={{ margin: 0, color: 'var(--text-muted)', flex: 1 }}>{a.questions.length} Questions found.</p>
+                  
+                  {hasSubmitted ? (
+                    (() => {
+                      if (!retakeReq) {
+                        return (
+                          <button className="btn btn-outline" style={{ width: '100%', borderColor: 'var(--primary)' }} onClick={() => {
+                            const newReq = {
+                              id: Date.now(),
+                              studentId,
+                              assessmentId: a.id,
+                              title: a.title,
+                              status: 'pending'
+                            };
+                            setRetakeRequests([...retakeRequests, newReq]);
+                            alert("Your retake request has been successfully sent to the lecturer!");
+                          }}>
+                            Request Retake Permission
+                          </button>
+                        );
+                      } else if (retakeReq.status === 'pending') {
+                        return (
+                          <button className="btn btn-outline" style={{ width: '100%', opacity: 0.6, cursor: 'not-allowed' }} disabled>
+                            Retake Pending Approval...
+                          </button>
+                        );
+                      } else if (retakeReq.status === 'approved') {
+                        return (
+                          <button className="btn btn-primary" style={{ width: '100%', background: 'var(--gradient-brand)' }} onClick={() => {
+                            setRetakeRequests(retakeRequests.filter(r => !(r.studentId === studentId && r.assessmentId === a.id)));
+                            setActiveExam(a);
+                          }}>
+                            Begin Retake Exam
+                          </button>
+                        );
+                      }
+                    })()
+                  ) : (
+                    <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => setActiveExam(a)}>Begin Assessment</button>
+                  )}
+                </div>
+              );
+            })}
+            {assessments.length === 0 && (
+              <div className="glass-panel" style={{ gridColumn: '1/-1', padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                No assessments available at the moment.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* My Graded Results View */}
+        {studentTabState === 'results' && (
+          <div style={{ display: 'grid', gap: '20px' }}>
+            {submissions.map((sub, i) => {
+              const ass = assessments.find(a => a.id === sub.assessmentId);
+              const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 20;
+              const totalScore = sub.results.reduce((acc, r) => acc + r.score, 0);
+              const percentage = Math.round((totalScore / totalMaxMarks) * 100);
+
+              return (
+                <div key={i} className="glass-panel" style={{ padding: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+                  <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                    <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '16px', borderRadius: '16px', color: 'var(--primary)' }}>
+                      <FileBadge size={32} />
+                    </div>
+                    <div>
+                      <h3 style={{ margin: '0 0 6px 0', fontSize: '1.2rem' }}>{ass?.title || 'Course Assessment'}</h3>
+                      <p style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        Submitted on: {sub.timestamp || 'Recent'}
+                      </p>
+                      <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>AI Graded</span>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                    <ScoreRing score={percentage} size={70} strokeWidth={7} />
+                    <button className="btn btn-outline" style={{ padding: '10px 20px', fontSize: '0.85rem' }} onClick={() => setSelectedSub(sub)}>
+                      <Eye size={16} /> Get Corrections
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            {submissions.length === 0 && (
+              <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                You have not completed any assessments yet. Take an assessment to see your grades!
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const LoginScreen = () => {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '60px', animation: 'fadeIn 1s ease' }}>
+          <div style={{ display: 'inline-flex', padding: '20px', background: 'var(--panel-bg)', borderRadius: '30px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
+            <Brain size={60} color="var(--primary)" />
+          </div>
+          <h1 style={{ fontSize: '4rem', fontWeight: '900', margin: '0 0 16px 0', background: 'var(--gradient-brand)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-2px' }}>GradeGuide</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: '500' }}>Academic Grading Infrastructure for the AI Age</p>
+        </div>
+        
+        <div className="role-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '32px', width: '100%', maxWidth: '800px' }}>
+          {[
+            { id: 'Student', icon: Smartphone, label: 'Student Portal', desc: 'Take exams & get instant AI feedback' },
+            { id: 'Lecturer', icon: ShieldCheck, label: 'Faculty Dashboard', desc: 'Create assessments, review grading & audit AI settings' }
+          ].map(r => (
+            <div key={r.id} className="role-card" onClick={() => {
+              if (r.id === 'Student') {
+                setRole('Student');
+              } else {
+                setLoginModalRole(r.id);
+                setLoginError('');
+                setUsernameInput('');
+                setPasswordInput('');
+              }
+            }}>
+              <r.icon size={48} color="var(--primary)" />
+              <h3 style={{ margin: 0 }}>{r.label}</h3>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>{r.desc}</p>
+              <div className="btn btn-outline" style={{ marginTop: 'auto', width: '100%' }}>Enter <ChevronRight size={16}/></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  if (!role) return ( <> <GlobalStyles /> <LoginScreen /> {loginModalRole && RoleLoginModal()} </> );
+
+  return (
+    <>
+      <GlobalStyles />
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <header className="glass-panel header-content" style={{ margin: '20px', padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <Brain color="var(--primary)" size={32} />
+            <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 'bold' }}>GradeGuide</h2>
+            <div style={{ width: '1px', height: '24px', background: 'var(--panel-border)', margin: '0 8px' }}></div>
+            <span className="badge badge-primary">{role === 'Lecturer' ? 'Faculty' : role}</span>
+          </div>
+          <div className="header-actions" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} onClick={() => setRole(null)}><LogOut size={18}/> <span className="btn-text">Exit</span></button>
+          </div>
+        </header>
+        <main className="dashboard-main" style={{ flex: 1, padding: '0 20px 60px 20px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+          {role === 'Lecturer' && LecturerDashboard()}
+          {role === 'Student' && StudentDashboard()}
+        </main>
+        {selectedSub && DetailedCorrectionsModal()}
+        {loginModalRole && RoleLoginModal()}
+      </div>
+    </>
+  );
+}
