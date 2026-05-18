@@ -27,6 +27,7 @@ const GlobalStyles = () => (
     body {
       margin: 0; padding: 0; background: var(--bg-dark); color: var(--text-main);
       font-family: var(--font-family); min-height: 100vh; overflow-x: hidden;
+      display: block !important;
     }
     .glass-panel {
       background: var(--panel-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -66,10 +67,64 @@ const GlobalStyles = () => (
     .role-card:hover { border-color: var(--primary); background: rgba(59,130,246,0.05); transform: translateY(-8px); }
     .role-card.active { border-color: var(--primary); background: rgba(59,130,246,0.12); box-shadow: 0 10px 40px rgba(59,130,246,0.2); }
     
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px;
+      width: 100%;
+      max-width: 800px;
+    }
+    
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 32px;
+    }
+    
+    .two-col-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    
+    .audit-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 32px;
+    }
+    
+    .score-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 32px;
+    }
+    
+    .header-content {
+      margin: 20px;
+      padding: 16px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .role-grid, .dashboard-grid, .two-col-grid, .audit-grid, .score-detail-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+      }
+    }
+
     @media (max-width: 768px) {
-      .role-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
       .dashboard-main { padding: 16px !important; }
-      .header-content { padding: 12px 20px !important; margin: 10px !important; }
+      .header-content {
+        margin: 10px !important;
+        padding: 12px 20px !important;
+        border-radius: 16px !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        text-align: center !important;
+      }
       .btn-text { display: none; }
       .nav-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     }
@@ -440,7 +495,7 @@ export default function GradeGuideApp() {
           </div>
 
           {/* Score & General Status Bar */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '32px', marginBottom: '40px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--panel-border)', padding: '24px', borderRadius: '20px' }}>
+          <div className="score-detail-grid" style={{ marginBottom: '40px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--panel-border)', padding: '24px', borderRadius: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <ScoreRing score={percentage} size={130} strokeWidth={11} />
             </div>
@@ -633,7 +688,7 @@ export default function GradeGuideApp() {
 
         {lecturerTab === 'material' && (
           <div className="glass-panel" style={{ padding: '40px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
+            <div className="two-col-grid" style={{ marginBottom: '32px' }}>
               <div className="role-card" style={{ padding: '32px' }} onClick={() => setShowCam(true)}>
                 <Camera size={40} color="var(--primary)" />
                 <h3 style={{ margin: 0 }}>Scan Printed Copy</h3>
@@ -667,7 +722,7 @@ export default function GradeGuideApp() {
         )}
 
         {lecturerTab === 'build' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '32px' }}>
+          <div className="dashboard-grid">
             {/* Builder Form */}
             <div className="glass-panel" style={{ padding: '40px' }}>
               <h2 style={{ marginTop: 0, marginBottom: '24px' }}>Build New Assessment</h2>
@@ -850,7 +905,7 @@ export default function GradeGuideApp() {
         )}
 
         {lecturerTab === 'audit' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '32px', animation: 'fadeIn 0.5s ease' }}>
+          <div className="audit-grid" style={{ animation: 'fadeIn 0.5s ease' }}>
             
             {/* Left Column: AI Engine Config */}
             <div className="glass-panel" style={{ padding: '32px', alignSelf: 'start' }}>
@@ -1170,7 +1225,7 @@ export default function GradeGuideApp() {
           <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: '500' }}>Academic Grading Infrastructure for the AI Age</p>
         </div>
         
-        <div className="role-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '32px', width: '100%', maxWidth: '800px' }}>
+        <div className="role-grid">
           {[
             { id: 'Student', icon: Smartphone, label: 'Student Portal', desc: 'Take exams & get instant AI feedback' },
             { id: 'Lecturer', icon: ShieldCheck, label: 'Faculty Dashboard', desc: 'Create assessments, review grading & audit AI settings' }
