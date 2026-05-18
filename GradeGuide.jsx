@@ -167,6 +167,7 @@ const ScoreRing = ({ score, size = 120, strokeWidth = 10 }) => {
 export default function GradeGuideApp() {
   const [role, setRole] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const DEFAULT_OR_KEY = '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';
   const [aiSettings, setAiSettings] = useState({
     provider: 'openrouter',
     geminiKey: '',
@@ -174,7 +175,7 @@ export default function GradeGuideApp() {
     anthropicKey: '',
     hfToken: '',
     hfModelId: 'mistralai/Mistral-7B-Instruct-v0.3',
-    openrouterKey: '',
+    openrouterKey: DEFAULT_OR_KEY,
     openrouterModel: 'openrouter/free'
   });
 
@@ -221,6 +222,10 @@ export default function GradeGuideApp() {
       const loadedSettings = d.settings || {};
       if (loadedSettings.openrouterModel === 'google/gemini-flash-1.5-free') {
         loadedSettings.openrouterModel = 'openrouter/free';
+      }
+      // If the stored key is blank (old device cache), fill in the new default key
+      if (!loadedSettings.openrouterKey) {
+        loadedSettings.openrouterKey = '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';
       }
       
       setAiSettings(prev => ({ ...prev, ...loadedSettings }));
