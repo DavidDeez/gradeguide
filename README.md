@@ -1,48 +1,73 @@
-# GradeGuide AI
+# 🛡️ GradeGuide AI
+### *Academic Grading Infrastructure for the AI Age*
 
-**GradeGuide AI** is an Intelligent Academic Assessment Platform that leverages cutting-edge LLM and Vision AI models to completely automate the grading of student coursework and exams. It is built as a highly responsive, standalone React application.
+**GradeGuide AI** is an Intelligent Academic Assessment Platform that leverages cutting-edge Large Language Models (LLMs) and Vision OCR AI to completely automate the ingestion, grading, and auditing of student coursework and exams. 
 
-![GradeGuide Interface](https://img.shields.io/badge/GradeGuide-Intelligent_Grading-3b82f6?style=for-the-badge)
+Built as a highly responsive, standalone React application, it provides zero-hallucination, context-grounded evaluation to guarantee strict compliance with course materials.
+
+---
 
 ## 🌟 Key Features
 
-### 1. Multi-Role Portals
-- **Lecturer Dashboard**: Manage course context, create assessments via a built-in builder, scan documents using the camera for OCR, and upload PDF grounding material. View live student submissions, AI feedback, and manually override scores.
-- **Student Dashboard**: Browse available assessments, take tests with an animated live AI marking interface, and view detailed analytical feedback (scores, strengths, areas to improve).
-- **Admin Dashboard**: Live system analytics monitoring assessment completions, submission throughput, and infrastructure compliance checks.
+### 1. Unified Faculty Dashboard
+Instead of fragmenting educator tasks across multiple consoles, GradeGuide integrates all administrative controls under a single secure gateway (`admin`/`admin` authorization):
+* **Source Material Ingestion:** Scan physical, printed assessment papers via a live **Vision OCR Camera scanner** or upload digital copy files (PDF, TXT, MD).
+* **Assessment Builder:** Create dynamic examinations by directly setting custom questions, allocating maximum marks, and publishing tests.
+* **Grading Desk:** Review student answer sheets, read detailed AI corrections, key strengths, and suggested areas of improvement.
+* **System Audit & Engine Control:** A dedicated, side-by-side panel displaying real-time system metrics (Integrity, Active Exams, Audited Submissions), a reactive **AI Engine configuration form** (Provider choice, Model select, API Key input), and full **System Compliance Logs** displaying every student trace.
 
-### 2. Dual AI Engine Configuration
-The Global Settings modal allows seamless switching between two powerful backend inferencing approaches:
-- **Anthropic Claude (Vision + Instruct)**: Utilize `claude-3-5-sonnet` (via your API key) to allow advanced PDF parsing and intelligent image OCR for course material ingestion.
-- **HuggingFace Inference API**: Connect to any open-weights model (e.g., `mistralai/Mistral-7B-Instruct-v0.3`) for fully customizable, instruction-tuned LLM grading using a provided Access Token.
+### 2. Student Portal & Retake Gates
+A secure, simplified workspace for student testing:
+* **Frictionless Testing:** Start published exams, input detailed answers, and watch the live, animated AI grading interface process papers in real-time.
+* **Detailed Corrections:** Get immediate performance score rings and inspect correction notes, strengths, and exact improvement suggestions.
+* **Retake Permission Gate:** To prevent abuse, students are strictly locked out after submission. To retake an exam, they must click **"Request Retake Permission"**, which routes a request to the Faculty's dashboard. Once approved, their lockout is wiped and they are welcomed with a **"Begin Retake Exam"** call to action!
 
-### 3. Smart Course Grounding
-Upload PDFs or use your device camera to scan physical documents. GradeGuide automatically extracts the text via Claude Vision and uses it to establish a strict "source of truth" context window for the grading AI, ensuring zero hallucinations and purely objective marking.
+### 3. Integrated AI Engine Config
+Directly configure and save provider settings inside your workspace. Supports four top-tier inferencing providers:
+1. **OpenRouter (Recommended):** Tap into 100% free open-weights models (Gemma 2 9B, Llama 3 8B, Mistral 7B) using a free API key.
+2. **Google Gemini 1.5 Direct:** Access direct low-latency inferencing (Gemini 1.5 Flash / Pro) with native API key storage.
+3. **Anthropic Claude 3.7:** Run complex, multi-modal vision and text analyses.
+4. **HuggingFace Inference:** Connect custom models using standard inference tokens.
 
-### 4. Zero-Friction Architecture
-Designed as a standalone, single-file React application (`GradeGuide.jsx`). The system utilizes intelligent global state management for instant cross-portal updates without requiring a backend database. Includes a sleek, modern UI with:
-- Dark navy premium theming
-- Smooth gradients
-- Glassmorphism panels
-- Animated SVG score rings
+---
+
+## 🏗️ Architecture & Security Safeguards
+* **Persistent Session Tracing:** Assigns unique, local-storage based `studentId` references to trace student grading sheets and request pipelines.
+* **Student Sandbox Lockout:** Completely hides the API connection status, sliders, configurations, and administrative audit panels from student interfaces to ensure absolute server integrity.
+* **Zero-Hallucination Grounding:** Custom-builds grading prompts that strictly bound the AI's marking behavior to the uploaded context materials, avoiding grading hallucinations.
+
+---
 
 ## 🚀 How to Run Locally
 
-You do not need Node.js or `npm` installed! A native `index.html` wrapper handles the live Babel JSX transpilation.
+You do not need heavy Node.js libraries or server-side installs! The root of the repository houses a lightweight standalone React deployment transpiled natively via Babel CDNs:
 
-1. Clone the repository:
+1. **Clone the repository:**
    ```bash
-   git clone https://github.com/DavidDeez/GradeGuide.git
-   cd GradeGuide
+   git clone https://github.com/DavidDeez/gradeguide.git
+   cd gradeguide
    ```
-2. Run a local HTTP server:
+2. **Launch a local HTTP server:**
    ```bash
    python -m http.server 3000
    ```
-3. Open your browser and navigate to `http://localhost:3000`.
+3. **Navigate in your browser:**
+   Open [http://localhost:3000](http://localhost:3000) and choose your portal!
+
+---
 
 ## 📂 Project Structure
-- `GradeGuide.jsx`: The core single-file React application containing all UI components, state logic, and API interactions.
-- `index.html`: The standalone HTML wrapper with ES Module `importmap` configuring Babel and React CDNs.
-- `docs/`: Phase 2 architectural design documents and UML diagrams.
-- `ai-grader-pro/`: Initial legacy prototype components (Frontend/Backend).
+
+```
+.
+├── GradeGuide.jsx      # Core standalone React single-file application (UI, State, API engine)
+├── index.html          # Lightweight HTML wrapper loading React, Lucide Icons, and Babel transpilers
+├── README.md           # The primary documentation file
+├── docs/               # System Requirement Specifications (SRS) and Phase 1/2 blueprints
+└── ai-grader-pro/      # Legacy prototype components (Frontend & Backend templates)
+```
+
+---
+
+## 🛡️ License & Academic Integrity
+Designed to bring transparent, objective, and accessible grading to educational institutions worldwide. Built with love for **hackathon judges** and educators in the AI era.
