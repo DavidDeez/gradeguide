@@ -3,7 +3,7 @@ import {
   Settings, Camera, Upload, Book, FileText, CheckCircle, 
   BarChart, X, Plus, Trash2, Check, Video, Layout, LogOut, 
   FileBadge, Sliders, Play, Save, ChevronRight, Activity, 
-  ShieldCheck, Brain, Star, Smartphone, AlertCircle, Eye, Edit
+  ShieldCheck, Brain, Star, Smartphone, AlertCircle, Eye, Edit, Download
 } from 'lucide-react';
 
 const GlobalStyles = () => (
@@ -422,8 +422,8 @@ export default function GradeGuideApp() {
   };
 
   const markSubmission = async (assessment, answers, studentFiles = []) => {
-    const system = "Expert Academic Grader. You MUST grade strictly according to the Reference Context provided. If no reference context is provided, grade using general academic knowledge. Return RAW JSON array only: [{\"questionId\":1, \"score\":8, \"grade\":\"A\", \"feedback\":\"...\", \"strengths\":[], \"improvements\":[]}]";
-    const prompt = `Grading task for: ${assessment.title}\nQuestions: ${JSON.stringify(assessment.questions)}\nStudent Typed Answers: ${JSON.stringify(answers)}\nReference Context: ${assessment.contextText || courseMaterial.text}\nIf a student file is attached, read the answers directly from the file to grade.`;
+    const system = "Expert Academic Grader and Plagiarism Detector. Grade strictly according to the Reference Context provided. Return a RAW JSON object with EXACTLY this structure: {\"results\": [{\"questionId\":1, \"score\":8, \"grade\":\"A\", \"feedback\":\"...\", \"strengths\":[], \"improvements\":[]}], \"authenticity\": 95, \"authenticityReason\": \"Original reasoning detected.\"}";
+    const prompt = `Grading task for: ${assessment.title}\nQuestions: ${JSON.stringify(assessment.questions)}\nStudent Typed Answers: ${JSON.stringify(answers)}\nReference Context: ${assessment.contextText || courseMaterial.text}\nIf a student file is attached, read the answers directly from the file to grade. Also, strictly evaluate the student answers for AI-generation or plagiarism.`;
     const files = assessment.contextPdfBase64 ? [{ mime: assessment.contextFileMime || "application/pdf", base64: assessment.contextPdfBase64 }] : (courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : []);
     
     if (studentFiles.length > 0) files.push(...studentFiles);
@@ -468,8 +468,8 @@ export default function GradeGuideApp() {
     newScripts[idx].loading = true;
     setBulkState({...bulkState, scripts: newScripts});
     
-    const system = "You are an expert grading system. Output ONLY a RAW JSON object representing the final grade. Example: {\"score\": 85, \"feedback\": \"Excellent reasoning, but missing step 2.\"}";
-    const prompt = `Marking Guide:\n${bulkState.guideText}\n\nStudent Script (Extracted text):\n${script.text}\n\nGrade the student strictly against the marking guide. If images are attached, read them to verify.`;
+    const system = "You are an expert grading and plagiarism detection system. Output ONLY a RAW JSON object representing the final grade and authenticity. Example: {\"score\": 85, \"feedback\": \"Excellent reasoning.\", \"authenticity\": 95, \"authenticityReason\": \"Handwritten script detected.\"}";
+    const prompt = `Marking Guide:\n${bulkState.guideText}\n\nStudent Script (Extracted text):\n${script.text}\n\nGrade the student strictly against the marking guide. If images are attached, read them to verify. Evaluate authenticity.`;
     const files = [];
     if (bulkState.guideBase64) files.push({ mime: bulkState.guideMime || "image/jpeg", base64: bulkState.guideBase64 });
     if (script.base64) files.push({ mime: script.mime || "image/jpeg", base64: script.base64 });
@@ -1174,6 +1174,28 @@ export default function GradeGuideApp() {
               </div>
             )}
 
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h3 style={{ margin: 0 }}>Graded Submissions</h3>
+              <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => {
+                if (submissions.length === 0) return alert('No grades to export.');
+                let csv = 'Matric Number,Exam Title,Score,Max Marks,Percentage,Authenticity Score,Timestamp\n';
+                submissions.forEach(sub => {
+                  const ass = assessments.find(a => a.id === sub.assessmentId);
+                  const title = ass ? ass.title : 'Unknown';
+                  const totalMax = ass ? ass.questions.reduce((a,q) => a + (q.maxMarks||10), 0) : 0;
+                  const score = sub.results ? sub.results.reduce((a,r) => a + r.score, 0) : 0;
+                  const perc = totalMax > 0 ? Math.round((score/totalMax)*100) : 0;
+                  csv += `${sub.studentId},"${title}",${score},${totalMax},${perc}%,${sub.authenticity ? sub.authenticity+'%' : 'N/A'},"${sub.timestamp}"\n`;
+                });
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `GradeGuide_Export_${Date.now()}.csv`;
+                a.click();
+              }}><Download size={18}/> Export Grades to CSV</button>
+            </div>
+
             {submissions.map((sub, i) => {
               const ass = assessments.find(a => a.id === sub.assessmentId);
               const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 0;
@@ -1186,6 +1208,11 @@ export default function GradeGuideApp() {
                     <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold', textTransform: 'uppercase' }}>Student Matric Number: {sub.studentId}</span>
                     <h3 style={{ margin: '4px 0 8px 0' }}>Assessment: {ass?.title || 'Unknown'}</h3>
                     <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Timestamp: {sub.timestamp || 'Recent Submission'}</p>
+                    {sub.authenticity && (
+                      <span className="badge" style={{ marginTop: '8px', display: 'inline-block', background: sub.authenticity > 80 ? 'var(--success)' : (sub.authenticity > 50 ? 'var(--warning)' : 'var(--danger)'), color: 'white' }}>
+                        Authenticity: {sub.authenticity}%
+                      </span>
+                    )}
                   </div>
                   
                   <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
@@ -1381,19 +1408,51 @@ export default function GradeGuideApp() {
               {/* Developer / Testing Controls */}
               <div className="glass-panel" style={{ padding: '32px', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.02)' }}>
                 <h3 style={{ margin: '0 0 16px 0', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Trash2 size={20} /> Developer Tools
+                  <Trash2 size={20} /> Developer & Database Tools
                 </h3>
                 <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '0.85rem', lineHeight: '1.4' }}>
-                  Use this to wipe the registered students database if you need to re-use an email or matric number for testing. This will NOT delete exams or AI keys.
+                  Manage your offline local database. Export your data to switch devices without losing exams!
                 </p>
-                <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => {
-                  if (window.confirm("Are you sure you want to delete all registered students?")) {
-                    setStudents([]);
-                    alert("Students database wiped. You can now re-register with your test emails.");
-                  }
-                }}>
-                  <Trash2 size={16} /> Delete All Registered Students
-                </button>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <button className="btn btn-outline" style={{ flex: 1, borderColor: 'var(--primary)', color: 'var(--primary)' }} onClick={() => {
+                    const data = localStorage.getItem('grade_guide_pro_v1');
+                    if (!data) return alert('No database found to backup!');
+                    const blob = new Blob([data], { type: 'application/json' });
+                    const a = document.createElement('a');
+                    a.href = window.URL.createObjectURL(blob);
+                    a.download = `GradeGuide_DB_Backup_${Date.now()}.json`;
+                    a.click();
+                  }}><Download size={16} /> Export DB Backup</button>
+                  
+                  <input type="file" id="dbImport" hidden accept=".json" onChange={e => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                      try {
+                        const data = JSON.parse(ev.target.result);
+                        if (data.assessments) {
+                          localStorage.setItem('grade_guide_pro_v1', ev.target.result);
+                          alert('Database restored successfully! The page will now reload.');
+                          window.location.reload();
+                        } else throw new Error();
+                      } catch(err) { alert('Invalid backup file.'); }
+                    };
+                    reader.readAsText(file);
+                  }} />
+                  <button className="btn btn-outline" style={{ flex: 1, borderColor: 'var(--success)', color: 'var(--success)' }} onClick={() => document.getElementById('dbImport').click()}>
+                    <Upload size={16} /> Import DB Backup
+                  </button>
+
+                  <button className="btn btn-outline" style={{ flex: 1, color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => {
+                    if (window.confirm("Are you sure you want to delete all registered students?")) {
+                      setStudents([]);
+                      alert("Students database wiped. You can now re-register with your test emails.");
+                    }
+                  }}>
+                    <Trash2 size={16} /> Delete Students
+                  </button>
+                </div>
               </div>
 
             </div>
@@ -1442,7 +1501,8 @@ export default function GradeGuideApp() {
           setExamLoading(true);
           try {
             const uploadPayload = studentUpload ? [studentUpload] : [];
-            const results = await markSubmission(activeExam, examAnswers, uploadPayload);
+            const response = await markSubmission(activeExam, examAnswers, uploadPayload);
+            const results = response.results || response; // Backwards compatibility for old format
             const totalMax = activeExam.questions.reduce((a, q) => a + (q.maxMarks || 10), 0);
             const totalScore = results.reduce((a, r) => a + r.score, 0);
             const newSub = { 
@@ -1452,6 +1512,8 @@ export default function GradeGuideApp() {
               studentEmail: studentProfile?.email || '',
               answers: examAnswers, 
               results,
+              authenticity: response.authenticity || null,
+              authenticityReason: response.authenticityReason || '',
               timestamp: new Date().toLocaleString()
             };
             setSubmissions(prev => [...prev, newSub]);
