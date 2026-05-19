@@ -654,14 +654,14 @@ export default function GradeGuideApp() {
     
     const handleLogin = (e) => {
       e.preventDefault();
-      if (usernameInput.trim().toLowerCase() === 'admin' && passwordInput === 'admin') {
+      if (usernameInput.trim().toLowerCase() === 'lecturer@gradeguide.com' && passwordInput === 'admin123') {
         setRole(loginModalRole);
         setLoginModalRole(null);
         setUsernameInput('');
         setPasswordInput('');
         setLoginError('');
       } else {
-        setLoginError('Invalid username or password! Access denied.');
+        setLoginError('Invalid email or password! Access denied.');
       }
     };
 
@@ -683,11 +683,11 @@ export default function GradeGuideApp() {
 
           <form onSubmit={handleLogin} style={{ display: 'grid', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Username</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Faculty Email Address</label>
               <input 
-                type="text" 
+                type="email" 
                 className="input-field" 
-                placeholder="Enter username" 
+                placeholder="lecturer@gradeguide.com" 
                 required 
                 value={usernameInput}
                 onChange={e => setUsernameInput(e.target.value)}
@@ -1313,20 +1313,21 @@ export default function GradeGuideApp() {
 
   // ─── Student Signup Screen ───────────────────────────────────────────────
   const StudentSignupScreen = () => {
-    const [form, setForm] = React.useState({ name: '', matricNo: '', email: '' });
+    const [form, setForm] = React.useState({ name: '', matricNo: '', email: '', pin: '' });
     const [err, setErr] = React.useState('');
     const [loading, setLoading] = React.useState(false);
 
     const handleSignup = async (e) => {
       e.preventDefault();
       setErr('');
-      if (!form.name.trim() || !form.matricNo.trim() || !form.email.trim()) return setErr('All fields are required.');
+      if (!form.name.trim() || !form.matricNo.trim() || !form.email.trim() || !form.pin.trim()) return setErr('All fields are required.');
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setErr('Please enter a valid email address.');
+      if (!/^\d{4}$/.test(form.pin)) return setErr('Please create a 4-digit login PIN.');
       if (students.find(s => s.matricNo.toLowerCase() === form.matricNo.toLowerCase())) return setErr('This matric number is already registered. Please log in instead.');
       if (students.find(s => s.email.toLowerCase() === form.email.toLowerCase())) return setErr('This email is already registered. Please log in instead.');
       setLoading(true);
       const otp = String(Math.floor(100000 + Math.random() * 900000));
-      setPendingOtp({ code: otp, email: form.email, name: form.name, matricNo: form.matricNo, expiry: Date.now() + 600000 });
+      setPendingOtp({ code: otp, email: form.email, name: form.name, matricNo: form.matricNo, pin: form.pin, expiry: Date.now() + 600000 });
       setSignupForm(form);
       await sendOtpEmail(form.email, form.name, otp); // best-effort — OTP shown on screen if email fails
       setLoading(false);
@@ -1353,10 +1354,15 @@ export default function GradeGuideApp() {
                 <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Matric Number</label>
                 <input className="input-field" placeholder="e.g. 200101234" value={form.matricNo} onChange={e => setForm({...form, matricNo: e.target.value})} />
               </div>
-              <div style={{ marginBottom: '24px' }}>
+              <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Email Address</label>
                 <input className="input-field" type="email" placeholder="your@email.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
                 <p style={{ margin: '8px 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>Your results will be sent to this email after grading.</p>
+              </div>
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Create 4-Digit Login PIN</label>
+                <input className="input-field" type="password" inputMode="numeric" maxLength={4} placeholder="••••" value={form.pin} onChange={e => setForm({...form, pin: e.target.value})} />
+                <p style={{ margin: '8px 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>You will use this PIN to log in.</p>
               </div>
               {err && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
               <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }} disabled={loading}>
@@ -1400,7 +1406,7 @@ export default function GradeGuideApp() {
       if (Date.now() > pendingOtp.expiry) { setAuthError('OTP expired. Please sign up again.'); setAuthScreen('student-signup'); return; }
       if (entered !== pendingOtp.code) return setAuthError('Incorrect OTP. Please check your email.');
       // Register student
-      const profile = { name: pendingOtp.name, matricNo: pendingOtp.matricNo, email: pendingOtp.email };
+      const profile = { name: pendingOtp.name, matricNo: pendingOtp.matricNo, email: pendingOtp.email, pin: pendingOtp.pin };
       setStudents(prev => [...prev, profile]);
       setStudentProfile(profile);
       setPendingOtp(null);
@@ -1457,16 +1463,15 @@ export default function GradeGuideApp() {
     );
   };
 
-  // ─── Student Login Screen ────────────────────────────────────────────────
   const StudentLoginScreen = () => {
-    const [form, setForm] = React.useState({ email: '', matricNo: '' });
+    const [form, setForm] = React.useState({ matricNo: '', pin: '' });
     const [err, setErr] = React.useState('');
 
     const handleLogin = (e) => {
       e.preventDefault();
       setErr('');
-      const found = students.find(s => s.email.toLowerCase() === form.email.toLowerCase() && s.matricNo.toLowerCase() === form.matricNo.toLowerCase());
-      if (!found) return setErr('No account found with those details. Please check your email and matric number.');
+      const found = students.find(s => s.matricNo.toLowerCase() === form.matricNo.toLowerCase() && s.pin === form.pin);
+      if (!found) return setErr('No account found. Please check your matric number and 4-digit PIN.');
       setStudentProfile(found);
       setRole('Student');
       setAuthScreen('landing');
@@ -1485,12 +1490,12 @@ export default function GradeGuideApp() {
           <div className="glass-panel" style={{ padding: '32px' }}>
             <form onSubmit={handleLogin}>
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Email Address</label>
-                <input className="input-field" type="email" placeholder="your@email.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
-              </div>
-              <div style={{ marginBottom: '24px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Matric Number</label>
                 <input className="input-field" placeholder="e.g. 200101234" value={form.matricNo} onChange={e => setForm({...form, matricNo: e.target.value})} />
+              </div>
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>4-Digit PIN</label>
+                <input className="input-field" type="password" inputMode="numeric" maxLength={4} placeholder="••••" value={form.pin} onChange={e => setForm({...form, pin: e.target.value})} />
               </div>
               {err && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
               <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }}>
