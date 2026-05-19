@@ -511,8 +511,9 @@ export default function GradeGuideApp() {
       canvas.height = videoRef.current.videoHeight;
       canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
       try {
-        const b64 = canvas.toDataURL('image/jpeg');
-        const text = await extractTextFromImage(b64);
+        const b64 = canvas.toDataURL('image/jpeg', 0.5);
+        // Bypass synchronous OCR for instantaneous snapping. AI will natively read the image later.
+        const text = "[Image captured successfully. The AI Vision Engine will read this directly during grading]";
         onExtract(text, b64);
         onClose();
       } catch (e) { alert(e.message); }

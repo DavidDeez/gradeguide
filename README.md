@@ -11,16 +11,17 @@ Built as a highly responsive, standalone React application, it provides zero-hal
 
 ### 1. Unified Faculty Dashboard
 Instead of fragmenting educator tasks across multiple consoles, GradeGuide integrates all administrative controls under a single secure gateway (`admin`/`admin` authorization):
-* **Source Material Ingestion:** Scan physical, printed assessment papers via a live **Vision OCR Camera scanner** or upload digital copy files (PDF, TXT, MD).
+* **Source Material Ingestion:** Upload digital copy files (PDF, TXT, MD, Images) to strictly ground the AI grading.
 * **Assessment Builder:** Create dynamic examinations by directly setting custom questions, allocating maximum marks, and publishing tests.
-* **Grading Desk:** Review student answer sheets, read detailed AI corrections, key strengths, and suggested areas of improvement.
-* **System Audit & Engine Control:** A dedicated, side-by-side panel displaying real-time system metrics (Integrity, Active Exams, Audited Submissions), a reactive **AI Engine configuration form** (Provider choice, Model select, API Key input), and full **System Compliance Logs** displaying every student trace.
+* **Bulk Offline Scanner:** Snap your physical marking rubric, then rapidly snap images of physical student scripts. The AI Vision model automatically cross-references and bulk-grades them instantly!
+* **Grading Desk:** Review student answer sheets, read detailed AI corrections, and **Export Grades to CSV** with one click.
+* **System Audit & Engine Control:** Full System Compliance Logs displaying every student trace. Includes full **Database Backup & Restore** capabilities to easily switch devices without losing exams.
 
-### 2. Student Portal & Retake Gates
+### 2. Student Portal & Advanced Uploads
 A secure, simplified workspace for student testing:
-* **Frictionless Testing:** Start published exams, input detailed answers, and watch the live, animated AI grading interface process papers in real-time.
-* **Detailed Corrections:** Get immediate performance score rings and inspect correction notes, strengths, and exact improvement suggestions.
-* **Retake Permission Gate:** To prevent abuse, students are strictly locked out after submission. To retake an exam, they must click **"Request Retake Permission"**, which routes a request to the Faculty's dashboard. Once approved, their lockout is wiped and they are welcomed with a **"Begin Retake Exam"** call to action!
+* **Frictionless Testing:** Start published exams and input detailed answers, or simply **Upload your PDF/Image Answer Script** for the AI to natively read and grade!
+* **Detailed Corrections & Authenticity:** Get immediate performance score rings, correction notes, and an AI-powered **Plagiarism / Authenticity Score** to deter cheating.
+* **Retake Permission Gate:** Students are locked out after submission and must request retakes. Includes a direct **Lecturer Messaging System** for urgent support.
 
 ### 3. Integrated AI Engine Config
 Directly configure and save provider settings inside your workspace. Supports four top-tier inferencing providers:
