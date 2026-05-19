@@ -233,6 +233,7 @@ export default function GradeGuideApp() {
   const [showCam, setShowCam] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newQuestions, setNewQuestions] = useState([{ id: 1, text: '', maxMarks: 10 }]);
+  const [assessmentContext, setAssessmentContext] = useState({ text: '', pdfBase64: null, pdfName: '' });
   
   const [activeExam, setActiveExam] = useState(null);
   const [examAnswers, setExamAnswers] = useState({});
@@ -732,8 +733,6 @@ export default function GradeGuideApp() {
   };
 
   const LecturerDashboard = () => {
-    const [assessmentContext, setAssessmentContext] = useState({ text: '', pdfBase64: null, pdfName: '' });
-
     const handleFileUpload = (e) => {
       const file = e.target.files[0];
       if(!file) return;
