@@ -409,9 +409,9 @@ export default function GradeGuideApp() {
   };
 
   const markSubmission = async (assessment, answers) => {
-    const system = "Expert Academic Grader. Return RAW JSON array only: [{\"questionId\":1, \"score\":8, \"grade\":\"A\", \"feedback\":\"...\", \"strengths\":[], \"improvements\":[]}]";
-    const prompt = `Grading task for: ${assessment.title}\nStudent Answers: ${JSON.stringify(answers)}\nReference Context: ${courseMaterial.text}`;
-    const files = courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : [];
+    const system = "Expert Academic Grader. You MUST grade strictly according to the Reference Context provided. If no reference context is provided, grade using general academic knowledge. Return RAW JSON array only: [{\"questionId\":1, \"score\":8, \"grade\":\"A\", \"feedback\":\"...\", \"strengths\":[], \"improvements\":[]}]";
+    const prompt = `Grading task for: ${assessment.title}\nStudent Answers: ${JSON.stringify(answers)}\nReference Context: ${assessment.contextText || courseMaterial.text}`;
+    const files = assessment.contextPdfBase64 ? [{ mime: "application/pdf", base64: assessment.contextPdfBase64 }] : (courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : []);
     
     const result = await callAI(prompt, system, files);
     try {
@@ -547,9 +547,9 @@ export default function GradeGuideApp() {
   const DetailedCorrectionsModal = () => {
     if (!selectedSub) return null;
     const ass = assessments.find(a => a.id === selectedSub.assessmentId);
-    const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 20;
-    const totalScore = selectedSub.results.reduce((acc, r) => acc + r.score, 0);
-    const percentage = Math.round((totalScore / totalMaxMarks) * 100);
+    const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 0;
+    const totalScore = selectedSub.results ? selectedSub.results.reduce((acc, r) => acc + r.score, 0) : 0;
+    const percentage = totalMaxMarks > 0 ? Math.round((totalScore / totalMaxMarks) * 100) : 0;
 
     return (
       <div className="modal-overlay" style={{ zIndex: 1000 }}>
@@ -572,8 +572,11 @@ export default function GradeGuideApp() {
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Star size={20} color="var(--warning)" fill="var(--warning)" /> Performance Feedback
               </h3>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-main)', margin: '4px 0' }}>
+                Score: {totalScore} / {totalMaxMarks} ({percentage}%)
+              </div>
               <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
-                This grading is fully contextualized and grounded on the course material uploaded in the lecturer dashboard to prevent zero-hallucinations and maintain grading compliance.
+                Graded against the uploaded course material for high-context compliance.
               </p>
             </div>
           </div>
@@ -729,6 +732,8 @@ export default function GradeGuideApp() {
   };
 
   const LecturerDashboard = () => {
+    const [assessmentContext, setAssessmentContext] = useState({ text: '', pdfBase64: null, pdfName: '' });
+
     const handleFileUpload = (e) => {
       const file = e.target.files[0];
       if(!file) return;
@@ -740,6 +745,21 @@ export default function GradeGuideApp() {
         reader.readAsDataURL(file);
       } else if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
         reader.onload = ev => setCourseMaterial({ ...courseMaterial, text: ev.target.result, pdfBase64: null, pdfName: '' });
+        reader.readAsText(file);
+      } else {
+        alert("Unsupported file type. Please use PDF or Text.");
+      }
+    };
+
+    const handleAssessmentFileUpload = (e) => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      if (file.type === 'application/pdf') {
+        reader.onload = ev => setAssessmentContext({ ...assessmentContext, pdfBase64: ev.target.result.split(',')[1], pdfName: file.name, text: '' });
+        reader.readAsDataURL(file);
+      } else if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        reader.onload = ev => setAssessmentContext({ ...assessmentContext, text: ev.target.result, pdfBase64: null, pdfName: '' });
         reader.readAsText(file);
       } else {
         alert("Unsupported file type. Please use PDF or Text.");
@@ -796,6 +816,32 @@ export default function GradeGuideApp() {
             <div className="glass-panel" style={{ padding: '40px' }}>
               <h2 style={{ marginTop: 0, marginBottom: '24px' }}>Build New Assessment</h2>
               
+              <div style={{ marginBottom: '32px', paddingBottom: '24px', borderBottom: '1px solid var(--panel-border)' }}>
+                <label style={{ display: 'block', marginBottom: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Specific Assessment Context Material (Optional)</label>
+                <div className="two-col-grid" style={{ marginBottom: '16px' }}>
+                  <label className="role-card" style={{ padding: '24px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)' }}>
+                    <Upload size={32} color="var(--success)" />
+                    <h4 style={{ margin: '8px 0 0 0' }}>{assessmentContext.pdfName || 'Upload Digital Copy'}</h4>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF, TXT, or MD support</p>
+                    <input type="file" hidden onChange={handleAssessmentFileUpload} accept=".pdf,.txt,.md" />
+                  </label>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <textarea 
+                    className="input-field scrollbar" 
+                    rows={4} 
+                    placeholder="Alternatively, paste specific context here. AI will use this strictly for grading this exam..."
+                    value={assessmentContext.text}
+                    onChange={e => setAssessmentContext({...assessmentContext, text: e.target.value})}
+                  />
+                  {assessmentContext.pdfBase64 && (
+                    <div style={{ position: 'absolute', top: '10px', right: '10px' }} className="badge badge-success">
+                      <FileText size={14} style={{ marginRight: '6px' }} /> PDF Linked
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div style={{ marginBottom: '24px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Assessment Title</label>
                 <input 
@@ -873,6 +919,8 @@ export default function GradeGuideApp() {
                       id: Date.now(),
                       title: newTitle.trim(),
                       published: true,
+                      contextText: assessmentContext.text,
+                      contextPdfBase64: assessmentContext.pdfBase64,
                       questions: newQuestions.map((q, i) => ({
                         id: i + 1,
                         title: `Question ${i + 1}`,
@@ -884,6 +932,7 @@ export default function GradeGuideApp() {
                     setAssessments([createdExam, ...assessments]);
                     setNewTitle('');
                     setNewQuestions([{ id: Date.now(), text: '', maxMarks: 10 }]);
+                    setAssessmentContext({ text: '', pdfBase64: null, pdfName: '' });
                     alert(`Assessment "${createdExam.title}" has been successfully published to the Student Portal!`);
                   }}
                 >
@@ -948,9 +997,9 @@ export default function GradeGuideApp() {
             )}
             {submissions.map((sub, i) => {
               const ass = assessments.find(a => a.id === sub.assessmentId);
-              const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 20;
-              const totalScore = sub.results.reduce((acc, r) => acc + r.score, 0);
-              const percentage = Math.round((totalScore / totalMaxMarks) * 100);
+              const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 0;
+              const totalScore = sub.results ? sub.results.reduce((acc, r) => acc + r.score, 0) : 0;
+              const percentage = totalMaxMarks > 0 ? Math.round((totalScore / totalMaxMarks) * 100) : 0;
               
               return (
                 <div key={i} className="glass-panel" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
@@ -1180,7 +1229,14 @@ export default function GradeGuideApp() {
       <div className="glass-panel" style={{ padding: '40px', maxWidth: '800px', margin: '0 auto', animation: 'slideUp 0.4s ease' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
           <h2 style={{ margin: 0 }}>{activeExam.title}</h2>
-          <button className="btn-outline" onClick={() => setActiveExam(null)}><X size={20}/></button>
+          <button className="btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => {
+            if (window.confirm("Are you sure you want to go back? Your current answers will be lost.")) {
+              setActiveExam(null);
+              setExamAnswers({});
+            }
+          }}>
+            <X size={16}/> Back
+          </button>
         </div>
         {activeExam.questions.map(q => (
           <div key={q.id} style={{ marginBottom: '32px' }}>
@@ -1297,9 +1353,9 @@ export default function GradeGuideApp() {
           <div style={{ display: 'grid', gap: '20px' }}>
             {submissions.map((sub, i) => {
               const ass = assessments.find(a => a.id === sub.assessmentId);
-              const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 20;
-              const totalScore = sub.results.reduce((acc, r) => acc + r.score, 0);
-              const percentage = Math.round((totalScore / totalMaxMarks) * 100);
+              const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 0;
+              const totalScore = sub.results ? sub.results.reduce((acc, r) => acc + r.score, 0) : 0;
+              const percentage = totalMaxMarks > 0 ? Math.round((totalScore / totalMaxMarks) * 100) : 0;
 
               return (
                 <div key={i} className="glass-panel" style={{ padding: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
