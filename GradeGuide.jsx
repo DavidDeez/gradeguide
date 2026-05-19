@@ -229,7 +229,7 @@ export default function GradeGuideApp() {
   const [submissions, setSubmissions] = useState([]);
 
   // Focus-safe Dashboard States
-  const [lecturerTab, setLecturerTab] = useState('material');
+  const [lecturerTab, setLecturerTab] = useState('build');
   const [showCam, setShowCam] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newQuestions, setNewQuestions] = useState([{ id: 1, text: '', maxMarks: 10 }]);
@@ -768,46 +768,17 @@ export default function GradeGuideApp() {
     return (
       <div style={{ animation: 'fadeIn 0.5s ease' }}>
         <div className="nav-container" style={{ display: 'flex', gap: '8px', marginBottom: '32px', borderBottom: '1px solid var(--panel-border)' }}>
-          <div className={`nav-tab ${lecturerTab === 'material' ? 'active' : ''}`} onClick={() => setLecturerTab('material')}>Source Material</div>
           <div className={`nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => setLecturerTab('build')}>Assessment Builder</div>
-          <div className={`nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => setLecturerTab('results')}>Grading Desk</div>
+          <div className={`nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => setLecturerTab('results')}>
+            Grading Desk
+            {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
+              <span className="badge badge-success" style={{ marginLeft: '8px', background: 'var(--danger)', color: 'white' }}>
+                {retakeRequests.filter(r => r.status === 'pending').length} New
+              </span>
+            )}
+          </div>
           <div className={`nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}>System Audit & Engine</div>
         </div>
-
-        {lecturerTab === 'material' && (
-          <div className="glass-panel" style={{ padding: '40px' }}>
-            <div className="two-col-grid" style={{ marginBottom: '32px' }}>
-              <div className="role-card" style={{ padding: '32px' }} onClick={() => setShowCam(true)}>
-                <Camera size={40} color="var(--primary)" />
-                <h3 style={{ margin: 0 }}>Scan Printed Copy</h3>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>AI-powered OCR via Vision</p>
-              </div>
-              <label className="role-card" style={{ padding: '32px', cursor: 'pointer' }}>
-                <Upload size={40} color="var(--success)" />
-                <h3 style={{ margin: 0 }}>{courseMaterial.pdfName || 'Upload Digital Copy'}</h3>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>PDF, TXT, or MD support</p>
-                <input type="file" hidden onChange={handleFileUpload} accept=".pdf,.txt,.md" />
-              </label>
-            </div>
-            
-            <div style={{ position: 'relative' }}>
-              <label style={{ display: 'block', marginBottom: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Context Material (Raw Text)</label>
-              <textarea 
-                className="input-field scrollbar" 
-                rows={12} 
-                placeholder="The AI will use this content as the only truth for grading..."
-                value={courseMaterial.text}
-                onChange={e => setCourseMaterial({...courseMaterial, text: e.target.value})}
-              />
-              {courseMaterial.pdfBase64 && (
-                <div style={{ position: 'absolute', top: '10px', right: '10px' }} className="badge badge-success">
-                  <FileText size={14} style={{ marginRight: '6px' }} /> PDF Linked
-                </div>
-              )}
-            </div>
-            {showCam && <CameraModal onClose={() => setShowCam(false)} onExtract={t => setCourseMaterial(p => ({...p, text: p.text + '\n' + t}))} />}
-          </div>
-        )}
 
         {lecturerTab === 'build' && (
           <div className="dashboard-grid">
@@ -1171,9 +1142,9 @@ export default function GradeGuideApp() {
                 <div style={{ display: 'grid', gap: '12px' }}>
                   {submissions.map((sub, i) => {
                     const ass = assessments.find(a => a.id === sub.assessmentId);
-                    const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 20;
-                    const totalScore = sub.results.reduce((acc, r) => acc + r.score, 0);
-                    const percentage = Math.round((totalScore / totalMaxMarks) * 100);
+                    const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 0;
+                    const totalScore = sub.results ? sub.results.reduce((acc, r) => acc + r.score, 0) : 0;
+                    const percentage = totalMaxMarks > 0 ? Math.round((totalScore / totalMaxMarks) * 100) : 0;
 
                     return (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'rgba(255,255,255,0.01)', borderRadius: '10px', border: '1px solid var(--panel-border)', flexWrap: 'wrap', gap: '12px' }}>
