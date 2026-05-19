@@ -1429,12 +1429,9 @@ export default function GradeGuideApp() {
             <p style={{ color: 'var(--primary)', fontWeight: '700', margin: '4px 0 0 0' }}>{pendingOtp?.email}</p>
           </div>
           <div className="glass-panel" style={{ padding: '32px' }}>
-            {/* Show OTP on screen as fallback when EmailJS is not configured */}
-            {!aiSettings.emailjsPublicKey && pendingOtp && (
-              <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '14px', padding: '16px 20px', marginBottom: '24px', textAlign: 'center' }}>
-                <p style={{ margin: '0 0 6px 0', fontSize: '0.78rem', color: 'var(--warning)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>⚠ Email not configured — Your OTP:</p>
-                <span style={{ fontSize: '2.2rem', fontWeight: '900', letterSpacing: '8px', color: 'white', fontFamily: 'monospace' }}>{pendingOtp.code}</span>
-                <p style={{ margin: '8px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Copy this code and enter it below to complete verification.</p>
+            {!aiSettings.emailjsPublicKey && (
+              <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '14px', padding: '16px 20px', marginBottom: '24px', textAlign: 'center' }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--danger)', fontWeight: '600' }}>⚠ Email delivery not configured. Ask your Lecturer to set up EmailJS in the Faculty Dashboard → System Audit & Engine.</p>
               </div>
             )}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '28px' }}>
