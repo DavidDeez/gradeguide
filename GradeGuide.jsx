@@ -3,7 +3,7 @@ import {
   Settings, Camera, Upload, Book, FileText, CheckCircle, 
   BarChart, X, Plus, Trash2, Check, Video, Layout, LogOut, 
   FileBadge, Sliders, Play, Save, ChevronRight, Activity, 
-  ShieldCheck, Brain, Star, Smartphone, AlertCircle, Eye
+  ShieldCheck, Brain, Star, Smartphone, AlertCircle, Eye, Edit
 } from 'lucide-react';
 
 const GlobalStyles = () => (
@@ -234,6 +234,7 @@ export default function GradeGuideApp() {
   const [newTitle, setNewTitle] = useState('');
   const [newQuestions, setNewQuestions] = useState([{ id: 1, text: '', maxMarks: 10 }]);
   const [assessmentContext, setAssessmentContext] = useState({ text: '', pdfBase64: null, pdfName: '' });
+  const [editingAssessmentId, setEditingAssessmentId] = useState(null);
   
   const [activeExam, setActiveExam] = useState(null);
   const [examAnswers, setExamAnswers] = useState({});
@@ -784,7 +785,9 @@ export default function GradeGuideApp() {
           <div className="dashboard-grid">
             {/* Builder Form */}
             <div className="glass-panel" style={{ padding: '40px' }}>
-              <h2 style={{ marginTop: 0, marginBottom: '24px' }}>Build New Assessment</h2>
+              <h2 style={{ marginTop: 0, marginBottom: '24px' }}>
+                {editingAssessmentId ? 'Edit Assessment' : 'Build New Assessment'}
+              </h2>
               
               <div style={{ marginBottom: '32px', paddingBottom: '24px', borderBottom: '1px solid var(--panel-border)' }}>
                 <label style={{ display: 'block', marginBottom: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Specific Assessment Context Material (Optional)</label>
@@ -877,6 +880,20 @@ export default function GradeGuideApp() {
                 >
                   <Plus size={18} /> Add Question
                 </button>
+                {editingAssessmentId && (
+                  <button 
+                    className="btn btn-outline" 
+                    style={{ flex: 1, color: 'var(--warning)', borderColor: 'rgba(245, 158, 11, 0.2)' }}
+                    onClick={() => {
+                      setNewTitle('');
+                      setNewQuestions([{ id: Date.now(), text: '', maxMarks: 10 }]);
+                      setAssessmentContext({ text: '', pdfBase64: null, pdfName: '' });
+                      setEditingAssessmentId(null);
+                    }}
+                  >
+                    <X size={18} /> Cancel Edit
+                  </button>
+                )}
                 <button 
                   className="btn btn-primary" 
                   style={{ flex: 1 }}
@@ -886,7 +903,7 @@ export default function GradeGuideApp() {
                     if (invalidQ) { alert("Please enter text for all questions."); return; }
                     
                     const createdExam = {
-                      id: Date.now(),
+                      id: editingAssessmentId || Date.now(),
                       title: newTitle.trim(),
                       published: true,
                       contextText: assessmentContext.text,
@@ -899,14 +916,20 @@ export default function GradeGuideApp() {
                       }))
                     };
                     
-                    setAssessments([createdExam, ...assessments]);
+                    if (editingAssessmentId) {
+                      setAssessments(assessments.map(a => a.id === editingAssessmentId ? createdExam : a));
+                    } else {
+                      setAssessments([createdExam, ...assessments]);
+                    }
+                    
                     setNewTitle('');
                     setNewQuestions([{ id: Date.now(), text: '', maxMarks: 10 }]);
                     setAssessmentContext({ text: '', pdfBase64: null, pdfName: '' });
-                    alert(`Assessment "${createdExam.title}" has been successfully published to the Student Portal!`);
+                    setEditingAssessmentId(null);
+                    alert(`Assessment "${createdExam.title}" has been successfully ${editingAssessmentId ? 'updated' : 'published'} to the Student Portal!`);
                   }}
                 >
-                  <Save size={18} /> Save & Publish Assessment
+                  <Save size={18} /> {editingAssessmentId ? 'Update Assessment' : 'Save & Publish'}
                 </button>
               </div>
             </div>
@@ -921,7 +944,20 @@ export default function GradeGuideApp() {
                       <h4 style={{ margin: '0 0 4px 0' }}>{a.title}</h4>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{a.questions.length} Questions</span>
                     </div>
-                    <button className="btn-outline" style={{ padding: '8px', border: 'none' }} onClick={() => setAssessments(assessments.filter(x => x.id !== a.id))}><Trash2 size={18} color="var(--danger)"/></button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="btn-outline" style={{ padding: '8px', border: 'none', color: 'var(--primary)' }} onClick={() => {
+                        setNewTitle(a.title);
+                        setNewQuestions(a.questions.map(q => ({ id: Date.now() + Math.random(), text: q.text, maxMarks: q.maxMarks })));
+                        setAssessmentContext({ text: a.contextText || '', pdfBase64: a.contextPdfBase64 || null, pdfName: a.contextPdfBase64 ? 'Linked Context' : '' });
+                        setEditingAssessmentId(a.id);
+                        window.scrollTo(0, 0);
+                      }}>
+                        <Edit size={18} />
+                      </button>
+                      <button className="btn-outline" style={{ padding: '8px', border: 'none' }} onClick={() => setAssessments(assessments.filter(x => x.id !== a.id))}>
+                        <Trash2 size={18} color="var(--danger)"/>
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {assessments.length === 0 && (
