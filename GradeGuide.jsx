@@ -141,6 +141,23 @@ const GlobalStyles = () => (
     .badge { padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
     .badge-primary { background: rgba(59, 130, 246, 0.2); color: var(--primary); }
     .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+
+    .auth-card {
+      width: 100%; max-width: 460px;
+      animation: slideUp 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+    }
+    .otp-input {
+      width: 56px; height: 64px; text-align: center; font-size: 1.6rem; font-weight: 900;
+      border-radius: 16px; background: rgba(0,0,0,0.3); border: 2px solid var(--panel-border);
+      color: white; outline: none; transition: all 0.2s;
+    }
+    .otp-input:focus { border-color: var(--primary); background: rgba(59,130,246,0.08); box-shadow: 0 0 0 4px rgba(59,130,246,0.15); }
+    .auth-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .divider { display: flex; align-items: center; gap: 16px; color: var(--text-muted); font-size: 0.85rem; margin: 20px 0; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--panel-border); }
   `}} />
 );
 
@@ -166,6 +183,7 @@ const ScoreRing = ({ score, size = 120, strokeWidth = 10 }) => {
 
 export default function GradeGuideApp() {
   const [role, setRole] = useState(null);
+  const [authScreen, setAuthScreen] = useState('landing'); // landing|student-entry|student-signup|student-otp|student-login
   const [showSettings, setShowSettings] = useState(false);
   const DEFAULT_OR_KEY = '';
   const [aiSettings, setAiSettings] = useState({
@@ -176,8 +194,22 @@ export default function GradeGuideApp() {
     hfToken: '',
     hfModelId: 'mistralai/Mistral-7B-Instruct-v0.3',
     openrouterKey: DEFAULT_OR_KEY,
-    openrouterModel: 'openrouter/free'
+    openrouterModel: 'openrouter/free',
+    emailjsPublicKey: '',
+    emailjsServiceId: '',
+    emailjsOtpTemplateId: '',
+    emailjsResultsTemplateId: ''
   });
+
+  // Auth state
+  const [studentProfile, setStudentProfile] = useState(null); // { name, matricNo, email }
+  const [students, setStudents] = useState([]); // all registered students
+  const [signupForm, setSignupForm] = useState({ name: '', matricNo: '', email: '' });
+  const [pendingOtp, setPendingOtp] = useState(null); // { code, email, name, matricNo, expiry }
+  const [otpDigits, setOtpDigits] = useState(['','','','','','']);
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: '', matricNo: '' });
 
   const [selectedSub, setSelectedSub] = useState(null);
   const [loginModalRole, setLoginModalRole] = useState(null);
@@ -201,14 +233,7 @@ export default function GradeGuideApp() {
   const [studentTabState, setStudentTabState] = useState('exams');
 
   const [retakeRequests, setRetakeRequests] = useState([]);
-  const [studentId, setStudentId] = useState(() => {
-    let id = localStorage.getItem('grade_guide_student_id');
-    if (!id) {
-      id = 'Student_' + Math.floor(100 + Math.random() * 900);
-      localStorage.setItem('grade_guide_student_id', id);
-    }
-    return id;
-  });
+  const studentId = studentProfile ? studentProfile.matricNo : 'Guest';
 
   useEffect(() => {
     const saved = localStorage.getItem('grade_guide_pro_v1');
@@ -217,14 +242,11 @@ export default function GradeGuideApp() {
       setAssessments(d.assessments || []);
       setSubmissions(d.submissions || []);
       setRetakeRequests(d.retakeRequests || []);
-      
-      // Auto-migrate any obsolete/stale OpenRouter model IDs stored in browser cache
+      setStudents(d.students || []);
       const loadedSettings = d.settings || {};
       if (loadedSettings.openrouterModel === 'google/gemini-flash-1.5-free') {
         loadedSettings.openrouterModel = 'openrouter/free';
       }
-
-      
       setAiSettings(prev => ({ ...prev, ...loadedSettings }));
     } else {
       setAssessments([{ id: 1, title: 'Introduction to AI Ethics', published: true, questions: [
@@ -235,8 +257,46 @@ export default function GradeGuideApp() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('grade_guide_pro_v1', JSON.stringify({ assessments, submissions, settings: aiSettings, retakeRequests }));
-  }, [assessments, submissions, aiSettings, retakeRequests]);
+    localStorage.setItem('grade_guide_pro_v1', JSON.stringify({ assessments, submissions, settings: aiSettings, retakeRequests, students }));
+  }, [assessments, submissions, aiSettings, retakeRequests, students]);
+
+  // --- EmailJS Helpers ---
+  const sendOtpEmail = async (toEmail, toName, otpCode) => {
+    if (!aiSettings.emailjsPublicKey || !aiSettings.emailjsServiceId || !aiSettings.emailjsOtpTemplateId) return false;
+    try {
+      await window.emailjs.send(
+        aiSettings.emailjsServiceId,
+        aiSettings.emailjsOtpTemplateId,
+        { to_email: toEmail, to_name: toName, otp_code: otpCode, app_name: 'GradeGuide AI' },
+        aiSettings.emailjsPublicKey
+      );
+      return true;
+    } catch(e) { console.error('EmailJS OTP error:', e); return false; }
+  };
+
+  const sendResultsEmail = async (profile, assessmentTitle, results, totalScore, totalMax) => {
+    if (!aiSettings.emailjsPublicKey || !aiSettings.emailjsServiceId || !aiSettings.emailjsResultsTemplateId) return;
+    const percentage = Math.round((totalScore / totalMax) * 100);
+    const breakdown = results.map((r, i) => `Q${i+1}: ${r.score}/${r.score + 2} — ${r.feedback}`).join('\n');
+    try {
+      await window.emailjs.send(
+        aiSettings.emailjsServiceId,
+        aiSettings.emailjsResultsTemplateId,
+        {
+          to_email: profile.email,
+          to_name: profile.name,
+          student_matric: profile.matricNo,
+          assessment_title: assessmentTitle,
+          total_score: totalScore,
+          total_max: totalMax,
+          percentage: percentage + '%',
+          breakdown: breakdown,
+          app_name: 'GradeGuide AI'
+        },
+        aiSettings.emailjsPublicKey
+      );
+    } catch(e) { console.error('EmailJS results error:', e); }
+  };
 
   const callAI = async (prompt, system, files = []) => {
     if (aiSettings.provider === 'openrouter') {
@@ -980,6 +1040,33 @@ export default function GradeGuideApp() {
               <div style={{ padding: '16px', background: 'rgba(16, 185, 129, 0.03)', border: '1px solid rgba(16, 185, 129, 0.1)', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <CheckCircle size={16} /> API Key Auto-Saved & Initialized
               </div>
+
+              {/* EmailJS Config Section */}
+              <div style={{ marginTop: '28px', paddingTop: '24px', borderTop: '1px solid var(--panel-border)' }}>
+                <h4 style={{ margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Activity size={18} color="var(--primary)" /> Email Delivery (EmailJS)
+                </h4>
+                <p style={{ margin: '0 0 16px 0', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+                  Configure EmailJS to send OTP verification codes and auto-email results to students.{' '}
+                  <a href="https://emailjs.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: '600' }}>Get free account →</a>
+                </p>
+                {[
+                  { key: 'emailjsPublicKey', label: 'Public Key', placeholder: 'e.g. abc123XYZ...' },
+                  { key: 'emailjsServiceId', label: 'Service ID', placeholder: 'e.g. service_xxxxxxx' },
+                  { key: 'emailjsOtpTemplateId', label: 'OTP Template ID', placeholder: 'e.g. template_xxxxxxx' },
+                  { key: 'emailjsResultsTemplateId', label: 'Results Template ID', placeholder: 'e.g. template_xxxxxxx' },
+                ].map(field => (
+                  <div key={field.key} style={{ marginBottom: '14px' }}>
+                    <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>{field.label}</label>
+                    <input className="input-field" style={{ fontSize: '0.85rem', padding: '10px 14px' }}
+                      placeholder={field.placeholder} value={aiSettings[field.key] || ''}
+                      onChange={e => setAiSettings({ ...aiSettings, [field.key]: e.target.value })} />
+                  </div>
+                ))}
+                <div style={{ padding: '12px 14px', background: aiSettings.emailjsPublicKey ? 'rgba(16,185,129,0.05)' : 'rgba(245,158,11,0.05)', border: `1px solid ${aiSettings.emailjsPublicKey ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}`, borderRadius: '10px', fontSize: '0.78rem', color: aiSettings.emailjsPublicKey ? 'var(--success)' : 'var(--warning)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {aiSettings.emailjsPublicKey ? <><CheckCircle size={14}/> Email delivery active — OTPs & results will be sent automatically.</> : <><AlertCircle size={14}/> Email delivery inactive — students can still register without OTP.</>}
+                </div>
+              </div>
             </div>
 
             {/* Right Column: System Auditing */}
@@ -1080,16 +1167,24 @@ export default function GradeGuideApp() {
           setExamLoading(true);
           try {
             const results = await markSubmission(activeExam, examAnswers);
+            const totalMax = activeExam.questions.reduce((a, q) => a + (q.maxMarks || 10), 0);
+            const totalScore = results.reduce((a, r) => a + r.score, 0);
             const newSub = { 
               assessmentId: activeExam.id, 
-              studentId: studentId, 
+              studentId: studentId,
+              studentName: studentProfile?.name || studentId,
+              studentEmail: studentProfile?.email || '',
               answers: examAnswers, 
               results,
               timestamp: new Date().toLocaleString()
             };
-            setSubmissions([...submissions, newSub]);
+            setSubmissions(prev => [...prev, newSub]);
             setActiveExam(null);
             setSelectedSub(newSub);
+            // Auto-send results email
+            if (studentProfile?.email) {
+              sendResultsEmail(studentProfile, activeExam.title, results, totalScore, totalMax);
+            }
           } catch(e) { alert(e.message); }
           setExamLoading(false);
         }}>
@@ -1216,44 +1311,283 @@ export default function GradeGuideApp() {
     );
   };
 
-  const LoginScreen = () => {
+  // ─── Student Signup Screen ───────────────────────────────────────────────
+  const StudentSignupScreen = () => {
+    const [form, setForm] = React.useState({ name: '', matricNo: '', email: '' });
+    const [err, setErr] = React.useState('');
+    const [loading, setLoading] = React.useState(false);
+
+    const handleSignup = async (e) => {
+      e.preventDefault();
+      setErr('');
+      if (!form.name.trim() || !form.matricNo.trim() || !form.email.trim()) return setErr('All fields are required.');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setErr('Please enter a valid email address.');
+      if (students.find(s => s.matricNo.toLowerCase() === form.matricNo.toLowerCase())) return setErr('This matric number is already registered. Please log in instead.');
+      if (students.find(s => s.email.toLowerCase() === form.email.toLowerCase())) return setErr('This email is already registered. Please log in instead.');
+      setLoading(true);
+      const otp = String(Math.floor(100000 + Math.random() * 900000));
+      const sent = await sendOtpEmail(form.email, form.name, otp);
+      setPendingOtp({ code: otp, email: form.email, name: form.name, matricNo: form.matricNo, expiry: Date.now() + 600000 });
+      setSignupForm(form);
+      setLoading(false);
+      if (!sent) {
+        setErr('EmailJS not configured — OTP skipped. Completing registration directly.');
+        setStudents(prev => [...prev, { name: form.name, matricNo: form.matricNo, email: form.email }]);
+        setStudentProfile({ name: form.name, matricNo: form.matricNo, email: form.email });
+        setRole('Student');
+        setAuthScreen('landing');
+        return;
+      }
+      setAuthScreen('student-otp');
+    };
+
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '60px', animation: 'fadeIn 1s ease' }}>
-          <div style={{ display: 'inline-flex', padding: '20px', background: 'var(--panel-bg)', borderRadius: '30px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
-            <Brain size={60} color="var(--primary)" />
-          </div>
-          <h1 style={{ fontSize: '4rem', fontWeight: '900', margin: '0 0 16px 0', background: 'var(--gradient-brand)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-2px' }}>GradeGuide</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: '500' }}>Academic Grading Infrastructure for the AI Age</p>
-        </div>
-        
-        <div className="role-grid">
-          {[
-            { id: 'Student', icon: Smartphone, label: 'Student Portal', desc: 'Take exams & get instant AI feedback' },
-            { id: 'Lecturer', icon: ShieldCheck, label: 'Faculty Dashboard', desc: 'Create assessments, review grading & audit AI settings' }
-          ].map(r => (
-            <div key={r.id} className="role-card" onClick={() => {
-              if (r.id === 'Student') {
-                setRole('Student');
-              } else {
-                setLoginModalRole(r.id);
-                setLoginError('');
-                setUsernameInput('');
-                setPasswordInput('');
-              }
-            }}>
-              <r.icon size={48} color="var(--primary)" />
-              <h3 style={{ margin: 0 }}>{r.label}</h3>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>{r.desc}</p>
-              <div className="btn btn-outline" style={{ marginTop: 'auto', width: '100%' }}>Enter <ChevronRight size={16}/></div>
+      <div className="auth-screen">
+        <div className="auth-card">
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <div style={{ display: 'inline-flex', padding: '16px', background: 'var(--panel-bg)', borderRadius: '20px', border: '1px solid var(--panel-border)', marginBottom: '16px' }}>
+              <Brain size={40} color="var(--primary)" />
             </div>
-          ))}
+            <h1 style={{ margin: '0 0 6px 0', fontSize: '2rem', fontWeight: '900', background: 'var(--gradient-brand)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Create Account</h1>
+            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Join GradeGuide — Register as a Student</p>
+          </div>
+          <div className="glass-panel" style={{ padding: '32px' }}>
+            <form onSubmit={handleSignup}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Full Name</label>
+                <input className="input-field" placeholder="e.g. David Adeyemi" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+              </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Matric Number</label>
+                <input className="input-field" placeholder="e.g. 200101234" value={form.matricNo} onChange={e => setForm({...form, matricNo: e.target.value})} />
+              </div>
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Email Address</label>
+                <input className="input-field" type="email" placeholder="your@email.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                <p style={{ margin: '8px 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>Your results will be sent to this email after grading.</p>
+              </div>
+              {err && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }} disabled={loading}>
+                {loading ? <Activity className="animate-spin" /> : <><CheckCircle size={18}/> Send Verification OTP</>}
+              </button>
+            </form>
+            <div className="divider">Already registered?</div>
+            <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => { setAuthError(''); setAuthScreen('student-login'); }}>
+              Log In with Matric Number
+            </button>
+            <button className="btn btn-outline" style={{ width: '100%', marginTop: '10px', fontSize: '0.85rem' }} onClick={() => setAuthScreen('landing')}>
+              ← Back to Portal Selection
+            </button>
+          </div>
         </div>
       </div>
     );
   };
 
-  if (!role) return ( <> <GlobalStyles /> <LoginScreen /> {loginModalRole && RoleLoginModal()} </> );
+  // ─── OTP Verification Screen ─────────────────────────────────────────────
+  const OtpVerificationScreen = () => {
+    const inputsRef = React.useRef([]);
+
+    const handleDigit = (val, idx) => {
+      if (!/^\d*$/.test(val)) return;
+      const next = [...otpDigits];
+      next[idx] = val.slice(-1);
+      setOtpDigits(next);
+      if (val && idx < 5) inputsRef.current[idx + 1]?.focus();
+    };
+
+    const handleKeyDown = (e, idx) => {
+      if (e.key === 'Backspace' && !otpDigits[idx] && idx > 0) inputsRef.current[idx - 1]?.focus();
+    };
+
+    const handleVerify = () => {
+      setAuthError('');
+      const entered = otpDigits.join('');
+      if (entered.length < 6) return setAuthError('Please enter the full 6-digit OTP.');
+      if (!pendingOtp) return setAuthError('Session expired. Please sign up again.');
+      if (Date.now() > pendingOtp.expiry) { setAuthError('OTP expired. Please sign up again.'); setAuthScreen('student-signup'); return; }
+      if (entered !== pendingOtp.code) return setAuthError('Incorrect OTP. Please check your email.');
+      // Register student
+      const profile = { name: pendingOtp.name, matricNo: pendingOtp.matricNo, email: pendingOtp.email };
+      setStudents(prev => [...prev, profile]);
+      setStudentProfile(profile);
+      setPendingOtp(null);
+      setOtpDigits(['','','','','','']);
+      setRole('Student');
+      setAuthScreen('landing');
+    };
+
+    const handleResend = async () => {
+      if (!pendingOtp) return;
+      const newOtp = String(Math.floor(100000 + Math.random() * 900000));
+      await sendOtpEmail(pendingOtp.email, pendingOtp.name, newOtp);
+      setPendingOtp({ ...pendingOtp, code: newOtp, expiry: Date.now() + 600000 });
+      alert('A new OTP has been sent to your email!');
+    };
+
+    return (
+      <div className="auth-screen">
+        <div className="auth-card">
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <div style={{ display: 'inline-flex', padding: '16px', background: 'rgba(16,185,129,0.1)', borderRadius: '20px', border: '1px solid rgba(16,185,129,0.2)', marginBottom: '16px' }}>
+              <CheckCircle size={40} color="var(--success)" />
+            </div>
+            <h1 style={{ margin: '0 0 6px 0', fontSize: '2rem', fontWeight: '900' }}>Verify Email</h1>
+            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Enter the 6-digit code sent to</p>
+            <p style={{ color: 'var(--primary)', fontWeight: '700', margin: '4px 0 0 0' }}>{pendingOtp?.email}</p>
+          </div>
+          <div className="glass-panel" style={{ padding: '32px' }}>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '28px' }}>
+              {otpDigits.map((d, i) => (
+                <input key={i} ref={el => inputsRef.current[i] = el} className="otp-input" type="text" inputMode="numeric" maxLength={1}
+                  value={d} onChange={e => handleDigit(e.target.value, i)} onKeyDown={e => handleKeyDown(e, i)} />
+              ))}
+            </div>
+            {authError && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)', textAlign: 'center' }}>{authError}</div>}
+            <button className="btn btn-primary" style={{ width: '100%', padding: '16px' }} onClick={handleVerify}>
+              <CheckCircle size={18}/> Verify & Complete Registration
+            </button>
+            <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Didn't receive it?{' '}
+              <span style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: '600' }} onClick={handleResend}>Resend OTP</span>
+            </p>
+            <button className="btn btn-outline" style={{ width: '100%', marginTop: '10px', fontSize: '0.85rem' }} onClick={() => setAuthScreen('student-signup')}>
+              ← Back to Sign Up
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ─── Student Login Screen ────────────────────────────────────────────────
+  const StudentLoginScreen = () => {
+    const [form, setForm] = React.useState({ email: '', matricNo: '' });
+    const [err, setErr] = React.useState('');
+
+    const handleLogin = (e) => {
+      e.preventDefault();
+      setErr('');
+      const found = students.find(s => s.email.toLowerCase() === form.email.toLowerCase() && s.matricNo.toLowerCase() === form.matricNo.toLowerCase());
+      if (!found) return setErr('No account found with those details. Please check your email and matric number.');
+      setStudentProfile(found);
+      setRole('Student');
+      setAuthScreen('landing');
+    };
+
+    return (
+      <div className="auth-screen">
+        <div className="auth-card">
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <div style={{ display: 'inline-flex', padding: '16px', background: 'var(--panel-bg)', borderRadius: '20px', border: '1px solid var(--panel-border)', marginBottom: '16px' }}>
+              <Brain size={40} color="var(--primary)" />
+            </div>
+            <h1 style={{ margin: '0 0 6px 0', fontSize: '2rem', fontWeight: '900', background: 'var(--gradient-brand)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Welcome Back</h1>
+            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Log in to your Student Portal</p>
+          </div>
+          <div className="glass-panel" style={{ padding: '32px' }}>
+            <form onSubmit={handleLogin}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Email Address</label>
+                <input className="input-field" type="email" placeholder="your@email.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+              </div>
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Matric Number</label>
+                <input className="input-field" placeholder="e.g. 200101234" value={form.matricNo} onChange={e => setForm({...form, matricNo: e.target.value})} />
+              </div>
+              {err && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }}>
+                <LogOut size={18}/> Log In
+              </button>
+            </form>
+            <div className="divider">New student?</div>
+            <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => { setAuthError(''); setAuthScreen('student-signup'); }}>
+              Create Account
+            </button>
+            <button className="btn btn-outline" style={{ width: '100%', marginTop: '10px', fontSize: '0.85rem' }} onClick={() => setAuthScreen('landing')}>
+              ← Back to Portal Selection
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ─── Student Entry Choice Screen ─────────────────────────────────────────
+  const StudentEntryScreen = () => (
+    <div className="auth-screen">
+      <div className="auth-card">
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{ display: 'inline-flex', padding: '16px', background: 'var(--panel-bg)', borderRadius: '20px', border: '1px solid var(--panel-border)', marginBottom: '16px' }}>
+            <Smartphone size={40} color="var(--primary)" />
+          </div>
+          <h1 style={{ margin: '0 0 6px 0', fontSize: '2rem', fontWeight: '900', background: 'var(--gradient-brand)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Student Portal</h1>
+          <p style={{ color: 'var(--text-muted)', margin: 0 }}>Sign up or log in to access your exams</p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="glass-panel" style={{ padding: '28px', textAlign: 'center', cursor: 'pointer', border: '1px solid var(--panel-border)', transition: 'all 0.3s' }} onClick={() => setAuthScreen('student-signup')}
+            onMouseOver={e => e.currentTarget.style.borderColor = 'var(--primary)'} onMouseOut={e => e.currentTarget.style.borderColor = 'var(--panel-border)'}>
+            <Plus size={32} color="var(--primary)" style={{ marginBottom: '10px' }} />
+            <h3 style={{ margin: '0 0 6px 0' }}>New Student — Sign Up</h3>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Register with your name, matric number & email</p>
+          </div>
+          <div className="glass-panel" style={{ padding: '28px', textAlign: 'center', cursor: 'pointer', border: '1px solid var(--panel-border)', transition: 'all 0.3s' }} onClick={() => setAuthScreen('student-login')}
+            onMouseOver={e => e.currentTarget.style.borderColor = 'var(--primary)'} onMouseOut={e => e.currentTarget.style.borderColor = 'var(--panel-border)'}>
+            <CheckCircle size={32} color="var(--success)" style={{ marginBottom: '10px' }} />
+            <h3 style={{ margin: '0 0 6px 0' }}>Returning Student — Log In</h3>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Log in with your email & matric number</p>
+          </div>
+          <button className="btn btn-outline" style={{ width: '100%', fontSize: '0.85rem' }} onClick={() => setAuthScreen('landing')}>
+            ← Back to Portal Selection
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ─── Landing Screen ───────────────────────────────────────────────────────
+  const LoginScreen = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '60px', animation: 'fadeIn 1s ease' }}>
+        <div style={{ display: 'inline-flex', padding: '20px', background: 'var(--panel-bg)', borderRadius: '30px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
+          <Brain size={60} color="var(--primary)" />
+        </div>
+        <h1 style={{ fontSize: '4rem', fontWeight: '900', margin: '0 0 16px 0', background: 'var(--gradient-brand)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-2px' }}>GradeGuide</h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: '500' }}>Academic Grading Infrastructure for the AI Age</p>
+      </div>
+      <div className="role-grid">
+        {[
+          { id: 'Student', icon: Smartphone, label: 'Student Portal', desc: 'Sign up or log in to take exams & get instant AI feedback' },
+          { id: 'Lecturer', icon: ShieldCheck, label: 'Faculty Dashboard', desc: 'Create assessments, review grading & audit AI settings' }
+        ].map(r => (
+          <div key={r.id} className="role-card" onClick={() => {
+            if (r.id === 'Student') {
+              setAuthScreen('student-entry');
+            } else {
+              setLoginModalRole(r.id);
+              setLoginError('');
+              setUsernameInput('');
+              setPasswordInput('');
+            }
+          }}>
+            <r.icon size={48} color="var(--primary)" />
+            <h3 style={{ margin: 0 }}>{r.label}</h3>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>{r.desc}</p>
+            <div className="btn btn-outline" style={{ marginTop: 'auto', width: '100%' }}>Enter <ChevronRight size={16}/></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // ─── Route Auth Screens ───────────────────────────────────────────────────
+  if (!role) {
+    if (authScreen === 'student-entry') return <><GlobalStyles /><StudentEntryScreen /></>;
+    if (authScreen === 'student-signup') return <><GlobalStyles /><StudentSignupScreen /></>;
+    if (authScreen === 'student-otp') return <><GlobalStyles /><OtpVerificationScreen /></>;
+    if (authScreen === 'student-login') return <><GlobalStyles /><StudentLoginScreen /></>;
+    return <><GlobalStyles /><LoginScreen />{loginModalRole && RoleLoginModal()}</>;
+  }
 
   return (
     <>
@@ -1265,9 +1599,14 @@ export default function GradeGuideApp() {
             <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 'bold' }}>GradeGuide</h2>
             <div style={{ width: '1px', height: '24px', background: 'var(--panel-border)', margin: '0 8px' }}></div>
             <span className="badge badge-primary">{role === 'Lecturer' ? 'Faculty' : role}</span>
+            {role === 'Student' && studentProfile && (
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '500' }}>
+                {studentProfile.name} · <span style={{ color: 'var(--primary)' }}>{studentProfile.matricNo}</span>
+              </span>
+            )}
           </div>
           <div className="header-actions" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} onClick={() => setRole(null)}><LogOut size={18}/> <span className="btn-text">Exit</span></button>
+            <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} onClick={() => { setRole(null); setStudentProfile(null); setAuthScreen('landing'); }}><LogOut size={18}/> <span className="btn-text">Exit</span></button>
           </div>
         </header>
         <main className="dashboard-main" style={{ flex: 1, padding: '0 20px 60px 20px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
