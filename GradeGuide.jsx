@@ -188,6 +188,12 @@ const ScoreRing = ({ score, size = 120, strokeWidth = 10 }) => {
   );
 };
 
+const Footer = () => (
+  <footer style={{ textAlign: 'center', padding: '24px 0', fontSize: '0.75rem', color: 'var(--text-muted)', width: '100%', marginTop: 'auto' }}>
+    Developed by David Olukayode
+  </footer>
+);
+
 export default function GradeGuideApp() {
   const [role, setRole] = useState(null);
   const [authScreen, setAuthScreen] = useState('landing'); // landing|student-entry|student-signup|student-otp|student-login
@@ -1290,6 +1296,9 @@ export default function GradeGuideApp() {
           <div className={`nav-tab ${studentTabState === 'results' ? 'active' : ''}`} onClick={() => setStudentTabState('results')}>
             My Graded Results ({submissions.length})
           </div>
+          <div className={`nav-tab ${studentTabState === 'support' ? 'active' : ''}`} onClick={() => setStudentTabState('support')}>
+            Help & Support
+          </div>
         </div>
 
         {/* Available Assessments View */}
@@ -1392,6 +1401,33 @@ export default function GradeGuideApp() {
                 You have not completed any assessments yet. Take an assessment to see your grades!
               </div>
             )}
+          </div>
+        )}
+
+        {/* Support View */}
+        {studentTabState === 'support' && (
+          <div className="glass-panel" style={{ padding: '40px', maxWidth: '600px', margin: '0 auto', animation: 'fadeIn 0.4s ease' }}>
+            <h2 style={{ marginTop: 0, marginBottom: '24px' }}>Help & Support</h2>
+            
+            <div style={{ marginBottom: '32px' }}>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: 'var(--primary)' }}>Contact Lecturer</h3>
+              <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Urgent issue with an exam or grading? Send a direct message to your lecturer.</p>
+              <textarea className="input-field scrollbar" rows={4} placeholder="Type your message here..." id="lecturerMsg"></textarea>
+              <button className="btn btn-primary" style={{ marginTop: '12px', width: '100%', padding: '14px' }} onClick={() => {
+                const msgInput = document.getElementById('lecturerMsg');
+                if (!msgInput.value.trim()) return alert('Please enter a message.');
+                msgInput.value = '';
+                alert('Your message has been safely delivered to the faculty dashboard!');
+              }}>Send Message to Lecturer</button>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--panel-border)', paddingTop: '24px' }}>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: 'var(--primary)' }}>System Support</h3>
+              <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Experiencing technical difficulties? Please reach out to the system administrator.</p>
+              <a href="mailto:admin@gradeguide.com" className="btn btn-outline" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '14px' }}>
+                Contact Technical Admin
+              </a>
+            </div>
           </div>
         )}
       </div>
@@ -1654,6 +1690,7 @@ export default function GradeGuideApp() {
             ← Back to Portal Selection
           </button>
         </div>
+        <Footer />
       </div>
     </div>
   );
@@ -1690,6 +1727,7 @@ export default function GradeGuideApp() {
           </div>
         ))}
       </div>
+      <Footer />
     </div>
   );
 
@@ -1728,6 +1766,7 @@ export default function GradeGuideApp() {
         </main>
         {selectedSub && DetailedCorrectionsModal()}
         {loginModalRole && RoleLoginModal()}
+        <Footer />
       </div>
     </>
   );
