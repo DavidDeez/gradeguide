@@ -1143,6 +1143,24 @@ export default function GradeGuideApp() {
                 </div>
               </div>
 
+              {/* Developer / Testing Controls */}
+              <div className="glass-panel" style={{ padding: '32px', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.02)' }}>
+                <h3 style={{ margin: '0 0 16px 0', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Trash2 size={20} /> Developer Tools
+                </h3>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '0.85rem', lineHeight: '1.4' }}>
+                  Use this to wipe the registered students database if you need to re-use an email or matric number for testing. This will NOT delete exams or AI keys.
+                </p>
+                <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => {
+                  if (window.confirm("Are you sure you want to delete all registered students?")) {
+                    setStudents([]);
+                    alert("Students database wiped. You can now re-register with your test emails.");
+                  }
+                }}>
+                  <Trash2 size={16} /> Delete All Registered Students
+                </button>
+              </div>
+
             </div>
           </div>
         )}
