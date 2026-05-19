@@ -1386,21 +1386,9 @@ export default function GradeGuideApp() {
   const OtpVerificationScreen = () => {
     const inputsRef = React.useRef([]);
 
-    const handleDigit = (val, idx) => {
-      if (!/^\d*$/.test(val)) return;
-      const next = [...otpDigits];
-      next[idx] = val.slice(-1);
-      setOtpDigits(next);
-      if (val && idx < 5) inputsRef.current[idx + 1]?.focus();
-    };
-
-    const handleKeyDown = (e, idx) => {
-      if (e.key === 'Backspace' && !otpDigits[idx] && idx > 0) inputsRef.current[idx - 1]?.focus();
-    };
-
-    const handleVerify = () => {
+    const handleVerify = (digitsToVerify = otpDigits) => {
       setAuthError('');
-      const entered = otpDigits.join('');
+      const entered = digitsToVerify.join('');
       if (entered.length < 6) return setAuthError('Please enter the full 6-digit OTP.');
       if (!pendingOtp) return setAuthError('Session expired. Please sign up again.');
       if (Date.now() > pendingOtp.expiry) { setAuthError('OTP expired. Please sign up again.'); setAuthScreen('student-signup'); return; }
@@ -1413,6 +1401,42 @@ export default function GradeGuideApp() {
       setOtpDigits(['','','','','','']);
       setRole('Student');
       setAuthScreen('landing');
+    };
+
+    const handleDigit = (val, idx) => {
+      if (!/^\d*$/.test(val)) return;
+      const next = [...otpDigits];
+      next[idx] = val.slice(-1);
+      setOtpDigits(next);
+      if (val && idx < 5) {
+        inputsRef.current[idx + 1]?.focus();
+      } else if (val && idx === 5) {
+        // Auto-submit on typing the 6th digit
+        handleVerify(next);
+      }
+    };
+
+    const handleKeyDown = (e, idx) => {
+      if (e.key === 'Backspace' && !otpDigits[idx] && idx > 0) inputsRef.current[idx - 1]?.focus();
+    };
+
+    const handlePaste = (e) => {
+      e.preventDefault();
+      const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+      if (!pastedData) return;
+      
+      const next = [...otpDigits];
+      for (let i = 0; i < pastedData.length; i++) {
+        next[i] = pastedData[i];
+      }
+      setOtpDigits(next);
+      
+      if (pastedData.length === 6) {
+        inputsRef.current[5]?.focus();
+        handleVerify(next);
+      } else {
+        inputsRef.current[pastedData.length]?.focus();
+      }
     };
 
     const handleResend = async () => {
@@ -1443,7 +1467,7 @@ export default function GradeGuideApp() {
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '28px' }}>
               {otpDigits.map((d, i) => (
                 <input key={i} ref={el => inputsRef.current[i] = el} className="otp-input" type="text" inputMode="numeric" maxLength={1}
-                  value={d} onChange={e => handleDigit(e.target.value, i)} onKeyDown={e => handleKeyDown(e, i)} />
+                  value={d} onChange={e => handleDigit(e.target.value, i)} onKeyDown={e => handleKeyDown(e, i)} onPaste={handlePaste} />
               ))}
             </div>
             {authError && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)', textAlign: 'center' }}>{authError}</div>}
