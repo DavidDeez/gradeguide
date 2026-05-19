@@ -248,6 +248,7 @@ export default function GradeGuideApp() {
   const [studentTabState, setStudentTabState] = useState('exams');
 
   const [retakeRequests, setRetakeRequests] = useState([]);
+  const [studentMessages, setStudentMessages] = useState([]);
   const studentId = studentProfile ? studentProfile.matricNo : 'Guest';
 
   useEffect(() => {
