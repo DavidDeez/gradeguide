@@ -127,6 +127,10 @@ const GlobalStyles = () => (
       }
       .btn-text { display: none; }
       .nav-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .brand-title { font-size: 2.8rem !important; letter-spacing: -1px !important; }
+      .auth-title { font-size: 1.6rem !important; }
+      .otp-input { width: 42px !important; height: 50px !important; font-size: 1.3rem !important; }
+      .otp-container { gap: 6px !important; }
     }
 
     .modal-overlay {
@@ -158,6 +162,9 @@ const GlobalStyles = () => (
     .auth-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
     .divider { display: flex; align-items: center; gap: 16px; color: var(--text-muted); font-size: 0.85rem; margin: 20px 0; }
     .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--panel-border); }
+    .brand-title { font-size: 4rem; font-weight: 900; margin: 0 0 16px 0; background: var(--gradient-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -2px; }
+    .auth-title { margin: 0 0 6px 0; font-size: 2rem; font-weight: 900; background: var(--gradient-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .otp-container { display: flex; gap: 10px; justify-content: center; margin-bottom: 28px; }
   `}} />
 );
 
@@ -1359,7 +1366,7 @@ export default function GradeGuideApp() {
             <div style={{ display: 'inline-flex', padding: '16px', background: 'var(--panel-bg)', borderRadius: '20px', border: '1px solid var(--panel-border)', marginBottom: '16px' }}>
               <Brain size={40} color="var(--primary)" />
             </div>
-            <h1 style={{ margin: '0 0 6px 0', fontSize: '2rem', fontWeight: '900', background: 'var(--gradient-brand)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Create Account</h1>
+            <h1 className="auth-title">Create Account</h1>
             <p style={{ color: 'var(--text-muted)', margin: 0 }}>Join GradeGuide — Register as a Student</p>
           </div>
           <div className="glass-panel" style={{ padding: '32px' }}>
@@ -1472,7 +1479,7 @@ export default function GradeGuideApp() {
             <div style={{ display: 'inline-flex', padding: '16px', background: 'rgba(16,185,129,0.1)', borderRadius: '20px', border: '1px solid rgba(16,185,129,0.2)', marginBottom: '16px' }}>
               <CheckCircle size={40} color="var(--success)" />
             </div>
-            <h1 style={{ margin: '0 0 6px 0', fontSize: '2rem', fontWeight: '900' }}>Verify Email</h1>
+            <h1 className="auth-title" style={{ background: 'none', WebkitTextFillColor: 'inherit' }}>Verify Email</h1>
             <p style={{ color: 'var(--text-muted)', margin: 0 }}>Enter the 6-digit code sent to</p>
             <p style={{ color: 'var(--primary)', fontWeight: '700', margin: '4px 0 0 0' }}>{pendingOtp?.email}</p>
           </div>
@@ -1482,7 +1489,7 @@ export default function GradeGuideApp() {
                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--danger)', fontWeight: '600' }}>⚠ Email delivery not configured. Ask your Lecturer to set up EmailJS in the Faculty Dashboard → System Audit & Engine.</p>
               </div>
             )}
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '28px' }}>
+            <div className="otp-container">
               {otpDigits.map((d, i) => (
                 <input key={i} ref={el => inputsRef.current[i] = el} className="otp-input" type="text" inputMode="numeric" maxLength={1}
                   value={d} onChange={e => handleDigit(e.target.value, i)} onKeyDown={e => handleKeyDown(e, i)} onPaste={handlePaste} />
@@ -1526,7 +1533,7 @@ export default function GradeGuideApp() {
             <div style={{ display: 'inline-flex', padding: '16px', background: 'var(--panel-bg)', borderRadius: '20px', border: '1px solid var(--panel-border)', marginBottom: '16px' }}>
               <Brain size={40} color="var(--primary)" />
             </div>
-            <h1 style={{ margin: '0 0 6px 0', fontSize: '2rem', fontWeight: '900', background: 'var(--gradient-brand)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Welcome Back</h1>
+            <h1 className="auth-title">Welcome Back</h1>
             <p style={{ color: 'var(--text-muted)', margin: 0 }}>Log in to your Student Portal</p>
           </div>
           <div className="glass-panel" style={{ padding: '32px' }}>
@@ -1565,7 +1572,7 @@ export default function GradeGuideApp() {
           <div style={{ display: 'inline-flex', padding: '16px', background: 'var(--panel-bg)', borderRadius: '20px', border: '1px solid var(--panel-border)', marginBottom: '16px' }}>
             <Smartphone size={40} color="var(--primary)" />
           </div>
-          <h1 style={{ margin: '0 0 6px 0', fontSize: '2rem', fontWeight: '900', background: 'var(--gradient-brand)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Student Portal</h1>
+          <h1 className="auth-title">Student Portal</h1>
           <p style={{ color: 'var(--text-muted)', margin: 0 }}>Sign up or log in to access your exams</p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -1596,7 +1603,7 @@ export default function GradeGuideApp() {
         <div style={{ display: 'inline-flex', padding: '20px', background: 'var(--panel-bg)', borderRadius: '30px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
           <Brain size={60} color="var(--primary)" />
         </div>
-        <h1 style={{ fontSize: '4rem', fontWeight: '900', margin: '0 0 16px 0', background: 'var(--gradient-brand)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-2px' }}>GradeGuide</h1>
+        <h1 className="brand-title">GradeGuide</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: '500' }}>Academic Grading Infrastructure for the AI Age</p>
       </div>
       <div className="role-grid">
