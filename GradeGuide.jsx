@@ -1326,18 +1326,10 @@ export default function GradeGuideApp() {
       if (students.find(s => s.email.toLowerCase() === form.email.toLowerCase())) return setErr('This email is already registered. Please log in instead.');
       setLoading(true);
       const otp = String(Math.floor(100000 + Math.random() * 900000));
-      const sent = await sendOtpEmail(form.email, form.name, otp);
       setPendingOtp({ code: otp, email: form.email, name: form.name, matricNo: form.matricNo, expiry: Date.now() + 600000 });
       setSignupForm(form);
+      await sendOtpEmail(form.email, form.name, otp); // best-effort — OTP shown on screen if email fails
       setLoading(false);
-      if (!sent) {
-        setErr('EmailJS not configured — OTP skipped. Completing registration directly.');
-        setStudents(prev => [...prev, { name: form.name, matricNo: form.matricNo, email: form.email }]);
-        setStudentProfile({ name: form.name, matricNo: form.matricNo, email: form.email });
-        setRole('Student');
-        setAuthScreen('landing');
-        return;
-      }
       setAuthScreen('student-otp');
     };
 
@@ -1437,6 +1429,14 @@ export default function GradeGuideApp() {
             <p style={{ color: 'var(--primary)', fontWeight: '700', margin: '4px 0 0 0' }}>{pendingOtp?.email}</p>
           </div>
           <div className="glass-panel" style={{ padding: '32px' }}>
+            {/* Show OTP on screen as fallback when EmailJS is not configured */}
+            {!aiSettings.emailjsPublicKey && pendingOtp && (
+              <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '14px', padding: '16px 20px', marginBottom: '24px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 6px 0', fontSize: '0.78rem', color: 'var(--warning)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>⚠ Email not configured — Your OTP:</p>
+                <span style={{ fontSize: '2.2rem', fontWeight: '900', letterSpacing: '8px', color: 'white', fontFamily: 'monospace' }}>{pendingOtp.code}</span>
+                <p style={{ margin: '8px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Copy this code and enter it below to complete verification.</p>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '28px' }}>
               {otpDigits.map((d, i) => (
                 <input key={i} ref={el => inputsRef.current[i] = el} className="otp-input" type="text" inputMode="numeric" maxLength={1}
