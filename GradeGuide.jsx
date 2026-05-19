@@ -258,6 +258,7 @@ export default function GradeGuideApp() {
       setSubmissions(d.submissions || []);
       setRetakeRequests(d.retakeRequests || []);
       setStudents(d.students || []);
+      setStudentMessages(d.studentMessages || []);
       const loadedSettings = d.settings || {};
       if (loadedSettings.openrouterModel === 'google/gemini-flash-1.5-free') {
         loadedSettings.openrouterModel = 'openrouter/free';
@@ -272,8 +273,8 @@ export default function GradeGuideApp() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('grade_guide_pro_v1', JSON.stringify({ assessments, submissions, settings: aiSettings, retakeRequests, students }));
-  }, [assessments, submissions, aiSettings, retakeRequests, students]);
+    localStorage.setItem('grade_guide_pro_v1', JSON.stringify({ assessments, submissions, settings: aiSettings, retakeRequests, students, studentMessages }));
+  }, [assessments, submissions, aiSettings, retakeRequests, students, studentMessages]);
 
   // --- EmailJS Helpers ---
   const sendOtpEmail = async (toEmail, toName, otpCode) => {
@@ -419,7 +420,7 @@ export default function GradeGuideApp() {
   const markSubmission = async (assessment, answers) => {
     const system = "Expert Academic Grader. You MUST grade strictly according to the Reference Context provided. If no reference context is provided, grade using general academic knowledge. Return RAW JSON array only: [{\"questionId\":1, \"score\":8, \"grade\":\"A\", \"feedback\":\"...\", \"strengths\":[], \"improvements\":[]}]";
     const prompt = `Grading task for: ${assessment.title}\nStudent Answers: ${JSON.stringify(answers)}\nReference Context: ${assessment.contextText || courseMaterial.text}`;
-    const files = assessment.contextPdfBase64 ? [{ mime: "application/pdf", base64: assessment.contextPdfBase64 }] : (courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : []);
+    const files = assessment.contextPdfBase64 ? [{ mime: assessment.contextFileMime || "application/pdf", base64: assessment.contextPdfBase64 }] : (courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : []);
     
     const result = await callAI(prompt, system, files);
     try {
@@ -761,8 +762,8 @@ export default function GradeGuideApp() {
       const file = e.target.files[0];
       if(!file) return;
       const reader = new FileReader();
-      if (file.type === 'application/pdf') {
-        reader.onload = ev => setAssessmentContext({ ...assessmentContext, pdfBase64: ev.target.result.split(',')[1], pdfName: file.name, text: '' });
+      if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
+        reader.onload = ev => setAssessmentContext({ ...assessmentContext, pdfBase64: ev.target.result.split(',')[1], pdfName: file.name, text: '', fileMime: file.type });
         reader.readAsDataURL(file);
       } else if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
         reader.onload = ev => setAssessmentContext({ ...assessmentContext, text: ev.target.result, pdfBase64: null, pdfName: '' });
@@ -798,11 +799,16 @@ export default function GradeGuideApp() {
               <div style={{ marginBottom: '32px', paddingBottom: '24px', borderBottom: '1px solid var(--panel-border)' }}>
                 <label style={{ display: 'block', marginBottom: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Specific Assessment Context Material (Optional)</label>
                 <div className="two-col-grid" style={{ marginBottom: '16px' }}>
+                  <div className="role-card" style={{ padding: '24px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)' }} onClick={() => setShowCam(true)}>
+                    <Camera size={32} color="var(--primary)" />
+                    <h4 style={{ margin: '8px 0 0 0' }}>Scan Printed Copy</h4>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>AI-powered OCR via Vision</p>
+                  </div>
                   <label className="role-card" style={{ padding: '24px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)' }}>
                     <Upload size={32} color="var(--success)" />
                     <h4 style={{ margin: '8px 0 0 0' }}>{assessmentContext.pdfName || 'Upload Digital Copy'}</h4>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF, TXT, or MD support</p>
-                    <input type="file" hidden onChange={handleAssessmentFileUpload} accept=".pdf,.txt,.md" />
+                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF, TXT, MD, JPG, PNG</p>
+                    <input type="file" hidden onChange={handleAssessmentFileUpload} accept=".pdf,.txt,.md,.jpg,.jpeg,.png" />
                   </label>
                 </div>
                 <div style={{ position: 'relative' }}>
@@ -815,10 +821,11 @@ export default function GradeGuideApp() {
                   />
                   {assessmentContext.pdfBase64 && (
                     <div style={{ position: 'absolute', top: '10px', right: '10px' }} className="badge badge-success">
-                      <FileText size={14} style={{ marginRight: '6px' }} /> PDF Linked
+                      <FileText size={14} style={{ marginRight: '6px' }} /> Linked Context File
                     </div>
                   )}
                 </div>
+                {showCam && <CameraModal onClose={() => setShowCam(false)} onExtract={t => setAssessmentContext(p => ({...p, text: p.text + '\n' + t}))} />}
               </div>
 
               <div style={{ marginBottom: '24px' }}>
@@ -914,6 +921,7 @@ export default function GradeGuideApp() {
                       published: true,
                       contextText: assessmentContext.text,
                       contextPdfBase64: assessmentContext.pdfBase64,
+                      contextFileMime: assessmentContext.fileMime,
                       questions: newQuestions.map((q, i) => ({
                         id: i + 1,
                         title: `Question ${i + 1}`,
@@ -1007,6 +1015,29 @@ export default function GradeGuideApp() {
                 </div>
               </div>
             )}
+            
+            {/* Student Messages Sub-Section */}
+            {studentMessages.length > 0 && (
+              <div style={{ background: 'rgba(59, 130, 246, 0.02)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '28px', borderRadius: '20px', marginBottom: '16px' }}>
+                <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertCircle size={20} /> Urgent Student Messages
+                </h3>
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {studentMessages.map(msg => (
+                    <div key={msg.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--panel-border)', flexWrap: 'wrap', gap: '12px' }}>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 'bold' }}>{msg.studentId} • {msg.date}</span>
+                        <p style={{ margin: '8px 0 0 0', lineHeight: '1.4' }}>"{msg.msg}"</p>
+                      </div>
+                      <button className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '0.85rem', color: 'var(--text-muted)' }} onClick={() => {
+                        setStudentMessages(studentMessages.filter(m => m.id !== msg.id));
+                      }}>Dismiss</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {submissions.map((sub, i) => {
               const ass = assessments.find(a => a.id === sub.assessmentId);
               const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 0;
@@ -1016,7 +1047,7 @@ export default function GradeGuideApp() {
               return (
                 <div key={i} className="glass-panel" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                   <div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold', textTransform: 'uppercase' }}>Submission ID: {sub.studentId}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold', textTransform: 'uppercase' }}>Student Matric Number: {sub.studentId}</span>
                     <h3 style={{ margin: '4px 0 8px 0' }}>Assessment: {ass?.title || 'Unknown'}</h3>
                     <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Timestamp: {sub.timestamp || 'Recent Submission'}</p>
                   </div>
@@ -1191,8 +1222,8 @@ export default function GradeGuideApp() {
                     return (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'rgba(255,255,255,0.01)', borderRadius: '10px', border: '1px solid var(--panel-border)', flexWrap: 'wrap', gap: '12px' }}>
                         <div>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold' }}>Audit Ref #{sub.studentId}</span>
-                          <h4 style={{ margin: '2px 0 0 0', fontSize: '0.9rem' }}>Exams: {ass?.title || 'Unknown Exam'}</h4>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold', textTransform: 'uppercase' }}>Matric Number: {sub.studentId}</span>
+                          <h4 style={{ margin: '2px 0 0 0', fontSize: '0.9rem' }}>Exam: {ass?.title || 'Unknown Exam'}</h4>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                           <ScoreRing score={percentage} size={42} strokeWidth={4} />
@@ -1416,6 +1447,8 @@ export default function GradeGuideApp() {
               <button className="btn btn-primary" style={{ marginTop: '12px', width: '100%', padding: '14px' }} onClick={() => {
                 const msgInput = document.getElementById('lecturerMsg');
                 if (!msgInput.value.trim()) return alert('Please enter a message.');
+                const newMsg = { id: Date.now(), studentId, msg: msgInput.value.trim(), date: new Date().toLocaleString() };
+                setStudentMessages(prev => [...prev, newMsg]);
                 msgInput.value = '';
                 alert('Your message has been safely delivered to the faculty dashboard!');
               }}>Send Message to Lecturer</button>
