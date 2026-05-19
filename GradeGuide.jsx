@@ -246,9 +246,12 @@ export default function GradeGuideApp() {
   const [examAnswers, setExamAnswers] = useState({});
   const [examLoading, setExamLoading] = useState(false);
   const [studentTabState, setStudentTabState] = useState('exams');
+  const [studentUpload, setStudentUpload] = useState(null);
 
   const [retakeRequests, setRetakeRequests] = useState([]);
   const [studentMessages, setStudentMessages] = useState([]);
+  const [bulkState, setBulkState] = useState({ guideText: '', guideBase64: null, guideMime: '', scripts: [] });
+  const [bulkScannerCam, setBulkScannerCam] = useState({ active: false, target: null, idx: null });
   const studentId = studentProfile ? studentProfile.matricNo : 'Guest';
 
   useEffect(() => {
@@ -418,16 +421,73 @@ export default function GradeGuideApp() {
     return data.candidates[0].content.parts[0].text;
   };
 
-  const markSubmission = async (assessment, answers) => {
+  const markSubmission = async (assessment, answers, studentFiles = []) => {
     const system = "Expert Academic Grader. You MUST grade strictly according to the Reference Context provided. If no reference context is provided, grade using general academic knowledge. Return RAW JSON array only: [{\"questionId\":1, \"score\":8, \"grade\":\"A\", \"feedback\":\"...\", \"strengths\":[], \"improvements\":[]}]";
-    const prompt = `Grading task for: ${assessment.title}\nStudent Answers: ${JSON.stringify(answers)}\nReference Context: ${assessment.contextText || courseMaterial.text}`;
+    const prompt = `Grading task for: ${assessment.title}\nQuestions: ${JSON.stringify(assessment.questions)}\nStudent Typed Answers: ${JSON.stringify(answers)}\nReference Context: ${assessment.contextText || courseMaterial.text}\nIf a student file is attached, read the answers directly from the file to grade.`;
     const files = assessment.contextPdfBase64 ? [{ mime: assessment.contextFileMime || "application/pdf", base64: assessment.contextPdfBase64 }] : (courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : []);
     
+    if (studentFiles.length > 0) files.push(...studentFiles);
+
     const result = await callAI(prompt, system, files);
     try {
       const cleaned = result.replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(cleaned);
     } catch(e) { throw new Error("AI output parsing failed. Try again."); }
+  };
+
+  const handleBulkUpload = (e, target, idx = null) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const b64 = ev.target.result.split(',')[1];
+      if (target === 'guide') {
+        if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+          setBulkState(prev => ({...prev, guideBase64: b64, guideMime: file.type}));
+        } else {
+          setBulkState(prev => ({...prev, guideText: prev.guideText + '\n' + ev.target.result}));
+        }
+      } else {
+        const newScripts = [...bulkState.scripts];
+        if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+          newScripts[idx].base64 = b64;
+          newScripts[idx].mime = file.type;
+        } else {
+          newScripts[idx].text = newScripts[idx].text + '\n' + ev.target.result;
+        }
+        setBulkState(prev => ({...prev, scripts: newScripts}));
+      }
+    };
+    if (file.type.startsWith('image/') || file.type === 'application/pdf') reader.readAsDataURL(file);
+    else reader.readAsText(file);
+  };
+
+  const gradeBulkScript = async (idx) => {
+    const script = bulkState.scripts[idx];
+    const newScripts = [...bulkState.scripts];
+    newScripts[idx].loading = true;
+    setBulkState({...bulkState, scripts: newScripts});
+    
+    const system = "You are an expert grading system. Output ONLY a RAW JSON object representing the final grade. Example: {\"score\": 85, \"feedback\": \"Excellent reasoning, but missing step 2.\"}";
+    const prompt = `Marking Guide:\n${bulkState.guideText}\n\nStudent Script (Extracted text):\n${script.text}\n\nGrade the student strictly against the marking guide. If images are attached, read them to verify.`;
+    const files = [];
+    if (bulkState.guideBase64) files.push({ mime: bulkState.guideMime || "image/jpeg", base64: bulkState.guideBase64 });
+    if (script.base64) files.push({ mime: script.mime || "image/jpeg", base64: script.base64 });
+    
+    try {
+      const result = await callAI(prompt, system, files);
+      const cleaned = result.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      const finalScripts = [...bulkState.scripts];
+      finalScripts[idx].result = parsed;
+      finalScripts[idx].loading = false;
+      setBulkState({...bulkState, scripts: finalScripts});
+    } catch(e) {
+      alert("Grading failed: " + e.message);
+      const finalScripts = [...bulkState.scripts];
+      finalScripts[idx].loading = false;
+      setBulkState({...bulkState, scripts: finalScripts});
+    }
   };
 
   const extractTextFromImage = async (base64) => {
@@ -451,8 +511,9 @@ export default function GradeGuideApp() {
       canvas.height = videoRef.current.videoHeight;
       canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
       try {
-        const text = await extractTextFromImage(canvas.toDataURL('image/jpeg'));
-        onExtract(text);
+        const b64 = canvas.toDataURL('image/jpeg');
+        const text = await extractTextFromImage(b64);
+        onExtract(text, b64);
         onClose();
       } catch (e) { alert(e.message); }
       setCapturing(false);
@@ -778,6 +839,7 @@ export default function GradeGuideApp() {
       <div style={{ animation: 'fadeIn 0.5s ease' }}>
         <div className="nav-container" style={{ display: 'flex', gap: '8px', marginBottom: '32px', borderBottom: '1px solid var(--panel-border)' }}>
           <div className={`nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => setLecturerTab('build')}>Assessment Builder</div>
+          <div className={`nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => setLecturerTab('scanner')}>Offline Scanner</div>
           <div className={`nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => setLecturerTab('results')}>
             Grading Desk
             {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
@@ -982,6 +1044,79 @@ export default function GradeGuideApp() {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {lecturerTab === 'scanner' && (
+          <div className="glass-panel" style={{ padding: '40px', animation: 'fadeIn 0.5s ease' }}>
+            <h2 style={{ marginTop: 0, marginBottom: '24px' }}>Offline Script Scanner (Bulk Grading)</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>Snap a marking guide, then scan physical student scripts. The AI will mark them all instantly without them logging in.</p>
+            
+            <div style={{ marginBottom: '40px' }}>
+              <h3 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}><Book size={20}/> 1. Provide Marking Guide</h3>
+              <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+                <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setBulkScannerCam({ active: true, target: 'guide', idx: null })}><Camera size={18}/> Snap Rubric</button>
+                <input type="file" id="bulkGuideUpload" hidden accept=".txt,.pdf,.jpg,.png" onChange={e => handleBulkUpload(e, 'guide')} />
+                <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => document.getElementById('bulkGuideUpload').click()}><Upload size={18}/> Upload Rubric</button>
+              </div>
+              <textarea className="input-field scrollbar" rows={3} placeholder="Extracted marking guide text will appear here..." value={bulkState.guideText} onChange={e => setBulkState({...bulkState, guideText: e.target.value})}></textarea>
+              {bulkState.guideBase64 && <div className="badge badge-success" style={{ marginTop: '12px' }}><FileText size={14} style={{ marginRight: '6px' }}/> Marking Guide Document Attached</div>}
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><FileBadge size={20}/> 2. Add Student Scripts</h3>
+                <button className="btn btn-primary" onClick={() => setBulkState({...bulkState, scripts: [...bulkState.scripts, { id: Date.now(), matric: '', text: '', base64: null, mime: '', result: null, loading: false }]})}><Plus size={18}/> Add Student</button>
+              </div>
+              
+              <div style={{ display: 'grid', gap: '24px' }}>
+                {bulkState.scripts.map((script, idx) => (
+                  <div key={script.id} style={{ background: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '16px', border: '1px solid var(--panel-border)' }}>
+                    <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                      <input className="input-field" placeholder="Student Matric Number" value={script.matric} onChange={e => {
+                        const newScripts = [...bulkState.scripts]; newScripts[idx].matric = e.target.value; setBulkState({...bulkState, scripts: newScripts});
+                      }} style={{ flex: 1, minWidth: '200px' }} />
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn btn-outline" style={{ padding: '10px' }} onClick={() => setBulkScannerCam({ active: true, target: 'script', idx })}><Camera size={18}/> Snap Script</button>
+                        <input type="file" id={`scriptUpload-${script.id}`} hidden accept=".txt,.pdf,.jpg,.png" onChange={e => handleBulkUpload(e, 'script', idx)} />
+                        <button className="btn btn-outline" style={{ padding: '10px' }} onClick={() => document.getElementById(`scriptUpload-${script.id}`).click()}><Upload size={18}/></button>
+                        <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)', padding: '10px' }} onClick={() => {
+                          setBulkState({...bulkState, scripts: bulkState.scripts.filter((_, i) => i !== idx)});
+                        }}><Trash2 size={18}/></button>
+                      </div>
+                    </div>
+                    <textarea className="input-field scrollbar" rows={3} placeholder="Extracted script text will appear here..." value={script.text} onChange={e => {
+                      const newScripts = [...bulkState.scripts]; newScripts[idx].text = e.target.value; setBulkState({...bulkState, scripts: newScripts});
+                    }}></textarea>
+                    {script.base64 && <div className="badge badge-primary" style={{ marginTop: '12px' }}><FileText size={14} style={{ marginRight: '6px' }}/> Image/Doc Attached</div>}
+                    
+                    <button className="btn btn-primary" style={{ marginTop: '20px', width: '100%', padding: '14px' }} disabled={script.loading || (!bulkState.guideText && !bulkState.guideBase64)} onClick={() => gradeBulkScript(idx)}>
+                      {script.loading ? <Activity className="animate-spin" /> : <><CheckCircle size={18}/> Mark this Script</>}
+                    </button>
+                    
+                    {script.result && (
+                      <div style={{ marginTop: '20px', padding: '20px', background: 'rgba(16,185,129,0.05)', border: '1px solid var(--success)', borderRadius: '12px', animation: 'fadeIn 0.5s ease' }}>
+                        <h3 style={{ margin: '0 0 12px 0', color: 'var(--success)' }}>Score: {script.result.score}/100</h3>
+                        <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>{script.result.feedback}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {bulkState.scripts.length === 0 && <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>Click "Add Student" to start scanning scripts.</div>}
+              </div>
+            </div>
+            
+            {bulkScannerCam.active && <CameraModal onClose={() => setBulkScannerCam({ active: false })} onExtract={(text, b64) => {
+              if (bulkScannerCam.target === 'guide') {
+                setBulkState({...bulkState, guideText: bulkState.guideText + '\n' + text, guideBase64: b64, guideMime: 'image/jpeg' });
+              } else {
+                const newScripts = [...bulkState.scripts];
+                newScripts[bulkScannerCam.idx].text += '\n' + text;
+                newScripts[bulkScannerCam.idx].base64 = b64;
+                newScripts[bulkScannerCam.idx].mime = 'image/jpeg';
+                setBulkState({...bulkState, scripts: newScripts});
+              }
+            }} />}
           </div>
         )}
 
@@ -1288,10 +1423,26 @@ export default function GradeGuideApp() {
             <textarea className="input-field" rows={4} placeholder="Type your answer clearly..." onChange={e => setExamAnswers({...examAnswers, [q.id]: e.target.value})} />
           </div>
         ))}
+        <div style={{ marginBottom: '24px', padding: '24px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed var(--primary)' }}>
+          <h4 style={{ margin: '0 0 12px 0' }}>Alternatively: Upload your Answer Script</h4>
+          <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Written your answers on paper or a PDF? Upload it and the AI will read it directly!</p>
+          <input type="file" id="studentUpload" hidden accept=".pdf,.jpg,.jpeg,.png" onChange={e => {
+             const f = e.target.files[0];
+             if(!f) return;
+             const r = new FileReader();
+             r.onload = ev => setStudentUpload({ mime: f.type, base64: ev.target.result.split(',')[1], name: f.name });
+             r.readAsDataURL(f);
+          }} />
+          <button className="btn btn-outline" style={{ width: '100%', padding: '14px' }} onClick={() => document.getElementById('studentUpload').click()}>
+            <Upload size={18}/> {studentUpload ? studentUpload.name : 'Upload PDF or Image Script'}
+          </button>
+        </div>
+
         <button className="btn btn-primary" style={{ width: '100%', padding: '18px' }} disabled={examLoading} onClick={async () => {
           setExamLoading(true);
           try {
-            const results = await markSubmission(activeExam, examAnswers);
+            const uploadPayload = studentUpload ? [studentUpload] : [];
+            const results = await markSubmission(activeExam, examAnswers, uploadPayload);
             const totalMax = activeExam.questions.reduce((a, q) => a + (q.maxMarks || 10), 0);
             const totalScore = results.reduce((a, r) => a + r.score, 0);
             const newSub = { 
