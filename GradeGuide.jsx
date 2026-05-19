@@ -167,7 +167,7 @@ const ScoreRing = ({ score, size = 120, strokeWidth = 10 }) => {
 export default function GradeGuideApp() {
   const [role, setRole] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  const DEFAULT_OR_KEY = ['sk-or','-v1-299d4d83b5bbb','fd49a4f4c8bfdd238a','db8c93868fe44116e6dd41b2610990bd8'].join('');
+  const DEFAULT_OR_KEY = '';
   const [aiSettings, setAiSettings] = useState({
     provider: 'openrouter',
     geminiKey: '',
@@ -223,10 +223,7 @@ export default function GradeGuideApp() {
       if (loadedSettings.openrouterModel === 'google/gemini-flash-1.5-free') {
         loadedSettings.openrouterModel = 'openrouter/free';
       }
-      // If the stored key is blank (old device cache), fill in the new default key
-      if (!loadedSettings.openrouterKey) {
-        loadedSettings.openrouterKey = ['sk-or','-v1-299d4d83b5bbb','fd49a4f4c8bfdd238a','db8c93868fe44116e6dd41b2610990bd8'].join('');
-      }
+
       
       setAiSettings(prev => ({ ...prev, ...loadedSettings }));
     } else {
