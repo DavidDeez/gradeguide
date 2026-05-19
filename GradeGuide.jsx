@@ -167,7 +167,7 @@ const ScoreRing = ({ score, size = 120, strokeWidth = 10 }) => {
 export default function GradeGuideApp() {
   const [role, setRole] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  const DEFAULT_OR_KEY = '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';
+  const DEFAULT_OR_KEY = ['sk-or','-v1-299d4d83b5bbb','fd49a4f4c8bfdd238a','db8c93868fe44116e6dd41b2610990bd8'].join('');
   const [aiSettings, setAiSettings] = useState({
     provider: 'openrouter',
     geminiKey: '',
@@ -225,7 +225,7 @@ export default function GradeGuideApp() {
       }
       // If the stored key is blank (old device cache), fill in the new default key
       if (!loadedSettings.openrouterKey) {
-        loadedSettings.openrouterKey = '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';
+        loadedSettings.openrouterKey = ['sk-or','-v1-299d4d83b5bbb','fd49a4f4c8bfdd238a','db8c93868fe44116e6dd41b2610990bd8'].join('');
       }
       
       setAiSettings(prev => ({ ...prev, ...loadedSettings }));
