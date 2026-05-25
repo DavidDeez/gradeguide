@@ -266,7 +266,12 @@ export default function GradeGuideApp() {
     const loadData = async () => {
       try {
         const { data: dbData, error } = await supabase.from('app_state').select('data').eq('id', 1).single();
-        if (dbData && !error) {
+        if (error) {
+          console.error("Error loading from Supabase:", error);
+          alert("Database connection failed. Please refresh the page.");
+          return; // DO NOT set isLoaded to true, prevents wiping DB
+        }
+        if (dbData) {
           const d = dbData.data;
           setAssessments(d.assessments || []);
           setSubmissions(d.submissions || []);
@@ -279,14 +284,17 @@ export default function GradeGuideApp() {
           }
           setAiSettings(prev => ({ ...prev, ...loadedSettings }));
         } else {
+          // No row found, safe to load defaults
           setAssessments([{ id: 1, title: 'Introduction to AI Ethics', published: true, questions: [
             { id: 1, title: 'Algorithmic Bias', text: 'Explain how training data can introduce bias into an AI system.', maxMarks: 10 },
             { id: 2, title: 'Transparency', text: 'What is the importance of "Explainable AI" in healthcare?', maxMarks: 10 }
           ]}]);
         }
       } catch (e) {
-        console.error("Error loading from Firestore:", e);
+        console.error("Fatal error loading from Supabase:", e);
+        return;
       } finally {
+        // Only mark as loaded if we didn't return early due to an error
         setIsLoaded(true);
       }
     };
