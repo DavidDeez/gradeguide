@@ -1,5 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAAvZM8g-nATJKG7rjoJXczN-H25rXGP0c",
+  authDomain: "gradeguide-c2a97.firebaseapp.com",
+  projectId: "gradeguide-c2a97",
+  storageBucket: "gradeguide-c2a97.firebasestorage.app",
+  messagingSenderId: "642238983204",
+  appId: "1:642238983204:web:55740155240a26d4e27cb1",
+  measurementId: "G-R3C6N7PB9J"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+import {
   Settings, Camera, Upload, Book, FileText, CheckCircle, 
   BarChart, X, Plus, Trash2, Check, Video, Layout, LogOut, 
   FileBadge, Sliders, Play, Save, ChevronRight, Activity, 
@@ -253,32 +269,49 @@ export default function GradeGuideApp() {
   const [bulkState, setBulkState] = useState({ guideText: '', guideBase64: null, guideMime: '', scripts: [] });
   const [bulkScannerCam, setBulkScannerCam] = useState({ active: false, target: null, idx: null });
   const studentId = studentProfile ? studentProfile.matricNo : 'Guest';
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [dbSyncing, setDbSyncing] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('grade_guide_pro_v1');
-    if (saved) {
-      const d = JSON.parse(saved);
-      setAssessments(d.assessments || []);
-      setSubmissions(d.submissions || []);
-      setRetakeRequests(d.retakeRequests || []);
-      setStudents(d.students || []);
-      setStudentMessages(d.studentMessages || []);
-      const loadedSettings = d.settings || {};
-      if (loadedSettings.openrouterModel === 'google/gemini-flash-1.5-free') {
-        loadedSettings.openrouterModel = 'openrouter/free';
+    const loadData = async () => {
+      try {
+        const docRef = doc(db, "gradeguide", "main_data");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const d = docSnap.data();
+          setAssessments(d.assessments || []);
+          setSubmissions(d.submissions || []);
+          setRetakeRequests(d.retakeRequests || []);
+          setStudents(d.students || []);
+          setStudentMessages(d.studentMessages || []);
+          const loadedSettings = d.settings || {};
+          if (loadedSettings.openrouterModel === 'google/gemini-flash-1.5-free') {
+            loadedSettings.openrouterModel = 'openrouter/free';
+          }
+          setAiSettings(prev => ({ ...prev, ...loadedSettings }));
+        } else {
+          setAssessments([{ id: 1, title: 'Introduction to AI Ethics', published: true, questions: [
+            { id: 1, title: 'Algorithmic Bias', text: 'Explain how training data can introduce bias into an AI system.', maxMarks: 10 },
+            { id: 2, title: 'Transparency', text: 'What is the importance of "Explainable AI" in healthcare?', maxMarks: 10 }
+          ]}]);
+        }
+      } catch (e) {
+        console.error("Error loading from Firestore:", e);
+      } finally {
+        setIsLoaded(true);
       }
-      setAiSettings(prev => ({ ...prev, ...loadedSettings }));
-    } else {
-      setAssessments([{ id: 1, title: 'Introduction to AI Ethics', published: true, questions: [
-        { id: 1, title: 'Algorithmic Bias', text: 'Explain how training data can introduce bias into an AI system.', maxMarks: 10 },
-        { id: 2, title: 'Transparency', text: 'What is the importance of "Explainable AI" in healthcare?', maxMarks: 10 }
-      ]}]);
-    }
+    };
+    loadData();
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('grade_guide_pro_v1', JSON.stringify({ assessments, submissions, settings: aiSettings, retakeRequests, students, studentMessages }));
-  }, [assessments, submissions, aiSettings, retakeRequests, students, studentMessages]);
+    if (isLoaded) {
+      setDbSyncing(true);
+      setDoc(doc(db, "gradeguide", "main_data"), { assessments, submissions, settings: aiSettings, retakeRequests, students, studentMessages })
+        .catch(e => console.error("Error saving to Firestore:", e))
+        .finally(() => setTimeout(() => setDbSyncing(false), 800));
+    }
+  }, [isLoaded, assessments, submissions, aiSettings, retakeRequests, students, studentMessages]);
 
   // --- EmailJS Helpers ---
   const sendOtpEmail = async (toEmail, toName, otpCode) => {
@@ -1415,9 +1448,10 @@ export default function GradeGuideApp() {
                   Manage your offline local database. Export your data to switch devices without losing exams!
                 </p>
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  <button className="btn btn-outline" style={{ flex: 1, borderColor: 'var(--primary)', color: 'var(--primary)' }} onClick={() => {
-                    const data = localStorage.getItem('grade_guide_pro_v1');
-                    if (!data) return alert('No database found to backup!');
+                  <button className="btn btn-outline" style={{ flex: 1, borderColor: 'var(--primary)', color: 'var(--primary)' }} onClick={async () => {
+                    const docSnap = await getDoc(doc(db, "gradeguide", "main_data"));
+                    if (!docSnap.exists()) return alert('No database found to backup!');
+                    const data = JSON.stringify(docSnap.data());
                     const blob = new Blob([data], { type: 'application/json' });
                     const a = document.createElement('a');
                     a.href = window.URL.createObjectURL(blob);
@@ -1429,11 +1463,11 @@ export default function GradeGuideApp() {
                     const file = e.target.files[0];
                     if (!file) return;
                     const reader = new FileReader();
-                    reader.onload = ev => {
+                    reader.onload = async ev => {
                       try {
                         const data = JSON.parse(ev.target.result);
                         if (data.assessments) {
-                          localStorage.setItem('grade_guide_pro_v1', ev.target.result);
+                          await setDoc(doc(db, "gradeguide", "main_data"), data);
                           alert('Database restored successfully! The page will now reload.');
                           window.location.reload();
                         } else throw new Error();
@@ -2001,6 +2035,15 @@ export default function GradeGuideApp() {
             {role === 'Student' && studentProfile && (
               <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '500' }}>
                 {studentProfile.name} · <span style={{ color: 'var(--primary)' }}>{studentProfile.matricNo}</span>
+              </span>
+            )}
+            {dbSyncing ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--primary)', background: 'rgba(59, 130, 246, 0.1)', padding: '4px 10px', borderRadius: '12px', transition: 'all 0.3s' }}>
+                <Activity size={12} /> Syncing to Cloud...
+              </span>
+            ) : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--success)', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 10px', borderRadius: '12px', transition: 'all 0.3s' }}>
+                <CheckCircle size={12} /> Saved to Cloud
               </span>
             )}
           </div>
