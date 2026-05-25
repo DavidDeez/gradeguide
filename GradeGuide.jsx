@@ -9,7 +9,7 @@ import {
   Settings, Camera, Upload, Book, FileText, CheckCircle, 
   BarChart, X, Plus, Trash2, Check, Video, Layout, LogOut, 
   FileBadge, Sliders, Play, Save, ChevronRight, Activity, 
-  ShieldCheck, Brain, Star, Smartphone, AlertCircle, Eye, Edit, Download
+  ShieldCheck, Brain, Star, Smartphone, AlertCircle, Eye, Edit, Download, Menu
 } from 'lucide-react';
 
 const GlobalStyles = () => (
@@ -144,7 +144,29 @@ const GlobalStyles = () => (
       .otp-input { width: 42px !important; height: 50px !important; font-size: 1.3rem !important; }
       .otp-container { gap: 6px !important; }
       .main-layout { flex-direction: column; margin: 0 16px; gap: 20px; }
-      .side-menu { display: none !important; }
+      .side-menu { 
+        position: fixed !important;
+        top: 0 !important;
+        left: -320px !important;
+        height: 100vh !important;
+        z-index: 2000 !important;
+        background: var(--bg-dark) !important;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        margin: 0 !important;
+        padding-top: 32px !important;
+        box-shadow: 4px 0 24px rgba(0,0,0,0.5) !important;
+        display: flex !important;
+      }
+      .side-menu.open {
+        left: 0 !important;
+      }
+      .mobile-menu-btn { display: block !important; }
+    }
+
+    .mobile-menu-btn { display: none; }
+    .drawer-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      z-index: 1500; animation: fadeIn 0.3s ease;
     }
 
     .main-layout {
@@ -256,6 +278,7 @@ export default function GradeGuideApp() {
 
   const [authScreen, setAuthScreen] = useState('landing'); // landing|student-entry|student-signup|student-otp|student-login
   const [showSettings, setShowSettings] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const DEFAULT_OR_KEY = '';
   const [aiSettings, setAiSettings] = useState({
     provider: 'openrouter',
@@ -941,16 +964,18 @@ export default function GradeGuideApp() {
 
     return (
       <div className="main-layout" style={{ animation: 'fadeIn 0.5s ease' }}>
+        {isMobileMenuOpen && <div className="drawer-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>}
+        
         {/* Left Side Menu (Faculty) */}
-        <div className="side-menu glass-panel" style={{ padding: '20px 12px' }}>
+        <div className={`side-menu glass-panel ${isMobileMenuOpen ? 'open' : ''}`} style={{ padding: '20px 12px' }}>
           <h3 style={{ margin: '0 0 16px 12px', fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Faculty Portal</h3>
-          <div className={`side-nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => setLecturerTab('build')}>🛠️ Assessment Builder</div>
-          <div className={`side-nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => setLecturerTab('scanner')}>📸 Offline Scanner</div>
-          <div className={`side-nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => setLecturerTab('results')}>
+          <div className={`side-nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => { setLecturerTab('build'); setIsMobileMenuOpen(false); }}>🛠️ Assessment Builder</div>
+          <div className={`side-nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => { setLecturerTab('scanner'); setIsMobileMenuOpen(false); }}>📸 Offline Scanner</div>
+          <div className={`side-nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => { setLecturerTab('results'); setIsMobileMenuOpen(false); }}>
             📝 Grading Desk
             {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
               <span className="badge badge-success" style={{ marginLeft: 'auto', background: 'var(--danger)', color: 'white' }}>
-                {retakeRequests.filter(r => r.status === 'pending').length} New
+                {retakeRequests.filter(r => r.status === 'pending').length}
               </span>
             )}
           </div>
@@ -1657,16 +1682,17 @@ export default function GradeGuideApp() {
 
     return (
       <div className="main-layout" style={{ animation: 'fadeIn 0.5s ease' }}>
+        {isMobileMenuOpen && <div className="drawer-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>}
         {/* Left Side Menu (Student) */}
-        <div className="side-menu glass-panel" style={{ padding: '20px 12px' }}>
+        <div className={`side-menu glass-panel ${isMobileMenuOpen ? 'open' : ''}`} style={{ padding: '20px 12px' }}>
           <h3 style={{ margin: '0 0 16px 12px', fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Student Portal</h3>
-          <div className={`side-nav-tab ${studentTabState === 'exams' ? 'active' : ''}`} onClick={() => setStudentTabState('exams')}>
+          <div className={`side-nav-tab ${studentTabState === 'exams' ? 'active' : ''}`} onClick={() => { setStudentTabState('exams'); setIsMobileMenuOpen(false); }}>
             📚 Available Assessments
           </div>
-          <div className={`side-nav-tab ${studentTabState === 'results' ? 'active' : ''}`} onClick={() => setStudentTabState('results')}>
+          <div className={`side-nav-tab ${studentTabState === 'results' ? 'active' : ''}`} onClick={() => { setStudentTabState('results'); setIsMobileMenuOpen(false); }}>
             🎓 My Graded Results ({submissions.length})
           </div>
-          <div className={`side-nav-tab ${studentTabState === 'support' ? 'active' : ''}`} onClick={() => setStudentTabState('support')}>
+          <div className={`side-nav-tab ${studentTabState === 'support' ? 'active' : ''}`} onClick={() => { setStudentTabState('support'); setIsMobileMenuOpen(false); }}>
             💬 Help & Support
           </div>
         </div>
@@ -2134,6 +2160,7 @@ export default function GradeGuideApp() {
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <header className="glass-panel header-content" style={{ margin: '20px', padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '24px' }}>
           <div className="header-brand-row" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <Menu className="mobile-menu-btn" size={28} style={{ cursor: 'pointer', color: 'var(--primary)', marginRight: '8px' }} onClick={() => setIsMobileMenuOpen(true)} />
             <Brain color="var(--primary)" size={32} />
             <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 'bold' }}>GradeGuide</h2>
             <div style={{ width: '1px', height: '24px', background: 'var(--panel-border)', margin: '0 8px' }}></div>
