@@ -144,7 +144,7 @@ const GlobalStyles = () => (
       .otp-input { width: 42px !important; height: 50px !important; font-size: 1.3rem !important; }
       .otp-container { gap: 6px !important; }
       .main-layout { flex-direction: column; margin: 0 16px; gap: 20px; }
-      .side-menu { display: none; }
+      .side-menu { display: none !important; }
     }
 
     .main-layout {
