@@ -548,7 +548,7 @@ export default function GradeGuideApp() {
   };
 
   const markSubmission = async (assessment, answers, studentFiles = []) => {
-    const system = "Expert Academic Grader and Plagiarism Detector. Grade strictly according to the Reference Context provided. IF AN ANSWER IS INCOHERENT, FACTUALLY WRONG, OR COMPLETELY IRRELEVANT, YOU MUST AWARD EXACTLY 0 POINTS. DO NOT GIVE POINTS FOR EFFORT. Return a RAW JSON object with EXACTLY this structure: {\"results\": [{\"questionId\":1, \"score\":8, \"grade\":\"A\", \"feedback\":\"...\", \"strengths\":[], \"improvements\":[]}], \"authenticity\": 95, \"authenticityReason\": \"Original reasoning detected.\"}";
+    const system = "Expert Academic Grader and Plagiarism Detector. Grade strictly according to the Reference Context provided. IF AN ANSWER IS INCOHERENT, FACTUALLY WRONG, OR COMPLETELY IRRELEVANT, YOU MUST AWARD EXACTLY 0 POINTS. DO NOT GIVE POINTS FOR EFFORT. Return a RAW JSON object with EXACTLY this structure: {\"results\": [{\"questionId\": <number>, \"score\": <number>, \"grade\": \"<string>\", \"feedback\": \"<string>\", \"strengths\": [\"<string>\"], \"improvements\": [\"<string>\"]}], \"authenticity\": <number 0-100>, \"authenticityReason\": \"<string>\"}. DO NOT BLINDLY COPY THIS EXAMPLE, OUTPUT ACTUAL GRADING METRICS.";
     const prompt = `Grading task for: ${assessment.title}\nQuestions: ${JSON.stringify(assessment.questions)}\nStudent Typed Answers: ${JSON.stringify(answers)}\nReference Context: ${assessment.contextText || courseMaterial.text}\nIf a student file is attached, read the answers directly from the file to grade. Also, strictly evaluate the student answers for AI-generation or plagiarism.`;
     const files = assessment.contextPdfBase64 ? [{ mime: assessment.contextFileMime || "application/pdf", base64: assessment.contextPdfBase64 }] : (courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : []);
     
@@ -594,7 +594,7 @@ export default function GradeGuideApp() {
     newScripts[idx].loading = true;
     setBulkState({...bulkState, scripts: newScripts});
     
-    const system = "You are an expert grading and plagiarism detection system. IF THE SCRIPT IS INCOHERENT, FACTUALLY WRONG, OR COMPLETELY IRRELEVANT TO THE MARKING GUIDE, YOU MUST AWARD EXACTLY 0 POINTS. DO NOT GIVE POINTS FOR EFFORT. Output ONLY a RAW JSON object representing the final grade and authenticity. Example: {\"score\": 85, \"feedback\": \"Excellent reasoning.\", \"authenticity\": 95, \"authenticityReason\": \"Handwritten script detected.\"}";
+    const system = "You are an expert grading and plagiarism detection system. IF THE SCRIPT IS INCOHERENT, FACTUALLY WRONG, OR COMPLETELY IRRELEVANT TO THE MARKING GUIDE, YOU MUST AWARD EXACTLY 0 POINTS. DO NOT GIVE POINTS FOR EFFORT. Output ONLY a RAW JSON object representing the final grade and authenticity. Schema: {\"score\": <number>, \"feedback\": \"<string>\", \"authenticity\": <number 0-100>, \"authenticityReason\": \"<string>\"}. DO NOT BLINDLY COPY THIS SCHEMA, COMPUTE THE ACTUAL METRICS.";
     const prompt = `Marking Guide:\n${bulkState.guideText}\n\nStudent Script (Extracted text):\n${script.text}\n\nGrade the student strictly against the marking guide. If images are attached, read them to verify. Evaluate authenticity.`;
     const files = [];
     if (bulkState.guideBase64) files.push({ mime: bulkState.guideMime || "image/jpeg", base64: bulkState.guideBase64 });
