@@ -1,74 +1,55 @@
-# 🛡️ GradeGuide AI
-### *Academic Grading Infrastructure for the AI Age*
+# GradeGuide 🧠
 
-**GradeGuide AI** is an Intelligent Academic Assessment Platform that leverages cutting-edge Large Language Models (LLMs) and Vision OCR AI to completely automate the ingestion, grading, and auditing of student coursework and exams. 
+![GradeGuide Banner](https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge) ![React](https://img.shields.io/badge/React-18.2.0-blue?style=for-the-badge&logo=react) ![Supabase](https://img.shields.io/badge/Database-Supabase-green?style=for-the-badge&logo=supabase)
 
-Built as a highly responsive, standalone React application, it provides zero-hallucination, context-grounded evaluation to guarantee strict compliance with course materials.
-
----
+**GradeGuide** is an advanced, serverless single-page React application designed to modernize and automate academic grading using state-of-the-art Artificial Intelligence. Built entirely without a Node.js backend dependency, GradeGuide uses on-the-fly Babel transpilation to execute instantly in the browser.
 
 ## 🌟 Key Features
 
-### 1. Unified Faculty Dashboard
-Instead of fragmenting educator tasks across multiple consoles, GradeGuide integrates all administrative controls under a single secure gateway (`admin`/`admin` authorization):
-* **Source Material Ingestion:** Upload digital copy files (PDF, TXT, MD, Images) to strictly ground the AI grading.
-* **Assessment Builder:** Create dynamic examinations by directly setting custom questions, allocating maximum marks, and publishing tests.
-* **Bulk Offline Scanner:** Snap your physical marking rubric, then rapidly snap images of physical student scripts. The AI Vision model automatically cross-references and bulk-grades them instantly!
-* **Grading Desk:** Review student answer sheets, read detailed AI corrections, and **Export Grades to CSV** with one click.
-* **System Audit & Engine Control:** Full System Compliance Logs displaying every student trace. Includes full **Database Backup & Restore** capabilities to easily switch devices without losing exams.
+### 1. Asymmetric Dual-Portal Ecosystem 🔐
+- **Faculty Dashboard:** A high-privilege environment where lecturers can build assessments, upload marking guides, scan physical handwritten scripts using OCR, audit the AI Engine, and export structured CSV grade data.
+- **Student Portal:** A secure, OTP-verified portal for students to take exams, upload PDF answer scripts, and receive instantly generated grade reports and qualitative AI feedback.
+- **Robust Persistence:** Secure `localStorage` mechanisms maintain session state to prevent accidental logouts across both environments.
 
-### 2. Student Portal & Advanced Uploads
-A secure, simplified workspace for student testing:
-* **Frictionless Testing:** Start published exams and input detailed answers, or simply **Upload your PDF/Image Answer Script** for the AI to natively read and grade!
-* **Detailed Corrections & Authenticity:** Get immediate performance score rings, correction notes, and an AI-powered **Plagiarism / Authenticity Score** to deter cheating.
-* **Retake Permission Gate:** Students are locked out after submission and must request retakes. Includes a direct **Lecturer Messaging System** for urgent support.
+### 2. Multi-Model AI Grading Engine 🤖
+GradeGuide does not rely on a single vendor. The application intelligently routes requests between multiple LLM architectures based on lecturer configuration:
+- **OpenRouter Integration:** Access hundreds of models, including Llama 3, Mistral, and Gemma 2.
+- **Google Gemini Direct API:** Native support for Gemini 1.5 Flash & Pro for high-speed multimodal processing.
+- **Anthropic Claude & HuggingFace:** Configurable support for advanced logic pipelines.
 
-### 3. Integrated AI Engine Config
-Directly configure and save provider settings inside your workspace. Supports four top-tier inferencing providers:
-1. **OpenRouter (Recommended):** Tap into 100% free open-weights models (Gemma 2 9B, Llama 3 8B, Mistral 7B) using a free API key.
-2. **Google Gemini 1.5 Direct:** Access direct low-latency inferencing (Gemini 1.5 Flash / Pro) with native API key storage.
-3. **Anthropic Claude 3.7:** Run complex, multi-modal vision and text analyses.
-4. **HuggingFace Inference:** Connect custom models using standard inference tokens.
+*The prompt engineering forces the AI to act as a rigorous academic grader and plagiarism detector, returning mathematically parsed JSON data for the UI to digest.*
 
----
+### 3. Serverless Cloud Synchronization ☁️
+- Bypasses traditional REST APIs by interacting natively with a **Supabase PostgreSQL database**. 
+- Utilizes a synchronized JSON blob (`app_state`) allowing real-time data flow between the Faculty and Student portals without a backend intermediary.
 
-## 🏗️ Architecture & Security Safeguards
-* **Persistent Session Tracing:** Assigns unique, local-storage based `studentId` references to trace student grading sheets and request pipelines.
-* **Student Sandbox Lockout:** Completely hides the API connection status, sliders, configurations, and administrative audit panels from student interfaces to ensure absolute server integrity.
-* **Zero-Hallucination Grounding:** Custom-builds grading prompts that strictly bound the AI's marking behavior to the uploaded context materials, avoiding grading hallucinations.
+### 4. Advanced Technical Integrations 🛠️
+- **EmailJS OTP Authentication:** Securely authenticates students and automatically dispatches beautifully formatted Grading Reports directly to their inboxes.
+- **Browser-Native OCR:** Uses `navigator.mediaDevices.getUserMedia` to hijack the device camera, allowing lecturers to scan and transcribe handwritten, physical exam scripts entirely offline before pushing to the AI for grading.
 
----
+### 5. Hyper-Responsive Glassmorphism UI 🎨
+- The interface is heavily optimized for both massive desktop displays and mobile phones.
+- Features deep backdrop blurring, dynamic SVG rendering (circular score rings), and a highly optimized **sliding-drawer mobile navigation architecture**.
 
-## 🚀 How to Run Locally
+## 🚀 Installation & Usage
 
-You do not need heavy Node.js libraries or server-side installs! The root of the repository houses a lightweight standalone React deployment transpiled natively via Babel CDNs:
+Because GradeGuide is a truly serverless application utilizing in-browser JSX transpilation, installation is instant:
 
-1. **Clone the repository:**
+1. Clone this repository:
    ```bash
-   git clone https://github.com/DavidDeez/gradeguide.git
-   cd gradeguide
+   git clone https://github.com/DavidDeez/GradeGuide.git
    ```
-2. **Launch a local HTTP server:**
-   ```bash
-   python -m http.server 3000
-   ```
-3. **Navigate in your browser:**
-   Open [http://localhost:3000](http://localhost:3000) and choose your portal!
+2. Open `index.html` in any modern browser. 
+3. *No `npm install`, no build steps, no local server required.*
 
----
+*(Note: In production environments, it is recommended to host the files on Vercel, Netlify, or GitHub Pages).*
 
-## 📂 Project Structure
+## ⚙️ Configuration
+Lecturers must configure the AI Engine upon first launch:
+1. Log into the **Faculty Dashboard** (Default: `lecturer@gradeguide.com` / `admin123`).
+2. Navigate to **System Audit & Engine**.
+3. Select your preferred AI Provider and input your API Key.
+4. Add your EmailJS public credentials if you wish to enable automated Student OTPs and Grade Emailing.
 
-```
-.
-├── GradeGuide.jsx      # Core standalone React single-file application (UI, State, API engine)
-├── index.html          # Lightweight HTML wrapper loading React, Lucide Icons, and Babel transpilers
-├── README.md           # The primary documentation file
-├── docs/               # System Requirement Specifications (SRS) and Phase 1/2 blueprints
-└── ai-grader-pro/      # Legacy prototype components (Frontend & Backend templates)
-```
-
----
-
-## 🛡️ License & Academic Integrity
-Designed to bring transparent, objective, and accessible grading to educational institutions worldwide. Built with love for **hackathon judges** and educators in the AI era.
+## 👨‍💻 Developer
+Developed by **David Olukayode** for modern, AI-driven educational infrastructure.
