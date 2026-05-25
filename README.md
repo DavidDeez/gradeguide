@@ -1,7 +1,7 @@
-# 🛡️ LearnSync AI
+# 🛡️ GradeGuide AI
 ### *Academic Grading Infrastructure for the AI Age*
 
-**LearnSync AI** is an Intelligent Academic Assessment Platform that leverages cutting-edge Large Language Models (LLMs) and Vision OCR AI to completely automate the ingestion, grading, and auditing of student coursework and exams. 
+**GradeGuide AI** is an Intelligent Academic Assessment Platform that leverages cutting-edge Large Language Models (LLMs) and Vision OCR AI to completely automate the ingestion, grading, and auditing of student coursework and exams. 
 
 Built as a highly responsive, standalone React application, it provides zero-hallucination, context-grounded evaluation to guarantee strict compliance with course materials.
 
@@ -10,7 +10,7 @@ Built as a highly responsive, standalone React application, it provides zero-hal
 ## 🌟 Key Features
 
 ### 1. Unified Faculty Dashboard
-Instead of fragmenting educator tasks across multiple consoles, LearnSync integrates all administrative controls under a single secure gateway (`admin`/`admin` authorization):
+Instead of fragmenting educator tasks across multiple consoles, GradeGuide integrates all administrative controls under a single secure gateway (`admin`/`admin` authorization):
 * **Source Material Ingestion:** Upload digital copy files (PDF, TXT, MD, Images) to strictly ground the AI grading.
 * **Assessment Builder:** Create dynamic examinations by directly setting custom questions, allocating maximum marks, and publishing tests.
 * **Bulk Offline Scanner:** Snap your physical marking rubric, then rapidly snap images of physical student scripts. The AI Vision model automatically cross-references and bulk-grades them instantly!
@@ -61,7 +61,7 @@ You do not need heavy Node.js libraries or server-side installs! The root of the
 
 ```
 .
-├── LearnSync.jsx       # Core standalone React single-file application (UI, State, API engine)
+├── GradeGuide.jsx      # Core standalone React single-file application (UI, State, API engine)
 ├── index.html          # Lightweight HTML wrapper loading React, Lucide Icons, and Babel transpilers
 ├── README.md           # The primary documentation file
 ├── docs/               # System Requirement Specifications (SRS) and Phase 1/2 blueprints
