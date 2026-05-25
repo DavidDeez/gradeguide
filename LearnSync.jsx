@@ -194,7 +194,7 @@ const Footer = () => (
   </footer>
 );
 
-export default function GradeGuideApp() {
+export default function LearnSyncApp() {
   const [role, setRole] = useState(null);
   const [authScreen, setAuthScreen] = useState('landing'); // landing|student-entry|student-signup|student-otp|student-login
   const [showSettings, setShowSettings] = useState(false);
@@ -287,7 +287,7 @@ export default function GradeGuideApp() {
       await window.emailjs.send(
         aiSettings.emailjsServiceId,
         aiSettings.emailjsOtpTemplateId,
-        { to_email: toEmail, to_name: toName, otp_code: otpCode, app_name: 'GradeGuide AI' },
+        { to_email: toEmail, to_name: toName, otp_code: otpCode, app_name: 'LearnSync AI' },
         aiSettings.emailjsPublicKey
       );
       return true;
@@ -311,7 +311,7 @@ export default function GradeGuideApp() {
           total_max: totalMax,
           percentage: percentage + '%',
           breakdown: breakdown,
-          app_name: 'GradeGuide AI'
+          app_name: 'LearnSync AI'
         },
         aiSettings.emailjsPublicKey
       );
@@ -355,7 +355,7 @@ export default function GradeGuideApp() {
           "Authorization": `Bearer ${aiSettings.openrouterKey}`,
           "Content-Type": "application/json",
           "HTTP-Referer": window.location.origin,
-          "X-Title": "GradeGuide AI"
+          "X-Title": "LearnSync AI"
         },
         body: JSON.stringify({
           model: aiSettings.openrouterModel || "openrouter/free",
@@ -736,7 +736,7 @@ export default function GradeGuideApp() {
     
     const handleLogin = (e) => {
       e.preventDefault();
-      if (usernameInput.trim().toLowerCase() === 'lecturer@gradeguide.com' && passwordInput === 'admin123') {
+      if (usernameInput.trim().toLowerCase() === 'lecturer@learnsync.com' && passwordInput === 'admin123') {
         setRole(loginModalRole);
         setLoginModalRole(null);
         setUsernameInput('');
@@ -769,7 +769,7 @@ export default function GradeGuideApp() {
               <input 
                 type="email" 
                 className="input-field" 
-                placeholder="lecturer@gradeguide.com" 
+                placeholder="lecturer@learnsync.com" 
                 required 
                 value={usernameInput}
                 onChange={e => setUsernameInput(e.target.value)}
@@ -1192,7 +1192,7 @@ export default function GradeGuideApp() {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `GradeGuide_Export_${Date.now()}.csv`;
+                a.download = `LearnSync_Export_${Date.now()}.csv`;
                 a.click();
               }}><Download size={18}/> Export Grades to CSV</button>
             </div>
@@ -1421,7 +1421,7 @@ export default function GradeGuideApp() {
                     const blob = new Blob([data], { type: 'application/json' });
                     const a = document.createElement('a');
                     a.href = window.URL.createObjectURL(blob);
-                    a.download = `GradeGuide_DB_Backup_${Date.now()}.json`;
+                    a.download = `LearnSync_DB_Backup_${Date.now()}.json`;
                     a.click();
                   }}><Download size={16} /> Export DB Backup</button>
                   
@@ -1672,7 +1672,7 @@ export default function GradeGuideApp() {
             <div style={{ borderTop: '1px solid var(--panel-border)', paddingTop: '24px' }}>
               <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: 'var(--primary)' }}>System Support</h3>
               <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Experiencing technical difficulties? Please reach out to the system administrator.</p>
-              <a href="mailto:admin@gradeguide.com" className="btn btn-outline" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '14px' }}>
+              <a href="mailto:admin@learnsync.com" className="btn btn-outline" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '14px' }}>
                 Contact Technical Admin
               </a>
             </div>
@@ -1713,7 +1713,7 @@ export default function GradeGuideApp() {
               <Brain size={40} color="var(--primary)" />
             </div>
             <h1 className="auth-title">Create Account</h1>
-            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Join GradeGuide — Register as a Student</p>
+            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Join LearnSync — Register as a Student</p>
           </div>
           <div className="glass-panel" style={{ padding: '32px' }}>
             <form onSubmit={handleSignup}>
@@ -1950,7 +1950,7 @@ export default function GradeGuideApp() {
         <div style={{ display: 'inline-flex', padding: '20px', background: 'var(--panel-bg)', borderRadius: '30px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
           <Brain size={60} color="var(--primary)" />
         </div>
-        <h1 className="brand-title">GradeGuide</h1>
+        <h1 className="brand-title">LearnSync</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: '500' }}>Academic Grading Infrastructure for the AI Age</p>
       </div>
       <div className="role-grid">
@@ -1995,7 +1995,7 @@ export default function GradeGuideApp() {
         <header className="glass-panel header-content" style={{ margin: '20px', padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <Brain color="var(--primary)" size={32} />
-            <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 'bold' }}>GradeGuide</h2>
+            <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 'bold' }}>LearnSync</h2>
             <div style={{ width: '1px', height: '24px', background: 'var(--panel-border)', margin: '0 8px' }}></div>
             <span className="badge badge-primary">{role === 'Lecturer' ? 'Faculty' : role}</span>
             {role === 'Student' && studentProfile && (
