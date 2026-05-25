@@ -264,8 +264,10 @@ export default function GradeGuideApp() {
     emailjsResultsTemplateId: ''
   });
 
-  // Auth state
-  const [studentProfile, setStudentProfile] = useState(null); // { name, matricNo, email }
+  // Auth state with LocalStorage Persistence
+  const [studentProfile, setStudentProfile] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('gg_student_profile')) || null; } catch { return null; }
+  });
   const [students, setStudents] = useState([]); // all registered students
   const [signupForm, setSignupForm] = useState({ name: '', matricNo: '', email: '' });
   const [pendingOtp, setPendingOtp] = useState(null); // { code, email, name, matricNo, expiry }
@@ -275,7 +277,21 @@ export default function GradeGuideApp() {
   const [loginForm, setLoginForm] = useState({ email: '', matricNo: '' });
 
   const [selectedSub, setSelectedSub] = useState(null);
-  const [loginModalRole, setLoginModalRole] = useState(null);
+  const [loginModalRole, setLoginModalRole] = useState(() => {
+    return localStorage.getItem('gg_role') || null;
+  });
+  
+  // Persist session state to local storage
+  useEffect(() => {
+    if (studentProfile) localStorage.setItem('gg_student_profile', JSON.stringify(studentProfile));
+    else localStorage.removeItem('gg_student_profile');
+  }, [studentProfile]);
+
+  useEffect(() => {
+    if (loginModalRole) localStorage.setItem('gg_role', loginModalRole);
+    else localStorage.removeItem('gg_role');
+  }, [loginModalRole]);
+
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -306,17 +322,17 @@ export default function GradeGuideApp() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [dbSyncing, setDbSyncing] = useState(false);
 
-  const fetchCloudData = async (isInitialLoad = false) => {
-    try {
-      const { data: dbData, error } = await supabase.from('app_state').select('data').eq('id', 1).single();
-      if (error && isInitialLoad) {
-        console.error("Error loading from Supabase:", error);
-        alert("Database connection failed. Please refresh the page.");
-        return; // DO NOT set isLoaded to true, prevents wiping DB
-      }
-      if (dbData) {
-        const d = dbData.data;
-        if (isInitialLoad) {
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const { data: dbData, error } = await supabase.from('app_state').select('data').eq('id', 1).single();
+        if (error) {
+          console.error("Error loading from Supabase:", error);
+          alert("Database connection failed. Please refresh the page.");
+          return; // DO NOT set isLoaded to true, prevents wiping DB
+        }
+        if (dbData) {
+          const d = dbData.data;
           setAssessments(d.assessments || []);
           setSubmissions(d.submissions || []);
           setRetakeRequests(d.retakeRequests || []);
@@ -328,39 +344,21 @@ export default function GradeGuideApp() {
           }
           setAiSettings(prev => ({ ...prev, ...loadedSettings }));
         } else {
-          // Careful merge for broadcast updates to prevent echo loops
-          setAssessments(prev => JSON.stringify(prev) !== JSON.stringify(d.assessments || []) ? (d.assessments || []) : prev);
-          setSubmissions(prev => JSON.stringify(prev) !== JSON.stringify(d.submissions || []) ? (d.submissions || []) : prev);
-          setRetakeRequests(prev => JSON.stringify(prev) !== JSON.stringify(d.retakeRequests || []) ? (d.retakeRequests || []) : prev);
-          setStudents(prev => JSON.stringify(prev) !== JSON.stringify(d.students || []) ? (d.students || []) : prev);
-          setStudentMessages(prev => JSON.stringify(prev) !== JSON.stringify(d.studentMessages || []) ? (d.studentMessages || []) : prev);
-          setAiSettings(prev => {
-             const loadedSettings = d.settings || {};
-             const merged = {...prev, ...loadedSettings};
-             return JSON.stringify(prev) !== JSON.stringify(merged) ? merged : prev;
-          });
+          // No row found, safe to load defaults
+          setAssessments([{ id: 1, title: 'Introduction to AI Ethics', published: true, questions: [
+            { id: 1, title: 'Algorithmic Bias', text: 'Explain how training data can introduce bias into an AI system.', maxMarks: 10 },
+            { id: 2, title: 'Transparency', text: 'What is the importance of "Explainable AI" in healthcare?', maxMarks: 10 }
+          ]}]);
         }
-      } else if (isInitialLoad) {
-        // No row found, safe to load defaults
-        setAssessments([{ id: 1, title: 'Introduction to AI Ethics', published: true, questions: [
-          { id: 1, title: 'Algorithmic Bias', text: 'Explain how training data can introduce bias into an AI system.', maxMarks: 10 },
-          { id: 2, title: 'Transparency', text: 'What is the importance of "Explainable AI" in healthcare?', maxMarks: 10 }
-        ]}]);
+      } catch (e) {
+        console.error("Fatal error loading from Supabase:", e);
+        return;
+      } finally {
+        setIsLoaded(true);
       }
-    } catch (e) {
-      if (isInitialLoad) console.error("Fatal error loading from Supabase:", e);
-      return;
-    } finally {
-      if (isInitialLoad) setIsLoaded(true);
-    }
-  };
-
-  useEffect(() => {
-    fetchCloudData(true);
+    };
+    loadData();
   }, []);
-
-  // Global channel for broadcasts
-  const syncChannel = React.useMemo(() => supabase.channel('grade-guide-sync'), []);
 
   useEffect(() => {
     if (isLoaded) {
@@ -371,30 +369,11 @@ export default function GradeGuideApp() {
           if (error) {
             console.error("Error saving to Supabase:", error);
             alert("CRITICAL DATABASE ERROR: Supabase rejected the save! Your Row Level Security (RLS) policies are blocking writes. Please run the SQL script to disable RLS restrictions.");
-          } else {
-            // Broadcast the update to all other connected clients
-            syncChannel.send({ type: 'broadcast', event: 'db-update', payload: { ts: Date.now() } });
           }
         })
         .finally(() => setTimeout(() => setDbSyncing(false), 800));
     }
   }, [isLoaded, assessments, submissions, aiSettings, retakeRequests, students, studentMessages]);
-
-  // Supabase Real-time synchronization (Broadcast Receiver)
-  useEffect(() => {
-    if (!isLoaded) return;
-    
-    syncChannel
-      .on('broadcast', { event: 'db-update' }, () => {
-        // When another device says they updated the database, we fetch the fresh data
-        fetchCloudData(false);
-      })
-      .subscribe();
-
-    return () => {
-      syncChannel.unsubscribe();
-    };
-  }, [isLoaded, syncChannel]);
 
   // --- EmailJS Helpers ---
   const sendOtpEmail = async (toEmail, toName, otpCode) => {
