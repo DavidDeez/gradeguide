@@ -1688,13 +1688,12 @@ export default function GradeGuideApp() {
       if (!/^\d{4}$/.test(form.pin)) return setErr('Please create a 4-digit login PIN.');
       if (students.find(s => s.matricNo.toLowerCase() === form.matricNo.toLowerCase())) return setErr('This matric number is already registered. Please log in instead.');
       if (students.find(s => s.email.toLowerCase() === form.email.toLowerCase())) return setErr('This email is already registered. Please log in instead.');
-      setLoading(true);
-      const otp = String(Math.floor(100000 + Math.random() * 900000));
-      setPendingOtp({ code: otp, email: form.email, name: form.name, matricNo: form.matricNo, pin: form.pin, expiry: Date.now() + 600000 });
-      setSignupForm(form);
-      await sendOtpEmail(form.email, form.name, otp); // best-effort — OTP shown on screen if email fails
-      setLoading(false);
-      setAuthScreen('student-otp');
+      // HACKATHON BYPASS: Skip OTP entirely and directly register the student
+      const profile = { name: form.name, matricNo: form.matricNo, email: form.email, pin: form.pin };
+      setStudents(prev => [...prev, profile]);
+      setStudentProfile(profile);
+      setRole('Student');
+      setAuthScreen('landing');
     };
 
     return (
