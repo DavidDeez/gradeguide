@@ -131,8 +131,9 @@ const GlobalStyles = () => (
         gap: 12px !important;
         text-align: center !important;
       }
+      .glass-panel { padding: 20px !important; }
       .btn-text { display: none; }
-      .nav-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .nav-container { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; white-space: nowrap; padding-bottom: 8px; }
       .brand-title { font-size: 2.8rem !important; letter-spacing: -1px !important; }
       .auth-title { font-size: 1.6rem !important; }
       .otp-input { width: 42px !important; height: 50px !important; font-size: 1.3rem !important; }
