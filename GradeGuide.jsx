@@ -245,7 +245,15 @@ const Footer = () => (
 );
 
 export default function GradeGuideApp() {
-  const [role, setRole] = useState(null);
+  const [role, setRole] = useState(() => {
+    return localStorage.getItem('gg_main_role') || null;
+  });
+  
+  useEffect(() => {
+    if (role) localStorage.setItem('gg_main_role', role);
+    else localStorage.removeItem('gg_main_role');
+  }, [role]);
+
   const [authScreen, setAuthScreen] = useState('landing'); // landing|student-entry|student-signup|student-otp|student-login
   const [showSettings, setShowSettings] = useState(false);
   const DEFAULT_OR_KEY = '';
