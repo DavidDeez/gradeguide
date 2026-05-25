@@ -1,19 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import { createClient } from "@supabase/supabase-js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAAvZM8g-nATJKG7rjoJXczN-H25rXGP0c",
-  authDomain: "gradeguide-c2a97.firebaseapp.com",
-  projectId: "gradeguide-c2a97",
-  storageBucket: "gradeguide-c2a97.firebasestorage.app",
-  messagingSenderId: "642238983204",
-  appId: "1:642238983204:web:55740155240a26d4e27cb1",
-  measurementId: "G-R3C6N7PB9J"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const supabaseUrl = 'https://rnayaaqjbkbuiderdngu.supabase.co';
+const supabaseKey = 'sb_publishable_YBhB3VAvGfm6ZnHOGA1jGw_G9a8GYb_';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 import {
   Settings, Camera, Upload, Book, FileText, CheckCircle, 
@@ -275,10 +265,9 @@ export default function GradeGuideApp() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const docRef = doc(db, "gradeguide", "main_data");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const d = docSnap.data();
+        const { data: dbData, error } = await supabase.from('app_state').select('data').eq('id', 1).single();
+        if (dbData && !error) {
+          const d = dbData.data;
           setAssessments(d.assessments || []);
           setSubmissions(d.submissions || []);
           setRetakeRequests(d.retakeRequests || []);
@@ -307,8 +296,9 @@ export default function GradeGuideApp() {
   useEffect(() => {
     if (isLoaded) {
       setDbSyncing(true);
-      setDoc(doc(db, "gradeguide", "main_data"), { assessments, submissions, settings: aiSettings, retakeRequests, students, studentMessages })
-        .catch(e => console.error("Error saving to Firestore:", e))
+      const payload = { assessments, submissions, settings: aiSettings, retakeRequests, students, studentMessages };
+      supabase.from('app_state').upsert({ id: 1, data: payload })
+        .then(({error}) => { if (error) console.error("Error saving to Supabase:", error); })
         .finally(() => setTimeout(() => setDbSyncing(false), 800));
     }
   }, [isLoaded, assessments, submissions, aiSettings, retakeRequests, students, studentMessages]);
@@ -1449,9 +1439,9 @@ export default function GradeGuideApp() {
                 </p>
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                   <button className="btn btn-outline" style={{ flex: 1, borderColor: 'var(--primary)', color: 'var(--primary)' }} onClick={async () => {
-                    const docSnap = await getDoc(doc(db, "gradeguide", "main_data"));
-                    if (!docSnap.exists()) return alert('No database found to backup!');
-                    const data = JSON.stringify(docSnap.data());
+                    const { data: dbData, error } = await supabase.from('app_state').select('data').eq('id', 1).single();
+                    if (error || !dbData) return alert('No database found to backup!');
+                    const data = JSON.stringify(dbData.data);
                     const blob = new Blob([data], { type: 'application/json' });
                     const a = document.createElement('a');
                     a.href = window.URL.createObjectURL(blob);
@@ -1467,7 +1457,7 @@ export default function GradeGuideApp() {
                       try {
                         const data = JSON.parse(ev.target.result);
                         if (data.assessments) {
-                          await setDoc(doc(db, "gradeguide", "main_data"), data);
+                          await supabase.from('app_state').upsert({ id: 1, data: data });
                           alert('Database restored successfully! The page will now reload.');
                           window.location.reload();
                         } else throw new Error();
