@@ -131,6 +131,11 @@ const GlobalStyles = () => (
         gap: 12px !important;
         text-align: center !important;
       }
+      .header-brand-row {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 10px !important;
+      }
       .glass-panel { padding: 20px !important; }
       .btn-text { display: none; }
       .nav-container { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; white-space: nowrap; padding-bottom: 8px; }
@@ -2026,7 +2031,7 @@ export default function GradeGuideApp() {
       <GlobalStyles />
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <header className="glass-panel header-content" style={{ margin: '20px', padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="header-brand-row" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <Brain color="var(--primary)" size={32} />
             <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 'bold' }}>GradeGuide</h2>
             <div style={{ width: '1px', height: '24px', background: 'var(--panel-border)', margin: '0 8px' }}></div>
