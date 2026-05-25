@@ -143,6 +143,44 @@ const GlobalStyles = () => (
       .auth-title { font-size: 1.6rem !important; }
       .otp-input { width: 42px !important; height: 50px !important; font-size: 1.3rem !important; }
       .otp-container { gap: 6px !important; }
+      .main-layout { flex-direction: column; margin: 0 16px; gap: 20px; }
+      .side-menu { display: none; }
+    }
+
+    .main-layout {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+      margin: 0 40px;
+    }
+    .side-menu {
+      width: 260px;
+      position: sticky;
+      top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .side-nav-tab {
+      padding: 14px 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.95rem;
+    }
+    .side-nav-tab:hover {
+      background: rgba(255,255,255,0.05);
+      color: var(--text-main);
+    }
+    .side-nav-tab.active {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--primary);
+      box-shadow: inset 3px 0 0 var(--primary);
     }
 
     .modal-overlay {
@@ -874,20 +912,38 @@ export default function GradeGuideApp() {
     };
 
     return (
-      <div style={{ animation: 'fadeIn 0.5s ease' }}>
-        <div className="nav-container" style={{ display: 'flex', gap: '8px', marginBottom: '32px', borderBottom: '1px solid var(--panel-border)' }}>
-          <div className={`nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => setLecturerTab('build')}>Assessment Builder</div>
-          <div className={`nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => setLecturerTab('scanner')}>Offline Scanner</div>
-          <div className={`nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => setLecturerTab('results')}>
-            Grading Desk
+      <div className="main-layout" style={{ animation: 'fadeIn 0.5s ease' }}>
+        {/* Left Side Menu (Faculty) */}
+        <div className="side-menu glass-panel" style={{ padding: '20px 12px' }}>
+          <h3 style={{ margin: '0 0 16px 12px', fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Faculty Portal</h3>
+          <div className={`side-nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => setLecturerTab('build')}>🛠️ Assessment Builder</div>
+          <div className={`side-nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => setLecturerTab('scanner')}>📸 Offline Scanner</div>
+          <div className={`side-nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => setLecturerTab('results')}>
+            📝 Grading Desk
             {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
-              <span className="badge badge-success" style={{ marginLeft: '8px', background: 'var(--danger)', color: 'white' }}>
+              <span className="badge badge-success" style={{ marginLeft: 'auto', background: 'var(--danger)', color: 'white' }}>
                 {retakeRequests.filter(r => r.status === 'pending').length} New
               </span>
             )}
           </div>
-          <div className={`nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}>System Audit & Engine</div>
+          <div className={`side-nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}>⚙️ System Audit & Engine</div>
         </div>
+
+        {/* Main Content Area */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="nav-container" style={{ display: 'flex', gap: '8px', marginBottom: '32px', borderBottom: '1px solid var(--panel-border)' }}>
+            <div className={`nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => setLecturerTab('build')}>Assessment Builder</div>
+            <div className={`nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => setLecturerTab('scanner')}>Offline Scanner</div>
+            <div className={`nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => setLecturerTab('results')}>
+              Grading Desk
+              {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
+                <span className="badge badge-success" style={{ marginLeft: '8px', background: 'var(--danger)', color: 'white' }}>
+                  {retakeRequests.filter(r => r.status === 'pending').length} New
+                </span>
+              )}
+            </div>
+            <div className={`nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}>System Audit & Engine</div>
+          </div>
 
         {lecturerTab === 'build' && (
           <div className="dashboard-grid">
@@ -1497,6 +1553,7 @@ export default function GradeGuideApp() {
             </div>
           </div>
         )}
+        </div>
       </div>
     );
   };
@@ -1571,19 +1628,35 @@ export default function GradeGuideApp() {
     );
 
     return (
-      <div style={{ animation: 'fadeIn 0.5s ease' }}>
-        {/* Sub-Navigation for Student Portal */}
-        <div className="nav-container" style={{ display: 'flex', gap: '8px', marginBottom: '32px', borderBottom: '1px solid var(--panel-border)' }}>
-          <div className={`nav-tab ${studentTabState === 'exams' ? 'active' : ''}`} onClick={() => setStudentTabState('exams')}>
-            Available Assessments
+      <div className="main-layout" style={{ animation: 'fadeIn 0.5s ease' }}>
+        {/* Left Side Menu (Student) */}
+        <div className="side-menu glass-panel" style={{ padding: '20px 12px' }}>
+          <h3 style={{ margin: '0 0 16px 12px', fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Student Portal</h3>
+          <div className={`side-nav-tab ${studentTabState === 'exams' ? 'active' : ''}`} onClick={() => setStudentTabState('exams')}>
+            📚 Available Assessments
           </div>
-          <div className={`nav-tab ${studentTabState === 'results' ? 'active' : ''}`} onClick={() => setStudentTabState('results')}>
-            My Graded Results ({submissions.length})
+          <div className={`side-nav-tab ${studentTabState === 'results' ? 'active' : ''}`} onClick={() => setStudentTabState('results')}>
+            🎓 My Graded Results ({submissions.length})
           </div>
-          <div className={`nav-tab ${studentTabState === 'support' ? 'active' : ''}`} onClick={() => setStudentTabState('support')}>
-            Help & Support
+          <div className={`side-nav-tab ${studentTabState === 'support' ? 'active' : ''}`} onClick={() => setStudentTabState('support')}>
+            💬 Help & Support
           </div>
         </div>
+
+        {/* Main Content Area */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Sub-Navigation for Student Portal (Top) */}
+          <div className="nav-container" style={{ display: 'flex', gap: '8px', marginBottom: '32px', borderBottom: '1px solid var(--panel-border)' }}>
+            <div className={`nav-tab ${studentTabState === 'exams' ? 'active' : ''}`} onClick={() => setStudentTabState('exams')}>
+              Available Assessments
+            </div>
+            <div className={`nav-tab ${studentTabState === 'results' ? 'active' : ''}`} onClick={() => setStudentTabState('results')}>
+              My Graded Results ({submissions.length})
+            </div>
+            <div className={`nav-tab ${studentTabState === 'support' ? 'active' : ''}`} onClick={() => setStudentTabState('support')}>
+              Help & Support
+            </div>
+          </div>
 
         {/* Available Assessments View */}
         {studentTabState === 'exams' && (
@@ -1716,6 +1789,7 @@ export default function GradeGuideApp() {
             </div>
           </div>
         )}
+        </div>
       </div>
     );
   };
