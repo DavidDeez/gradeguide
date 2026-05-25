@@ -224,9 +224,9 @@ export default function GradeGuideApp() {
     hfModelId: 'mistralai/Mistral-7B-Instruct-v0.3',
     openrouterKey: DEFAULT_OR_KEY,
     openrouterModel: 'openrouter/free',
-    emailjsPublicKey: '',
-    emailjsServiceId: '',
-    emailjsOtpTemplateId: '',
+    emailjsPublicKey: 'OFoJSMtD5Dy663OcN',
+    emailjsServiceId: 'service_669uej4',
+    emailjsOtpTemplateId: 'template_sh27d68',
     emailjsResultsTemplateId: ''
   });
 
