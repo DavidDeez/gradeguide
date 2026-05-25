@@ -282,8 +282,16 @@ export default function GradeGuideApp() {
 
   // --- EmailJS Helpers ---
   const sendOtpEmail = async (toEmail, toName, otpCode) => {
-      // BYPASS EMAILJS FOR HACKATHON DEMO: We just resolve immediately!
+    if (!aiSettings.emailjsPublicKey || !aiSettings.emailjsServiceId || !aiSettings.emailjsOtpTemplateId) return false;
+    try {
+      await window.emailjs.send(
+        aiSettings.emailjsServiceId,
+        aiSettings.emailjsOtpTemplateId,
+        { to_email: toEmail, to_name: toName, otp_code: otpCode, app_name: 'GradeGuide AI' },
+        aiSettings.emailjsPublicKey
+      );
       return true;
+    } catch(e) { console.error('EmailJS OTP error:', e); return false; }
   };
 
   const sendResultsEmail = async (profile, assessmentTitle, results, totalScore, totalMax) => {
@@ -1688,12 +1696,13 @@ export default function GradeGuideApp() {
       if (!/^\d{4}$/.test(form.pin)) return setErr('Please create a 4-digit login PIN.');
       if (students.find(s => s.matricNo.toLowerCase() === form.matricNo.toLowerCase())) return setErr('This matric number is already registered. Please log in instead.');
       if (students.find(s => s.email.toLowerCase() === form.email.toLowerCase())) return setErr('This email is already registered. Please log in instead.');
-      // HACKATHON BYPASS: Skip OTP entirely and directly register the student
-      const profile = { name: form.name, matricNo: form.matricNo, email: form.email, pin: form.pin };
-      setStudents(prev => [...prev, profile]);
-      setStudentProfile(profile);
-      setRole('Student');
-      setAuthScreen('landing');
+      setLoading(true);
+      const otp = String(Math.floor(100000 + Math.random() * 900000));
+      setPendingOtp({ code: otp, email: form.email, name: form.name, matricNo: form.matricNo, pin: form.pin, expiry: Date.now() + 600000 });
+      setSignupForm(form);
+      await sendOtpEmail(form.email, form.name, otp); // best-effort — OTP shown on screen if email fails
+      setLoading(false);
+      setAuthScreen('student-otp');
     };
 
     return (
