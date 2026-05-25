@@ -282,16 +282,8 @@ export default function LearnSyncApp() {
 
   // --- EmailJS Helpers ---
   const sendOtpEmail = async (toEmail, toName, otpCode) => {
-    if (!aiSettings.emailjsPublicKey || !aiSettings.emailjsServiceId || !aiSettings.emailjsOtpTemplateId) return false;
-    try {
-      await window.emailjs.send(
-        aiSettings.emailjsServiceId,
-        aiSettings.emailjsOtpTemplateId,
-        { to_email: toEmail, to_name: toName, otp_code: otpCode, app_name: 'LearnSync AI' },
-        aiSettings.emailjsPublicKey
-      );
+      // BYPASS EMAILJS FOR HACKATHON DEMO: We just resolve immediately!
       return true;
-    } catch(e) { console.error('EmailJS OTP error:', e); return false; }
   };
 
   const sendResultsEmail = async (profile, assessmentTitle, results, totalScore, totalMax) => {
