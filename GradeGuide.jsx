@@ -350,10 +350,44 @@ export default function GradeGuideApp() {
       setDbSyncing(true);
       const payload = { assessments, submissions, settings: aiSettings, retakeRequests, students, studentMessages };
       supabase.from('app_state').upsert({ id: 1, data: payload })
-        .then(({error}) => { if (error) console.error("Error saving to Supabase:", error); })
+        .then(({error}) => { 
+          if (error) {
+            console.error("Error saving to Supabase:", error);
+            alert("CRITICAL DATABASE ERROR: Supabase rejected the save! Your Row Level Security (RLS) policies are blocking writes. Please run the SQL script to disable RLS restrictions.");
+          }
+        })
         .finally(() => setTimeout(() => setDbSyncing(false), 800));
     }
   }, [isLoaded, assessments, submissions, aiSettings, retakeRequests, students, studentMessages]);
+
+  // Supabase Real-time synchronization
+  useEffect(() => {
+    if (!isLoaded) return;
+    
+    const channel = supabase.channel('public:app_state')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state', filter: 'id=eq.1' }, (payload) => {
+        if (payload.new && payload.new.data) {
+          const d = payload.new.data;
+          // Use JSON.stringify comparisons to prevent infinite echo loops when we save our own data
+          setAssessments(prev => JSON.stringify(prev) !== JSON.stringify(d.assessments || []) ? (d.assessments || []) : prev);
+          setSubmissions(prev => JSON.stringify(prev) !== JSON.stringify(d.submissions || []) ? (d.submissions || []) : prev);
+          setRetakeRequests(prev => JSON.stringify(prev) !== JSON.stringify(d.retakeRequests || []) ? (d.retakeRequests || []) : prev);
+          setStudents(prev => JSON.stringify(prev) !== JSON.stringify(d.students || []) ? (d.students || []) : prev);
+          setStudentMessages(prev => JSON.stringify(prev) !== JSON.stringify(d.studentMessages || []) ? (d.studentMessages || []) : prev);
+          
+          setAiSettings(prev => {
+             const loadedSettings = d.settings || {};
+             const merged = {...prev, ...loadedSettings};
+             return JSON.stringify(prev) !== JSON.stringify(merged) ? merged : prev;
+          });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isLoaded]);
 
   // --- EmailJS Helpers ---
   const sendOtpEmail = async (toEmail, toName, otpCode) => {
