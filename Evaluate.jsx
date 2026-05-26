@@ -896,6 +896,7 @@ export default function EvaluateApp() {
       if (loginModalRole === 'Admin') {
         if (usernameInput.trim().toLowerCase() === 'admin@evaluate.com' && passwordInput === 'admin') {
           setRole('Admin');
+          setLecturerTab('audit');
           setLoginModalRole(null);
         } else {
           setLoginError('Invalid Admin credentials');
@@ -1007,35 +1008,44 @@ export default function EvaluateApp() {
         
         {/* Left Side Menu (Faculty) */}
         <div className={`side-menu glass-panel ${isMobileMenuOpen ? 'open' : ''}`} style={{ padding: '20px 12px' }}>
-          <h3 style={{ margin: '0 0 16px 12px', fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Faculty Portal</h3>
-          <div className={`side-nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => { setLecturerTab('build'); setIsMobileMenuOpen(false); }}>🛠️ Assessment Builder</div>
-          <div className={`side-nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => { setLecturerTab('scanner'); setIsMobileMenuOpen(false); }}>📸 Offline Scanner</div>
-          <div className={`side-nav-tab ${lecturerTab === 'students' ? 'active' : ''}`} onClick={() => { setLecturerTab('students'); setIsMobileMenuOpen(false); }}>👥 Student Management</div>
-          <div className={`side-nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => { setLecturerTab('results'); setIsMobileMenuOpen(false); }}>
-            📝 Grading Desk
-            {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
-              <span className="badge badge-success" style={{ marginLeft: 'auto', background: 'var(--danger)', color: 'white' }}>
-                {retakeRequests.filter(r => r.status === 'pending').length}
-              </span>
-            )}
-          </div>
+          <h3 style={{ margin: '0 0 16px 12px', fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>{role === 'Admin' ? 'Admin Portal' : 'Faculty Portal'}</h3>
+          
+          {role !== 'Admin' && (
+            <>
+              <div className={`side-nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => { setLecturerTab('build'); setIsMobileMenuOpen(false); }}>🛠️ Assessment Builder</div>
+              <div className={`side-nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => { setLecturerTab('scanner'); setIsMobileMenuOpen(false); }}>📸 Offline Scanner</div>
+              <div className={`side-nav-tab ${lecturerTab === 'students' ? 'active' : ''}`} onClick={() => { setLecturerTab('students'); setIsMobileMenuOpen(false); }}>👥 Student Management</div>
+              <div className={`side-nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => { setLecturerTab('results'); setIsMobileMenuOpen(false); }}>
+                📝 Grading Desk
+                {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
+                  <span className="badge badge-success" style={{ marginLeft: 'auto', background: 'var(--danger)', color: 'white' }}>
+                    {retakeRequests.filter(r => r.status === 'pending').length}
+                  </span>
+                )}
+              </div>
+            </>
+          )}
           <div className={`side-nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}>⚙️ System Audit & Engine</div>
         </div>
 
         {/* Main Content Area */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="nav-container" style={{ display: 'flex', gap: '8px', marginBottom: '32px', borderBottom: '1px solid var(--panel-border)' }}>
-            <div className={`nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => setLecturerTab('build')}>Assessment Builder</div>
-            <div className={`nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => setLecturerTab('scanner')}>Offline Scanner</div>
-            <div className={`nav-tab ${lecturerTab === 'students' ? 'active' : ''}`} onClick={() => setLecturerTab('students')}>Student Management</div>
-            <div className={`nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => setLecturerTab('results')}>
-              Grading Desk
-              {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
-                <span className="badge badge-success" style={{ marginLeft: '8px', background: 'var(--danger)', color: 'white' }}>
-                  {retakeRequests.filter(r => r.status === 'pending').length} New
-                </span>
-              )}
-            </div>
+            {role !== 'Admin' && (
+              <>
+                <div className={`nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => setLecturerTab('build')}>Assessment Builder</div>
+                <div className={`nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => setLecturerTab('scanner')}>Offline Scanner</div>
+                <div className={`nav-tab ${lecturerTab === 'students' ? 'active' : ''}`} onClick={() => setLecturerTab('students')}>Student Management</div>
+                <div className={`nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => setLecturerTab('results')}>
+                  Grading Desk
+                  {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
+                    <span className="badge badge-success" style={{ marginLeft: '8px', background: 'var(--danger)', color: 'white' }}>
+                      {retakeRequests.filter(r => r.status === 'pending').length} New
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
             <div className={`nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}>System Audit & Engine</div>
           </div>
 
@@ -1459,12 +1469,10 @@ const name = document.getElementById('newStudName').value.trim();
                 <div>
                   <h3 style={{ marginTop: 0, color: 'var(--primary)' }}>Bulk Import (CSV)</h3>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Format: Name, MatricNo, Email (one per line)</p>
-                  <textarea id="bulkStudCSV" className="input-field scrollbar" rows={6} placeholder="John Doe, 2001, john@edu.com
-Jane Smith, 2002, jane@edu.com"></textarea>
+                  <textarea id="bulkStudCSV" className="input-field scrollbar" rows={6} placeholder="John Doe, 2001, john@edu.com\nJane Smith, 2002, jane@edu.com"></textarea>
                   <button className="btn btn-outline" style={{ marginTop: '16px' }} onClick={() => {
 const text = document.getElementById('bulkStudCSV').value;
-                    const lines = text.split('
-').filter(l => l.trim());
+                    const lines = text.split('\\n').filter(l => l.trim());
                     const added = [];
                     lines.forEach(line => {
                       const [name, matricNo, email] = line.split(',').map(s => s.trim());
@@ -2258,41 +2266,6 @@ const text = document.getElementById('bulkStudCSV').value;
       <Footer />
     </div>
   );
-            } else {
-              setLoginModalRole(r.id);
-              setLoginError('');
-              setUsernameInput('');
-              setPasswordInput('');
-            }
-          }}>
-            <r.icon size={48} color="var(--primary)" />
-            <h3 style={{ margin: 0 }}>{r.label}</h3>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>{r.desc}</p>
-            <div className="btn btn-outline" style={{ marginTop: 'auto', width: '100%' }}>Enter <ChevronRight size={16}/></div>
-          </div>
-        ))}
-      </div>
-      <Footer />
-    </div>
-  );
-            } else {
-              setLoginModalRole(r.id);
-              setLoginError('');
-              setUsernameInput('');
-              setPasswordInput('');
-            }
-          }}>
-            <r.icon size={48} color="var(--primary)" />
-            <h3 style={{ margin: 0 }}>{r.label}</h3>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>{r.desc}</p>
-            <div className="btn btn-outline" style={{ marginTop: 'auto', width: '100%' }}>Enter <ChevronRight size={16}/></div>
-          </div>
-        ))}
-      </div>
-      <Footer />
-    </div>
-  );
-
   // ─── Route Auth Screens ───────────────────────────────────────────────────
   if (!role) {
     if (authScreen === 'student-login') return <><GlobalStyles /><StudentLoginScreen /></>;
@@ -2330,7 +2303,7 @@ const text = document.getElementById('bulkStudCSV').value;
           </div>
         </header>
         <main className="dashboard-main" style={{ flex: 1, padding: '0 20px 60px 20px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-          {role === 'Lecturer' && LecturerDashboard()}
+          {(role === 'Lecturer' || role === 'Admin') && LecturerDashboard()}
           {role === 'Student' && StudentDashboard()}
         </main>
         {selectedSub && DetailedCorrectionsModal()}
