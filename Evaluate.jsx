@@ -266,7 +266,7 @@ const Footer = () => (
   </footer>
 );
 
-export default function GradeGuideApp() {
+export default function EvaluateApp() {
   const [role, setRole] = useState(() => {
     return localStorage.getItem('gg_main_role') || null;
   });
@@ -406,14 +406,36 @@ export default function GradeGuideApp() {
     }
   }, [isLoaded, assessments, submissions, aiSettings, retakeRequests, students, studentMessages]);
 
+
+  // --- Student Draft Auto-Save ---
+  useEffect(() => {
+    if (activeExam && studentProfile) {
+      const draftKey = `draft_${studentProfile.matricNo}_${activeExam.id}`;
+      const saved = localStorage.getItem(draftKey);
+      if (saved) {
+        try { setExamAnswers(JSON.parse(saved)); } catch (e) {}
+      } else {
+        setExamAnswers({});
+      }
+    }
+  }, [activeExam, studentProfile]);
+
+  useEffect(() => {
+    if (activeExam && studentProfile && Object.keys(examAnswers).length > 0) {
+      const draftKey = `draft_${studentProfile.matricNo}_${activeExam.id}`;
+      localStorage.setItem(draftKey, JSON.stringify(examAnswers));
+    }
+  }, [examAnswers, activeExam, studentProfile]);
+
   // --- EmailJS Helpers ---
+
   const sendOtpEmail = async (toEmail, toName, otpCode) => {
     if (!aiSettings.emailjsPublicKey || !aiSettings.emailjsServiceId || !aiSettings.emailjsOtpTemplateId) return false;
     try {
       await window.emailjs.send(
         aiSettings.emailjsServiceId,
         aiSettings.emailjsOtpTemplateId,
-        { to_email: toEmail, to_name: toName, otp_code: otpCode, app_name: 'GradeGuide AI' },
+        { to_email: toEmail, to_name: toName, otp_code: otpCode, app_name: 'Evaluate' },
         aiSettings.emailjsPublicKey
       );
       return true;
@@ -437,7 +459,7 @@ export default function GradeGuideApp() {
           total_max: totalMax,
           percentage: percentage + '%',
           breakdown: breakdown,
-          app_name: 'GradeGuide AI'
+          app_name: 'Evaluate'
         },
         aiSettings.emailjsPublicKey
       );
@@ -481,7 +503,7 @@ export default function GradeGuideApp() {
           "Authorization": `Bearer ${aiSettings.openrouterKey}`,
           "Content-Type": "application/json",
           "HTTP-Referer": window.location.origin,
-          "X-Title": "GradeGuide AI"
+          "X-Title": "Evaluate"
         },
         body: JSON.stringify({
           model: aiSettings.openrouterModel || "openrouter/free",
@@ -779,10 +801,14 @@ export default function GradeGuideApp() {
             </div>
           </div>
 
-          {/* Question-by-Question Corrections breakdown */}
-          <h3 style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>Detailed Evaluation Breakdown</h3>
-          <div style={{ display: 'grid', gap: '32px' }}>
-            {selectedSub.results.map((res, index) => {
+
+          {role !== 'Student' && (
+            <>
+              {/* Question-by-Question Corrections breakdown */}
+              <h3 style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>Detailed Evaluation Breakdown</h3>
+              <div style={{ display: 'grid', gap: '32px' }}>
+                {selectedSub.results.map((res, index) => {
+
               const qObj = ass?.questions.find(q => q.id === res.questionId) || { text: 'Academic Question', maxMarks: 10 };
               const studentAns = selectedSub.answers[res.questionId] || 'No answer submitted.';
               
@@ -844,12 +870,16 @@ export default function GradeGuideApp() {
                       </div>
                     )}
                   </div>
+
                 </div>
               );
             })}
           </div>
+          </>
+          )}
 
           <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--panel-border)', paddingTop: '24px' }}>
+
             <button className="btn btn-primary" onClick={() => setSelectedSub(null)}>Done Reviewing</button>
           </div>
         </div>
@@ -857,21 +887,30 @@ export default function GradeGuideApp() {
     );
   };
 
+  
+  
   const RoleLoginModal = () => {
-    if (!loginModalRole) return null;
-    
     const handleLogin = (e) => {
       e.preventDefault();
-      if (usernameInput.trim().toLowerCase() === 'lecturer@gradeguide.com' && passwordInput === 'admin123') {
-        setRole(loginModalRole);
-        setLoginModalRole(null);
-        setUsernameInput('');
-        setPasswordInput('');
-        setLoginError('');
-      } else {
-        setLoginError('Invalid email or password! Access denied.');
+      setLoginError('');
+      if (loginModalRole === 'Admin') {
+        if (usernameInput.trim().toLowerCase() === 'admin@evaluate.com' && passwordInput === 'admin123') {
+          setRole('Admin');
+          setLoginModalRole(null);
+        } else {
+          setLoginError('Invalid Admin credentials');
+        }
+      } else if (loginModalRole === 'Lecturer') {
+        if (usernameInput.trim().toLowerCase() === 'lecturer@evaluate.com' && passwordInput === 'lecturer123') {
+          setRole('Lecturer');
+          setLoginModalRole(null);
+        } else {
+          setLoginError('Invalid Lecturer credentials');
+        }
       }
     };
+
+
 
     return (
       <div className="modal-overlay" style={{ zIndex: 1100 }}>
@@ -895,7 +934,7 @@ export default function GradeGuideApp() {
               <input 
                 type="email" 
                 className="input-field" 
-                placeholder="lecturer@gradeguide.com" 
+                placeholder="lecturer@evaluate.com" 
                 required 
                 value={usernameInput}
                 onChange={e => setUsernameInput(e.target.value)}
@@ -971,6 +1010,7 @@ export default function GradeGuideApp() {
           <h3 style={{ margin: '0 0 16px 12px', fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Faculty Portal</h3>
           <div className={`side-nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => { setLecturerTab('build'); setIsMobileMenuOpen(false); }}>🛠️ Assessment Builder</div>
           <div className={`side-nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => { setLecturerTab('scanner'); setIsMobileMenuOpen(false); }}>📸 Offline Scanner</div>
+          <div className={`side-nav-tab ${lecturerTab === 'students' ? 'active' : ''}`} onClick={() => { setLecturerTab('students'); setIsMobileMenuOpen(false); }}>👥 Student Management</div>
           <div className={`side-nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => { setLecturerTab('results'); setIsMobileMenuOpen(false); }}>
             📝 Grading Desk
             {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
@@ -987,6 +1027,7 @@ export default function GradeGuideApp() {
           <div className="nav-container" style={{ display: 'flex', gap: '8px', marginBottom: '32px', borderBottom: '1px solid var(--panel-border)' }}>
             <div className={`nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => setLecturerTab('build')}>Assessment Builder</div>
             <div className={`nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => setLecturerTab('scanner')}>Offline Scanner</div>
+            <div className={`nav-tab ${lecturerTab === 'students' ? 'active' : ''}`} onClick={() => setLecturerTab('students')}>Student Management</div>
             <div className={`nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => setLecturerTab('results')}>
               Grading Desk
               {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
@@ -1338,7 +1379,7 @@ export default function GradeGuideApp() {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `GradeGuide_Export_${Date.now()}.csv`;
+                a.download = `Evaluate_Export_${Date.now()}.csv`;
                 a.click();
               }}><Download size={18}/> Export Grades to CSV</button>
             </div>
@@ -1372,6 +1413,101 @@ export default function GradeGuideApp() {
               );
             })}
             {submissions.length === 0 && <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>No student submissions yet.</div>}
+          </div>
+        )}
+
+
+        {lecturerTab === 'students' && (
+          <div className="dashboard-grid">
+            <div className="glass-panel" style={{ padding: '40px' }}>
+              <h2 style={{ marginTop: 0, marginBottom: '24px' }}>Student Management</h2>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                <div>
+                  <h3 style={{ marginTop: 0, color: 'var(--primary)' }}>Add Individual Student</h3>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem' }}>Full Name</label>
+                    <input className="input-field" id="newStudName" placeholder="e.g. John Doe" />
+                  </div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem' }}>Matric Number</label>
+                    <input className="input-field" id="newStudMatric" placeholder="e.g. 200101234" />
+                  </div>
+                  <div style={{ marginBottom: '24px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem' }}>Email Address</label>
+                    <input className="input-field" id="newStudEmail" type="email" placeholder="student@university.edu" />
+                  </div>
+                  <button className="btn btn-primary" onClick={() => {
+                    const name = document.getElementById('newStudName').value.trim();
+                    const matricNo = document.getElementById('newStudMatric').value.trim();
+                    const email = document.getElementById('newStudEmail').value.trim();
+                    if(!name || !matricNo || !email) return alert("All fields are required.");
+                    if(students.find(s => s.matricNo.toLowerCase() === matricNo.toLowerCase())) return alert("Matric Number exists!");
+                    if(students.find(s => s.email.toLowerCase() === email.toLowerCase())) return alert("Email exists!");
+                    setStudents([{ name, matricNo, email }, ...students]);
+                    document.getElementById('newStudName').value = '';
+                    document.getElementById('newStudMatric').value = '';
+                    document.getElementById('newStudEmail').value = '';
+                  }}>+ Add Student</button>
+                </div>
+
+                <div>
+                  <h3 style={{ marginTop: 0, color: 'var(--primary)' }}>Bulk Import (CSV)</h3>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Format: Name, MatricNo, Email (one per line)</p>
+                  <textarea id="bulkStudCSV" className="input-field scrollbar" rows={6} placeholder="John Doe, 2001, john@edu.com
+Jane Smith, 2002, jane@edu.com"></textarea>
+                  <button className="btn btn-outline" style={{ marginTop: '16px' }} onClick={() => {
+                    const text = document.getElementById('bulkStudCSV').value;
+                    const lines = text.split('
+').filter(l => l.trim());
+                    const added = [];
+                    lines.forEach(line => {
+                      const [name, matricNo, email] = line.split(',').map(s => s.trim());
+                      if(name && matricNo && email && !students.find(s => s.matricNo.toLowerCase() === matricNo.toLowerCase()) && !added.find(a => a.matricNo.toLowerCase() === matricNo.toLowerCase())) {
+                        added.push({ name, matricNo, email });
+                      }
+                    });
+                    if(added.length > 0) {
+                      setStudents([...added, ...students]);
+                      alert(`Successfully imported ${added.length} students!`);
+                      document.getElementById('bulkStudCSV').value = '';
+                    } else {
+                      alert("No valid new students found to import. Check format and duplicates.");
+                    }
+                  }}>Import CSV</button>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '40px' }}>
+                <h3 style={{ color: 'var(--primary)', marginBottom: '16px' }}>Registered Students ({students.length})</h3>
+                <div style={{ maxHeight: '400px', overflowY: 'auto' }} className="scrollbar">
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                    <thead style={{ background: 'rgba(255,255,255,0.05)', position: 'sticky', top: 0 }}>
+                      <tr>
+                        <th style={{ padding: '12px' }}>Name</th>
+                        <th style={{ padding: '12px' }}>Matric No</th>
+                        <th style={{ padding: '12px' }}>Email</th>
+                        <th style={{ padding: '12px', textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {students.map(s => (
+                        <tr key={s.matricNo} style={{ borderBottom: '1px solid var(--panel-border)' }}>
+                          <td style={{ padding: '12px' }}>{s.name}</td>
+                          <td style={{ padding: '12px', fontFamily: 'monospace', color: 'var(--primary)' }}>{s.matricNo}</td>
+                          <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{s.email}</td>
+                          <td style={{ padding: '12px', textAlign: 'right' }}>
+                            <button className="btn btn-outline" style={{ padding: '6px 10px', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} onClick={() => {
+                              if(window.confirm(`Remove ${s.name}?`)) setStudents(students.filter(stud => stud.matricNo !== s.matricNo));
+                            }}>Remove</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1568,7 +1704,7 @@ export default function GradeGuideApp() {
                     const blob = new Blob([data], { type: 'application/json' });
                     const a = document.createElement('a');
                     a.href = window.URL.createObjectURL(blob);
-                    a.download = `GradeGuide_DB_Backup_${Date.now()}.json`;
+                    a.download = `Evaluate_DB_Backup_${Date.now()}.json`;
                     a.click();
                   }}><Download size={16} /> Export DB Backup</button>
                   
@@ -1671,6 +1807,9 @@ export default function GradeGuideApp() {
             // Auto-send results email
             if (studentProfile?.email) {
               sendResultsEmail(studentProfile, activeExam.title, results, totalScore, totalMax);
+            }
+            if (studentProfile) {
+              localStorage.removeItem(`draft_${studentProfile.matricNo}_${activeExam.id}`);
             }
           } catch(e) { alert(e.message); }
           setExamLoading(false);
@@ -1837,7 +1976,7 @@ export default function GradeGuideApp() {
             <div style={{ borderTop: '1px solid var(--panel-border)', paddingTop: '24px' }}>
               <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: 'var(--primary)' }}>System Support</h3>
               <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Experiencing technical difficulties? Please reach out to the system administrator.</p>
-              <a href="mailto:admin@gradeguide.com" className="btn btn-outline" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '14px' }}>
+              <a href="mailto:admin@evaluate.com" className="btn btn-outline" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '14px' }}>
                 Contact Technical Admin
               </a>
             </div>
@@ -1879,7 +2018,7 @@ export default function GradeGuideApp() {
               <Brain size={40} color="var(--primary)" />
             </div>
             <h1 className="auth-title">Create Account</h1>
-            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Join GradeGuide — Register as a Student</p>
+            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Join Evaluate — Register as a Student</p>
           </div>
           <div className="glass-panel" style={{ padding: '32px' }}>
             <form onSubmit={handleSignup}>
@@ -2076,57 +2215,61 @@ export default function GradeGuideApp() {
     );
   };
 
-  // ─── Student Entry Choice Screen ─────────────────────────────────────────
-  const StudentEntryScreen = () => (
-    <div className="auth-screen">
-      <div className="auth-card">
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ display: 'inline-flex', padding: '16px', background: 'var(--panel-bg)', borderRadius: '20px', border: '1px solid var(--panel-border)', marginBottom: '16px' }}>
-            <Smartphone size={40} color="var(--primary)" />
-          </div>
-          <h1 className="auth-title">Student Portal</h1>
-          <p style={{ color: 'var(--text-muted)', margin: 0 }}>Sign up or log in to access your exams</p>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div className="glass-panel" style={{ padding: '28px', textAlign: 'center', cursor: 'pointer', border: '1px solid var(--panel-border)', transition: 'all 0.3s' }} onClick={() => setAuthScreen('student-signup')}
-            onMouseOver={e => e.currentTarget.style.borderColor = 'var(--primary)'} onMouseOut={e => e.currentTarget.style.borderColor = 'var(--panel-border)'}>
-            <Plus size={32} color="var(--primary)" style={{ marginBottom: '10px' }} />
-            <h3 style={{ margin: '0 0 6px 0' }}>New Student — Sign Up</h3>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Register with your name, matric number & email</p>
-          </div>
-          <div className="glass-panel" style={{ padding: '28px', textAlign: 'center', cursor: 'pointer', border: '1px solid var(--panel-border)', transition: 'all 0.3s' }} onClick={() => setAuthScreen('student-login')}
-            onMouseOver={e => e.currentTarget.style.borderColor = 'var(--primary)'} onMouseOut={e => e.currentTarget.style.borderColor = 'var(--panel-border)'}>
-            <CheckCircle size={32} color="var(--success)" style={{ marginBottom: '10px' }} />
-            <h3 style={{ margin: '0 0 6px 0' }}>Returning Student — Log In</h3>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Log in with your email & matric number</p>
-          </div>
-          <button className="btn btn-outline" style={{ width: '100%', fontSize: '0.85rem' }} onClick={() => setAuthScreen('landing')}>
-            ← Back to Portal Selection
-          </button>
-        </div>
-        <Footer />
-      </div>
-    </div>
-  );
-
   // ─── Landing Screen ───────────────────────────────────────────────────────
+  
+  
   const LoginScreen = () => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
       <div style={{ textAlign: 'center', marginBottom: '60px', animation: 'fadeIn 1s ease' }}>
         <div style={{ display: 'inline-flex', padding: '20px', background: 'var(--panel-bg)', borderRadius: '30px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
           <Brain size={60} color="var(--primary)" />
         </div>
-        <h1 className="brand-title">GradeGuide</h1>
+        <h1 className="brand-title">Evaluate</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: '500' }}>Academic Grading Infrastructure for the AI Age</p>
       </div>
       <div className="role-grid">
         {[
-          { id: 'Student', icon: Smartphone, label: 'Student Portal', desc: 'Sign up or log in to take exams & get instant AI feedback' },
-          { id: 'Lecturer', icon: ShieldCheck, label: 'Faculty Dashboard', desc: 'Create assessments, review grading & audit AI settings' }
+          { id: 'Student', icon: Smartphone, label: 'Student Portal', desc: 'Log in to take exams & view results' },
+          { id: 'Lecturer', icon: ShieldCheck, label: 'Lecturer Dashboard', desc: 'Manage assessments, grading, and students' },
+          { id: 'Admin', icon: Settings, label: 'Admin Portal', desc: 'System configuration and API management' }
         ].map(r => (
           <div key={r.id} className="role-card" onClick={() => {
             if (r.id === 'Student') {
-              setAuthScreen('student-entry');
+              setAuthScreen('student-login');
+            } else {
+              setLoginModalRole(r.id);
+              setLoginError('');
+              setUsernameInput('');
+              setPasswordInput('');
+            }
+          }}>
+            <r.icon size={48} color="var(--primary)" />
+            <h3 style={{ margin: 0 }}>{r.label}</h3>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>{r.desc}</p>
+            <div className="btn btn-outline" style={{ marginTop: 'auto', width: '100%' }}>Enter <ChevronRight size={16}/></div>
+          </div>
+        ))}
+      </div>
+      <Footer />
+    </div>
+  );
+            } else {
+              setLoginModalRole(r.id);
+              setLoginError('');
+              setUsernameInput('');
+              setPasswordInput('');
+            }
+          }}>
+            <r.icon size={48} color="var(--primary)" />
+            <h3 style={{ margin: 0 }}>{r.label}</h3>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>{r.desc}</p>
+            <div className="btn btn-outline" style={{ marginTop: 'auto', width: '100%' }}>Enter <ChevronRight size={16}/></div>
+          </div>
+        ))}
+      </div>
+      <Footer />
+    </div>
+  );
             } else {
               setLoginModalRole(r.id);
               setLoginError('');
@@ -2147,9 +2290,6 @@ export default function GradeGuideApp() {
 
   // ─── Route Auth Screens ───────────────────────────────────────────────────
   if (!role) {
-    if (authScreen === 'student-entry') return <><GlobalStyles /><StudentEntryScreen /></>;
-    if (authScreen === 'student-signup') return <><GlobalStyles /><StudentSignupScreen /></>;
-    if (authScreen === 'student-otp') return <><GlobalStyles /><OtpVerificationScreen /></>;
     if (authScreen === 'student-login') return <><GlobalStyles /><StudentLoginScreen /></>;
     return <><GlobalStyles /><LoginScreen />{loginModalRole && RoleLoginModal()}</>;
   }
@@ -2162,7 +2302,7 @@ export default function GradeGuideApp() {
           <div className="header-brand-row" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <Menu className="mobile-menu-btn" size={28} style={{ cursor: 'pointer', color: 'var(--primary)', marginRight: '8px' }} onClick={() => setIsMobileMenuOpen(true)} />
             <Brain color="var(--primary)" size={32} />
-            <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 'bold' }}>GradeGuide</h2>
+            <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 'bold' }}>Evaluate</h2>
             <div style={{ width: '1px', height: '24px', background: 'var(--panel-border)', margin: '0 8px' }}></div>
             <span className="badge badge-primary">{role === 'Lecturer' ? 'Faculty' : role}</span>
             {role === 'Student' && studentProfile && (

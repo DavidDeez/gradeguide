@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GradeGuide AI - Intelligent Academic Assessment Platform</title>
+    <title>Evaluate - Intelligent Academic Assessment Platform</title>
     
     <!-- Babel for on-the-fly JSX transpilation -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -33,7 +33,7 @@
     <div id="root">
         <div id="loading">
             <div class="spinner"></div>
-            <span>Initializing GradeGuide...</span>
+            <span>Initializing Evaluate...</span>
         </div>
     </div>
 
@@ -44,33 +44,28 @@
         async function startApp() {
             try {
                 // Fetch the JSX source code with a timestamp to prevent caching
-                const response = await fetch(`./GradeGuide.jsx?v=${Date.now()}`);
-                if (!response.ok) throw new Error(`Failed to load GradeGuide.jsx: ${response.statusText}`);
+                const response = await fetch(`./Evaluate.jsx?v=${Date.now()}`);
+                if (!response.ok) throw new Error(`Failed to load Evaluate.jsx: ${response.statusText}`);
                 const code = await response.text();
 
                 // Transpile JSX to JS
-                // We wrap the code to handle the 'export default' and ensure GradeGuideApp is available
                 const transpiledCode = Babel.transform(code, {
                     presets: ['react'],
-                    filename: 'GradeGuide.jsx'
+                    filename: 'Evaluate.jsx'
                 }).code;
 
-                // Create a module blob to execute the transpiled code as an ES module
                 const blob = new Blob([transpiledCode], { type: 'application/javascript' });
                 const url = URL.createObjectURL(blob);
                 
-                // Import the newly created module
                 const module = await import(url);
-                const GradeGuideApp = module.default;
+                const EvaluateApp = module.default;
 
-                // Render the application
                 const root = createRoot(document.getElementById('root'));
-                root.render(<GradeGuideApp />);
+                root.render(<EvaluateApp />);
                 
-                // Clean up
                 URL.revokeObjectURL(url);
             } catch (error) {
-                console.error("GradeGuide Startup Error:", error);
+                console.error("Evaluate Startup Error:", error);
                 document.getElementById('root').innerHTML = `
                     <div style="padding: 40px; text-align: center; color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; background: rgba(239, 68, 68, 0.05);">
                         <h2 style="margin-top: 0;">Startup Failed</h2>
