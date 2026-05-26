@@ -894,14 +894,14 @@ export default function EvaluateApp() {
       e.preventDefault();
       setLoginError('');
       if (loginModalRole === 'Admin') {
-        if (usernameInput.trim().toLowerCase() === 'admin@evaluate.com' && passwordInput === 'admin123') {
+        if (usernameInput.trim().toLowerCase() === 'admin@evaluate.com' && passwordInput === 'admin') {
           setRole('Admin');
           setLoginModalRole(null);
         } else {
           setLoginError('Invalid Admin credentials');
         }
       } else if (loginModalRole === 'Lecturer') {
-        if (usernameInput.trim().toLowerCase() === 'lecturer@evaluate.com' && passwordInput === 'lecturer123') {
+        if (usernameInput.trim().toLowerCase() === 'lecturer@evaluate.com' && passwordInput === 'admin') {
           setRole('Lecturer');
           setLoginModalRole(null);
         } else {
@@ -1438,13 +1438,18 @@ export default function EvaluateApp() {
                     <input className="input-field" id="newStudEmail" type="email" placeholder="student@university.edu" />
                   </div>
                   <button className="btn btn-primary" onClick={() => {
-                    const name = document.getElementById('newStudName').value.trim();
+const name = document.getElementById('newStudName').value.trim();
                     const matricNo = document.getElementById('newStudMatric').value.trim();
                     const email = document.getElementById('newStudEmail').value.trim();
                     if(!name || !matricNo || !email) return alert("All fields are required.");
                     if(students.find(s => s.matricNo.toLowerCase() === matricNo.toLowerCase())) return alert("Matric Number exists!");
                     if(students.find(s => s.email.toLowerCase() === email.toLowerCase())) return alert("Email exists!");
-                    setStudents([{ name, matricNo, email }, ...students]);
+                    
+                    const otp = String(Math.floor(100000 + Math.random() * 900000));
+                    setStudents([{ name, matricNo, email, pin: otp }, ...students]);
+                    sendOtpEmail(email, name, otp); // Send email in background
+                    alert(`Student added. An OTP (${otp}) was emailed to them for login.`);
+                    
                     document.getElementById('newStudName').value = '';
                     document.getElementById('newStudMatric').value = '';
                     document.getElementById('newStudEmail').value = '';
@@ -1457,19 +1462,21 @@ export default function EvaluateApp() {
                   <textarea id="bulkStudCSV" className="input-field scrollbar" rows={6} placeholder="John Doe, 2001, john@edu.com
 Jane Smith, 2002, jane@edu.com"></textarea>
                   <button className="btn btn-outline" style={{ marginTop: '16px' }} onClick={() => {
-                    const text = document.getElementById('bulkStudCSV').value;
+const text = document.getElementById('bulkStudCSV').value;
                     const lines = text.split('
 ').filter(l => l.trim());
                     const added = [];
                     lines.forEach(line => {
                       const [name, matricNo, email] = line.split(',').map(s => s.trim());
                       if(name && matricNo && email && !students.find(s => s.matricNo.toLowerCase() === matricNo.toLowerCase()) && !added.find(a => a.matricNo.toLowerCase() === matricNo.toLowerCase())) {
-                        added.push({ name, matricNo, email });
+                        const otp = String(Math.floor(100000 + Math.random() * 900000));
+                        added.push({ name, matricNo, email, pin: otp });
+                        sendOtpEmail(email, name, otp); // Send emails in background
                       }
                     });
                     if(added.length > 0) {
                       setStudents([...added, ...students]);
-                      alert(`Successfully imported ${added.length} students!`);
+                      alert(`Successfully imported ${added.length} students! OTP emails are being sent.`);
                       document.getElementById('bulkStudCSV').value = '';
                     } else {
                       alert("No valid new students found to import. Check format and duplicates.");
@@ -2166,12 +2173,13 @@ Jane Smith, 2002, jane@edu.com"></textarea>
   const StudentLoginScreen = () => {
     const [form, setForm] = React.useState({ matricNo: '', pin: '' });
     const [err, setErr] = React.useState('');
+    const [loading, setLoading] = React.useState(false);
 
     const handleLogin = (e) => {
       e.preventDefault();
       setErr('');
       const found = students.find(s => s.matricNo.toLowerCase() === form.matricNo.toLowerCase() && s.pin === form.pin);
-      if (!found) return setErr('No account found. Please check your matric number and 4-digit PIN.');
+      if (!found) return setErr('No account found. Please check your matric number and OTP/PIN.');
       setStudentProfile(found);
       setRole('Student');
       setAuthScreen('landing');
@@ -2189,23 +2197,20 @@ Jane Smith, 2002, jane@edu.com"></textarea>
           </div>
           <div className="glass-panel" style={{ padding: '32px' }}>
             <form onSubmit={handleLogin}>
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '24px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Matric Number</label>
                 <input className="input-field" placeholder="e.g. 200101234" value={form.matricNo} onChange={e => setForm({...form, matricNo: e.target.value})} />
               </div>
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>4-Digit PIN</label>
-                <input className="input-field" type="password" inputMode="numeric" maxLength={4} placeholder="••••" value={form.pin} onChange={e => setForm({...form, pin: e.target.value})} />
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>6-Digit OTP / PIN</label>
+                <input className="input-field" type="password" inputMode="numeric" maxLength={6} placeholder="e.g. 123456" value={form.pin} onChange={e => setForm({...form, pin: e.target.value})} />
+                <p style={{ margin: '8px 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>Sent to your email by your Lecturer.</p>
               </div>
               {err && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
               <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }}>
                 <LogOut size={18}/> Log In
               </button>
             </form>
-            <div className="divider">New student?</div>
-            <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => { setAuthError(''); setAuthScreen('student-signup'); }}>
-              Create Account
-            </button>
             <button className="btn btn-outline" style={{ width: '100%', marginTop: '10px', fontSize: '0.85rem' }} onClick={() => setAuthScreen('landing')}>
               ← Back to Portal Selection
             </button>
