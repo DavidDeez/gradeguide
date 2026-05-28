@@ -2255,17 +2255,16 @@ const StudentLoginScreen = () => {
         <h1 className="brand-title">Evaluate</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: '500' }}>Academic Grading Infrastructure for the AI Age</p>
       </div>
-      <div className="role-grid">
+      <div className="role-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', maxWidth: '800px', margin: '0 auto' }}>
         {[
-          { id: 'Student', icon: Smartphone, label: 'Student Portal', desc: 'Log in to take exams & view results' },
-          { id: 'Lecturer', icon: ShieldCheck, label: 'Lecturer Dashboard', desc: 'Manage assessments, grading, and students' },
-          { id: 'Admin', icon: Settings, label: 'Admin Portal', desc: 'System configuration and API management' }
+          { id: 'Student', icon: Smartphone, label: 'Student Portal', desc: 'Log in with your details and OTP' },
+          { id: 'Faculty', icon: ShieldCheck, label: 'Faculty Dashboard', desc: 'Secure entry for Lecturers & Admins' }
         ].map(r => (
           <div key={r.id} className="role-card" onClick={() => {
             if (r.id === 'Student') {
               setAuthScreen('student-login');
             } else {
-              setLoginModalRole(r.id);
+              setLoginModalRole('Faculty');
               setLoginError('');
               setUsernameInput('');
               setPasswordInput('');
