@@ -2182,39 +2182,21 @@ const text = document.getElementById('bulkStudCSV').value;
   };
 
 
-  const StudentLoginScreen = () => {
-    const [step, setStep] = React.useState('matric'); // 'matric' or 'otp'
-    const [form, setForm] = React.useState({ matricNo: '', pin: '' });
+const StudentLoginScreen = () => {
+    const [form, setForm] = React.useState({ name: '', matricNo: '', pin: '' });
     const [err, setErr] = React.useState('');
-    const [loading, setLoading] = React.useState(false);
-
-    const handleGenerateOtp = async (e) => {
-      e.preventDefault();
-      setErr('');
-      const foundIndex = students.findIndex(s => s.matricNo.toLowerCase() === form.matricNo.toLowerCase());
-      if (foundIndex === -1) return setErr('No account found for this Matric Number.');
-      
-      setLoading(true);
-      const otp = String(Math.floor(100000 + Math.random() * 900000));
-      const updatedStudents = [...students];
-      updatedStudents[foundIndex].pin = otp;
-      setStudents(updatedStudents);
-      
-      const sent = await sendOtpEmail(updatedStudents[foundIndex].email, updatedStudents[foundIndex].name, otp);
-      setLoading(false);
-      
-      if (!sent) {
-        setErr('Failed to send OTP email. Please contact the administrator.');
-      } else {
-        setStep('otp');
-      }
-    };
 
     const handleLogin = (e) => {
       e.preventDefault();
       setErr('');
-      const found = students.find(s => s.matricNo.toLowerCase() === form.matricNo.toLowerCase() && s.pin === form.pin);
-      if (!found) return setErr('Invalid OTP. Please check your email and try again.');
+      const found = students.find(s => 
+        s.name.toLowerCase() === form.name.toLowerCase() && 
+        s.matricNo.toLowerCase() === form.matricNo.toLowerCase() && 
+        s.pin === form.pin
+      );
+      
+      if (!found) return setErr('Invalid credentials. Please check your Name, Matric Number, and Password.');
+      
       setStudentProfile(found);
       setRole('Student');
       setAuthScreen('landing');
@@ -2231,33 +2213,27 @@ const text = document.getElementById('bulkStudCSV').value;
             <p style={{ color: 'var(--text-muted)', margin: 0 }}>Log in to your Student Portal</p>
           </div>
           <div className="glass-panel" style={{ padding: '32px' }}>
-            {step === 'matric' ? (
-              <form onSubmit={handleGenerateOtp}>
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Matric Number</label>
-                  <input className="input-field" placeholder="e.g. 200101234" value={form.matricNo} onChange={e => setForm({...form, matricNo: e.target.value})} required />
-                </div>
-                {err && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
-                <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }} disabled={loading}>
-                  {loading ? 'Sending OTP...' : 'Generate OTP'}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleLogin}>
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>6-Digit OTP</label>
-                  <input className="input-field" type="password" inputMode="numeric" maxLength={6} placeholder="e.g. 123456" value={form.pin} onChange={e => setForm({...form, pin: e.target.value})} required />
-                  <p style={{ margin: '8px 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>Sent to your registered email address.</p>
-                </div>
-                {err && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
-                <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }}>
-                  <LogOut size={18}/> Log In
-                </button>
-                <button type="button" className="btn btn-outline" style={{ width: '100%', marginTop: '10px', fontSize: '0.85rem' }} onClick={() => setStep('matric')}>
-                  Change Matric Number
-                </button>
-              </form>
-            )}
+            <form onSubmit={handleLogin}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Full Name</label>
+                <input className="input-field" placeholder="e.g. John Doe" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
+              </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Matric Number</label>
+                <input className="input-field" placeholder="e.g. 200101234" value={form.matricNo} onChange={e => setForm({...form, matricNo: e.target.value})} required />
+              </div>
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Login Password (OTP)</label>
+                <input className="input-field" type="password" inputMode="numeric" maxLength={6} placeholder="e.g. 123456" value={form.pin} onChange={e => setForm({...form, pin: e.target.value})} required />
+                <p style={{ margin: '8px 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>This was sent to your email by your Lecturer.</p>
+              </div>
+              
+              {err && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
+              
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }}>
+                <LogOut size={18}/> Log In
+              </button>
+            </form>
             <button className="btn btn-outline" style={{ width: '100%', marginTop: '10px', fontSize: '0.85rem', border: 'none' }} onClick={() => setAuthScreen('landing')}>
               ← Back to Portal Selection
             </button>
