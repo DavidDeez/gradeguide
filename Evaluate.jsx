@@ -889,29 +889,18 @@ export default function EvaluateApp() {
 
   
   
+
   const RoleLoginModal = () => {
     const handleLogin = (e) => {
       e.preventDefault();
       setLoginError('');
-      if (loginModalRole === 'Admin') {
-        if (usernameInput.trim().toLowerCase() === 'admin@evaluate.com' && passwordInput === 'admin') {
-          setRole('Admin');
-          setLecturerTab('audit');
-          setLoginModalRole(null);
-        } else {
-          setLoginError('Invalid Admin credentials');
-        }
-      } else if (loginModalRole === 'Lecturer') {
-        if (usernameInput.trim().toLowerCase() === 'lecturer@evaluate.com' && passwordInput === 'admin') {
-          setRole('Lecturer');
-          setLoginModalRole(null);
-        } else {
-          setLoginError('Invalid Lecturer credentials');
-        }
+      if (passwordInput === 'admin') {
+        setRole('FacultyHub');
+        setLoginModalRole(null);
+      } else {
+        setLoginError('Invalid Faculty Password');
       }
     };
-
-
 
     return (
       <div className="modal-overlay" style={{ zIndex: 1100 }}>
@@ -926,24 +915,12 @@ export default function EvaluateApp() {
           </div>
           
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px', lineHeight: '1.4' }}>
-            You are attempting to access the high-privilege **{loginModalRole} Portal**. Please enter the system credentials below to continue.
+            You are attempting to access the high-privilege **Faculty Dashboard**. Please enter the global faculty password to continue.
           </p>
 
           <form onSubmit={handleLogin} style={{ display: 'grid', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Faculty Email Address</label>
-              <input 
-                type="email" 
-                className="input-field" 
-                placeholder="lecturer@evaluate.com" 
-                required 
-                value={usernameInput}
-                onChange={e => setUsernameInput(e.target.value)}
-              />
-            </div>
-            
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Password</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Faculty Password</label>
               <input 
                 type="password" 
                 className="input-field" 
@@ -968,6 +945,32 @@ export default function EvaluateApp() {
       </div>
     );
   };
+
+  const FacultyHubScreen = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '40px', animation: 'fadeIn 1s ease' }}>
+        <h1 className="brand-title">Faculty Hub</h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', fontWeight: '500' }}>Select your workspace</p>
+      </div>
+      <div className="role-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', maxWidth: '800px', margin: '0 auto' }}>
+        <div className="role-card" onClick={() => { setRole('Lecturer'); setLecturerTab('build'); }}>
+          <ShieldCheck size={48} color="var(--primary)" />
+          <h3 style={{ margin: 0 }}>Lecturer Dashboard</h3>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Manage assessments, grading, and students</p>
+          <div className="btn btn-outline" style={{ marginTop: 'auto', width: '100%' }}>Enter <ChevronRight size={16}/></div>
+        </div>
+        <div className="role-card" onClick={() => { setRole('Admin'); setLecturerTab('audit'); }}>
+          <Settings size={48} color="var(--primary)" />
+          <h3 style={{ margin: 0 }}>Admin Portal</h3>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>System configuration and API management</p>
+          <div className="btn btn-outline" style={{ marginTop: 'auto', width: '100%' }}>Enter <ChevronRight size={16}/></div>
+        </div>
+      </div>
+      <button className="btn btn-outline" style={{ marginTop: '40px', border: 'none' }} onClick={() => setRole(null)}>
+        <LogOut size={18} style={{ marginRight: '8px' }}/> Sign Out
+      </button>
+    </div>
+  );
 
   const LecturerDashboard = () => {
     const handleFileUpload = (e) => {
@@ -2178,16 +2181,40 @@ const text = document.getElementById('bulkStudCSV').value;
     );
   };
 
+
   const StudentLoginScreen = () => {
+    const [step, setStep] = React.useState('matric'); // 'matric' or 'otp'
     const [form, setForm] = React.useState({ matricNo: '', pin: '' });
     const [err, setErr] = React.useState('');
     const [loading, setLoading] = React.useState(false);
+
+    const handleGenerateOtp = async (e) => {
+      e.preventDefault();
+      setErr('');
+      const foundIndex = students.findIndex(s => s.matricNo.toLowerCase() === form.matricNo.toLowerCase());
+      if (foundIndex === -1) return setErr('No account found for this Matric Number.');
+      
+      setLoading(true);
+      const otp = String(Math.floor(100000 + Math.random() * 900000));
+      const updatedStudents = [...students];
+      updatedStudents[foundIndex].pin = otp;
+      setStudents(updatedStudents);
+      
+      const sent = await sendOtpEmail(updatedStudents[foundIndex].email, updatedStudents[foundIndex].name, otp);
+      setLoading(false);
+      
+      if (!sent) {
+        setErr('Failed to send OTP email. Please contact the administrator.');
+      } else {
+        setStep('otp');
+      }
+    };
 
     const handleLogin = (e) => {
       e.preventDefault();
       setErr('');
       const found = students.find(s => s.matricNo.toLowerCase() === form.matricNo.toLowerCase() && s.pin === form.pin);
-      if (!found) return setErr('No account found. Please check your matric number and OTP/PIN.');
+      if (!found) return setErr('Invalid OTP. Please check your email and try again.');
       setStudentProfile(found);
       setRole('Student');
       setAuthScreen('landing');
@@ -2204,22 +2231,34 @@ const text = document.getElementById('bulkStudCSV').value;
             <p style={{ color: 'var(--text-muted)', margin: 0 }}>Log in to your Student Portal</p>
           </div>
           <div className="glass-panel" style={{ padding: '32px' }}>
-            <form onSubmit={handleLogin}>
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Matric Number</label>
-                <input className="input-field" placeholder="e.g. 200101234" value={form.matricNo} onChange={e => setForm({...form, matricNo: e.target.value})} />
-              </div>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>6-Digit OTP / PIN</label>
-                <input className="input-field" type="password" inputMode="numeric" maxLength={6} placeholder="e.g. 123456" value={form.pin} onChange={e => setForm({...form, pin: e.target.value})} />
-                <p style={{ margin: '8px 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>Sent to your email by your Lecturer.</p>
-              </div>
-              {err && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }}>
-                <LogOut size={18}/> Log In
-              </button>
-            </form>
-            <button className="btn btn-outline" style={{ width: '100%', marginTop: '10px', fontSize: '0.85rem' }} onClick={() => setAuthScreen('landing')}>
+            {step === 'matric' ? (
+              <form onSubmit={handleGenerateOtp}>
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Matric Number</label>
+                  <input className="input-field" placeholder="e.g. 200101234" value={form.matricNo} onChange={e => setForm({...form, matricNo: e.target.value})} required />
+                </div>
+                {err && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }} disabled={loading}>
+                  {loading ? 'Sending OTP...' : 'Generate OTP'}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleLogin}>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>6-Digit OTP</label>
+                  <input className="input-field" type="password" inputMode="numeric" maxLength={6} placeholder="e.g. 123456" value={form.pin} onChange={e => setForm({...form, pin: e.target.value})} required />
+                  <p style={{ margin: '8px 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>Sent to your registered email address.</p>
+                </div>
+                {err && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }}>
+                  <LogOut size={18}/> Log In
+                </button>
+                <button type="button" className="btn btn-outline" style={{ width: '100%', marginTop: '10px', fontSize: '0.85rem' }} onClick={() => setStep('matric')}>
+                  Change Matric Number
+                </button>
+              </form>
+            )}
+            <button className="btn btn-outline" style={{ width: '100%', marginTop: '10px', fontSize: '0.85rem', border: 'none' }} onClick={() => setAuthScreen('landing')}>
               ← Back to Portal Selection
             </button>
           </div>
@@ -2266,10 +2305,14 @@ const text = document.getElementById('bulkStudCSV').value;
       <Footer />
     </div>
   );
-  // ─── Route Auth Screens ───────────────────────────────────────────────────
+// ─── Route Auth Screens ───────────────────────────────────────────────────
   if (!role) {
     if (authScreen === 'student-login') return <><GlobalStyles /><StudentLoginScreen /></>;
     return <><GlobalStyles /><LoginScreen />{loginModalRole && RoleLoginModal()}</>;
+  }
+
+  if (role === 'FacultyHub') {
+    return <><GlobalStyles /><FacultyHubScreen /></>;
   }
 
   return (
