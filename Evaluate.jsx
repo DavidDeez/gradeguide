@@ -34,6 +34,24 @@ const GlobalStyles = () => (
       display: block !important;
       line-height: 1.5;
     }
+    
+    .draw-icon {
+      animation: drawIcon 2.5s ease forwards;
+    }
+    .draw-icon path, .draw-icon line, .draw-icon polyline, .draw-icon circle, .draw-icon rect {
+      stroke-dasharray: 400;
+      stroke-dashoffset: 400;
+      animation: drawPath 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    @keyframes drawPath {
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes drawIcon {
+      0% { opacity: 0; transform: scale(0.9); }
+      20% { opacity: 1; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    
     .glass-panel {
       background: var(--panel-bg);
       border: 1px solid var(--panel-border); 
@@ -2408,7 +2426,7 @@ const StudentLoginScreen = () => {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
       <div style={{ textAlign: 'center', marginBottom: '60px', animation: 'fadeIn 1s ease' }}>
         <div style={{ display: 'inline-flex', padding: '20px', background: 'var(--panel-bg)', borderRadius: '8px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
-          <Brain size={60} color="var(--text-main)" />
+          <Brain size={60} color="var(--text-main)" className="draw-icon" />
         </div>
         <h1 className="brand-title">Evaluate</h1>
         <TypewriterText text="Academic Grading Infrastructure for the AI Age" delay={40} style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: '500' }} />
