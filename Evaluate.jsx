@@ -132,6 +132,13 @@ const GlobalStyles = () => (
       .mobile-menu-btn { display: block !important; }
     }
 
+    @media (max-width: 480px) {
+      .otp-input { width: 40px !important; height: 48px !important; font-size: 20px !important; }
+      .otp-container { gap: 6px !important; }
+      .brand-title { font-size: 2rem !important; }
+      .brand-subtitle { font-size: 0.8rem !important; }
+    }
+
     .mobile-menu-btn { display: none; }
     .drawer-overlay { position: fixed; inset: 0; background: rgba(1,4,9,0.8); z-index: 1500; }
     .main-layout { display: flex; gap: 24px; align-items: flex-start; margin: 0 24px; }
