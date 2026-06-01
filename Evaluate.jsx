@@ -187,18 +187,41 @@ const GlobalStyles = () => (
     .spotlight-wrapper {
       position: relative; overflow: hidden; border-radius: 6px;
       background: var(--panel-bg); border: 1px solid var(--panel-border);
-      transition: border-color 0.2s, transform 0.2s;
+      transition: all 0.3s ease;
     }
     .spotlight-wrapper:hover {
-      border-color: var(--text-muted); transform: translateY(-4px);
+      border-color: rgba(121, 192, 255, 0.5); transform: translateY(-4px);
+      box-shadow: 0 0 20px rgba(121, 192, 255, 0.15);
     }
     .spotlight-glow {
       position: absolute; pointer-events: none;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.06), transparent 40%);
+      background: radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(210, 168, 255, 0.15), transparent 40%);
       opacity: 0; transition: opacity 0.3s;
     }
     .spotlight-wrapper:hover .spotlight-glow { opacity: 1; }
+
+    @keyframes glitch {
+      0%, 100% { text-shadow: 2px 2px 0px var(--panel-bg); transform: translate(0); }
+      20% { text-shadow: 2px 2px 0px var(--panel-bg); transform: translate(0); }
+      21% { text-shadow: -3px 0 #0ff, 3px 0 #f0f; transform: translate(-2px, 1px); }
+      23% { text-shadow: 3px 0 #0ff, -3px 0 #f0f; transform: translate(2px, -1px); }
+      25% { text-shadow: 2px 2px 0px var(--panel-bg); transform: translate(0); }
+    }
+    
+    @keyframes holographic {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .holographic-text {
+      background: linear-gradient(90deg, #79c0ff, #d2a8ff, #ff7b72, #79c0ff);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: holographic 6s ease infinite;
+    }
 
 
     @keyframes flyTelegram {
@@ -429,6 +452,18 @@ const ParticleBackground = () => {
     let animationFrameId;
     let particles = [];
     
+    let mouse = { x: null, y: null, radius: 150 };
+    const handleMouseMove = (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    };
+    const handleMouseLeave = () => {
+      mouse.x = null;
+      mouse.y = null;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseleave', handleMouseLeave);
+    
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -449,6 +484,20 @@ const ParticleBackground = () => {
       update() {
         this.x += this.vx;
         this.y += this.vy;
+        
+        if (mouse.x != null && mouse.y != null) {
+          const dx = mouse.x - this.x;
+          const dy = mouse.y - this.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < mouse.radius) {
+            const forceDirectionX = dx / distance;
+            const forceDirectionY = dy / distance;
+            const force = (mouse.radius - distance) / mouse.radius;
+            this.x -= forceDirectionX * force * 5;
+            this.y -= forceDirectionY * force * 5;
+          }
+        }
+        
         if (this.x < 0 || this.x > canvas.width) this.vx = -this.vx;
         if (this.y < 0 || this.y > canvas.height) this.vy = -this.vy;
       }
@@ -494,8 +543,10 @@ const ParticleBackground = () => {
     animate();
 
     return () => {
-      window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, []);
 
@@ -2611,8 +2662,8 @@ const StudentLoginScreen = () => {
           <div style={{ display: 'inline-flex', padding: 'clamp(12px, 4vw, 20px)', background: 'var(--panel-bg)', borderRadius: '8px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
             <Brain key={`brain-${animKey}`} size={60} color="var(--text-main)" className="draw-icon" style={{ width: 'clamp(40px, 10vw, 60px)', height: 'clamp(40px, 10vw, 60px)' }} />
           </div>
-          <h1 className="brand-title" style={{ fontFamily: 'var(--font-family)', fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', letterSpacing: '2px', textShadow: '2px 2px 0px var(--panel-bg)', fontWeight: 'bold' }}>ＥＶＡＬＵＡＴＥ.ａｉ</h1>
-          <TypewriterText key={`type-${animKey}`} text="Academic Grading Infrastructure for the AI Age" delay={40} className="brand-subtitle" style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.75rem, 3vw, 1rem)', fontWeight: 'bold', fontFamily: "'Courier New', Courier, monospace", textTransform: 'uppercase', letterSpacing: '1px', wordWrap: 'break-word', whiteSpace: 'normal' }} />
+          <h1 className="brand-title" style={{ fontFamily: 'var(--font-family)', fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', letterSpacing: '2px', textShadow: '2px 2px 0px var(--panel-bg)', fontWeight: 'bold', animation: 'glitch 4s infinite' }}>ＥＶＡＬＵＡＴＥ.ａｉ</h1>
+          <TypewriterText key={`type-${animKey}`} text="Academic Grading Infrastructure for the AI Age" delay={40} className="brand-subtitle holographic-text" style={{ fontSize: 'clamp(0.75rem, 3vw, 1rem)', fontWeight: 'bold', fontFamily: "'Courier New', Courier, monospace", textTransform: 'uppercase', letterSpacing: '1px', wordWrap: 'break-word', whiteSpace: 'normal' }} />
         </div>
       <div className="role-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
         {[
