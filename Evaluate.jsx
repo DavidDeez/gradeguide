@@ -233,6 +233,14 @@ const GlobalStyles = () => (
       animation: spinPropeller3D 0.1s linear infinite;
     }
 
+
+    .blueprint-grid {
+      position: fixed; inset: 0; z-index: -2;
+      background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 30px 30px; pointer-events: none;
+    }
+
   `}} />
 );
 
@@ -404,6 +412,104 @@ const FlyingBiplaneLogo = () => (
   </div>
 );
 
+
+const ParticleBackground = () => {
+  const canvasRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    let particles = [];
+    
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        // Increased velocity for "more excited" electrons
+        this.vx = (Math.random() - 0.5) * 1.5;
+        this.vy = (Math.random() - 0.5) * 1.5;
+        this.radius = Math.random() * 1.5 + 0.5;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > canvas.width) this.vx = -this.vx;
+        if (this.y < 0 || this.y > canvas.height) this.vy = -this.vy;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(201, 209, 217, 0.6)'; // slightly brighter
+        ctx.fill();
+      }
+    }
+
+    const particleCount = Math.floor((canvas.width * canvas.height) / 10000); // more particles
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(new Particle());
+    }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      particles.forEach(p => p.update());
+      particles.forEach(p => p.draw());
+      
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < 140) { // increased connection distance
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(201, 209, 217, ${0.2 - distance / 140 * 0.2})`;
+            ctx.lineWidth = 0.8;
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+      
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  return (
+    <canvas 
+      ref={canvasRef} 
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: -3,
+        pointerEvents: 'none',
+        background: 'var(--bg-dark)'
+      }}
+    />
+  );
+};
+
 const TerminalBackground = () => {
   const [logs, setLogs] = React.useState([]);
   
@@ -448,54 +554,6 @@ const TerminalBackground = () => {
 };
 
 
-const MatrixBackground = () => {
-  const canvasRef = React.useRef(null);
-
-  React.useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    
-    let width = canvas.width = window.innerWidth;
-    let height = canvas.height = window.innerHeight;
-    
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
-    const fontSize = 10;
-    let columns = width / fontSize;
-    const drops = [];
-    
-    for (let x = 0; x < columns; x++) {
-      drops[x] = 1;
-    }
-
-    const draw = () => {
-      // translucent black background to create fade effect
-      ctx.fillStyle = 'rgba(13, 17, 23, 0.08)';
-      ctx.fillRect(0, 0, width, height);
-      
-      ctx.font = fontSize + 'px monospace';
-      
-      for (let i = 0; i < drops.length; i++) {
-        const text = letters.charAt(Math.floor(Math.random() * letters.length));
-        
-        // mostly gray/black, with rare red/green
-        const colorRand = Math.random();
-        if (colorRand > 0.98) {
-          ctx.fillStyle = 'rgba(248, 81, 73, 0.45)'; // red
-        } else if (colorRand > 0.96) {
-          ctx.fillStyle = 'rgba(46, 160, 67, 0.45)'; // green
-        } else {
-          ctx.fillStyle = 'rgba(139, 148, 158, 0.15)'; // mostly dark gray
-        }
-        
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-        
-        if (drops[i] * fontSize > height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
-        drops[i]++;
-      }
-    };
     
     const interval = setInterval(draw, 80);
     
@@ -2668,17 +2726,17 @@ const StudentLoginScreen = () => {
   );
 // ─── Route Auth Screens ───────────────────────────────────────────────────
   if (!role) {
-    if (authScreen === 'student-login') return <><GlobalStyles /><MatrixBackground /><TerminalBackground /><StudentLoginScreen /></>;
-    return <><GlobalStyles /><MatrixBackground /><TerminalBackground /><LoginScreen />{loginModalRole && RoleLoginModal()}</>;
+    if (authScreen === 'student-login') return <><GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><TerminalBackground /><StudentLoginScreen /></>;
+    return <><GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><TerminalBackground /><LoginScreen />{loginModalRole && RoleLoginModal()}</>;
   }
 
   if (role === 'FacultyHub') {
-    return <><GlobalStyles /><MatrixBackground /><TerminalBackground /><FacultyHubScreen /></>;
+    return <><GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><TerminalBackground /><FacultyHubScreen /></>;
   }
 
   return (
     <>
-      <GlobalStyles /><MatrixBackground /><MatrixBackground /><TerminalBackground />
+      <GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><TerminalBackground />
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <header className="glass-panel header-content" style={{ margin: '20px', padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '6px' }}>
           <div className="header-brand-row" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
