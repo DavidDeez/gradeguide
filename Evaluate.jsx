@@ -166,12 +166,7 @@ const GlobalStyles = () => (
     .auth-title { margin: 0 0 8px 0; font-size: 24px; font-weight: 400; color: var(--text-main); }
     .otp-container { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; }
 
-    .blueprint-grid {
-      position: fixed; inset: 0; z-index: -2;
-      background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-      background-size: 30px 30px; pointer-events: none;
-    }
+
     
     .skeleton-pulse {
       animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -449,6 +444,80 @@ const TerminalBackground = () => {
         ))}
       </div>
     </div>
+  );
+};
+
+
+const MatrixBackground = () => {
+  const canvasRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
+    const fontSize = 16;
+    let columns = width / fontSize;
+    const drops = [];
+    
+    for (let x = 0; x < columns; x++) {
+      drops[x] = 1;
+    }
+
+    const draw = () => {
+      // translucent black background to create fade effect
+      ctx.fillStyle = 'rgba(13, 17, 23, 0.05)';
+      ctx.fillRect(0, 0, width, height);
+      
+      // text color: github gray
+      ctx.fillStyle = 'rgba(201, 209, 217, 0.35)';
+      ctx.font = fontSize + 'px monospace';
+      
+      for (let i = 0; i < drops.length; i++) {
+        const text = letters.charAt(Math.floor(Math.random() * letters.length));
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+        
+        if (drops[i] * fontSize > height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i]++;
+      }
+    };
+    
+    const interval = setInterval(draw, 33);
+    
+    const handleResize = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      columns = width / fontSize;
+      while (drops.length < columns) drops.push(1);
+    };
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  return (
+    <canvas 
+      ref={canvasRef} 
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: -3,
+        pointerEvents: 'none',
+        background: 'var(--bg-dark)'
+      }}
+    />
   );
 };
 
@@ -2590,17 +2659,17 @@ const StudentLoginScreen = () => {
   );
 // ─── Route Auth Screens ───────────────────────────────────────────────────
   if (!role) {
-    if (authScreen === 'student-login') return <><GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><FlyingBiplaneLogo /><TerminalBackground /><StudentLoginScreen /></>;
-    return <><GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><FlyingBiplaneLogo /><TerminalBackground /><LoginScreen />{loginModalRole && RoleLoginModal()}</>;
+    if (authScreen === 'student-login') return <><GlobalStyles /><MatrixBackground /><MatrixBackground /><TerminalBackground /><StudentLoginScreen /></>;
+    return <><GlobalStyles /><MatrixBackground /><MatrixBackground /><TerminalBackground /><LoginScreen />{loginModalRole && RoleLoginModal()}</>;
   }
 
   if (role === 'FacultyHub') {
-    return <><GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><FlyingBiplaneLogo /><TerminalBackground /><FacultyHubScreen /></>;
+    return <><GlobalStyles /><MatrixBackground /><MatrixBackground /><TerminalBackground /><FacultyHubScreen /></>;
   }
 
   return (
     <>
-      <GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><FlyingBiplaneLogo /><TerminalBackground />
+      <GlobalStyles /><MatrixBackground /><MatrixBackground /><TerminalBackground />
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <header className="glass-panel header-content" style={{ margin: '20px', padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '6px' }}>
           <div className="header-brand-row" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
