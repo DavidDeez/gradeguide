@@ -15,6 +15,10 @@ import {
 const GlobalStyles = () => (
 <style dangerouslySetInnerHTML={{__html: `
     :root {
+      --bg-dark: #0d1117;
+      --panel-bg: #161b22;
+      --panel-border: #30363d;
+      --primary: #f0f6fc;
       --primary-hover: #c9d1d9;
       --text-main: #c9d1d9;
       --text-muted: #8b949e;
