@@ -133,10 +133,10 @@ const GlobalStyles = () => (
     }
 
     @media (max-width: 480px) {
-      .otp-input { width: 40px !important; height: 48px !important; font-size: 20px !important; }
-      .otp-container { gap: 6px !important; }
-      .brand-title { font-size: 2rem !important; }
-      .brand-subtitle { font-size: 0.8rem !important; }
+      .otp-input { width: clamp(32px, 10vw, 48px) !important; height: clamp(40px, 12vw, 56px) !important; font-size: clamp(16px, 5vw, 24px) !important; }
+      .otp-container { gap: 4px !important; flex-wrap: wrap; }
+      .brand-title { font-size: clamp(1.8rem, 6vw, 2.5rem) !important; }
+      .brand-subtitle { font-size: clamp(0.75rem, 3vw, 1rem) !important; }
     }
 
     .mobile-menu-btn { display: none; }
@@ -2596,15 +2596,15 @@ const StudentLoginScreen = () => {
   
   
   const LoginScreen = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
-      <div style={{ textAlign: 'center', marginBottom: '60px', animation: 'fadeIn 1s ease' }}>
-        <div style={{ display: 'inline-flex', padding: '20px', background: 'var(--panel-bg)', borderRadius: '8px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
-          <Brain size={60} color="var(--text-main)" className="draw-icon" />
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px' }}>
+      <div style={{ textAlign: 'center', marginBottom: 'clamp(30px, 8vw, 60px)', animation: 'fadeIn 1s ease', width: '100%' }}>
+        <div style={{ display: 'inline-flex', padding: 'clamp(12px, 4vw, 20px)', background: 'var(--panel-bg)', borderRadius: '8px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
+          <Brain size={60} color="var(--text-main)" className="draw-icon" style={{ width: 'clamp(40px, 10vw, 60px)', height: 'clamp(40px, 10vw, 60px)' }} />
         </div>
-        <h1 className="brand-title" style={{ fontFamily: 'var(--font-family)', fontSize: '2.5rem', letterSpacing: '2px', textShadow: '2px 2px 0px var(--panel-bg)', fontWeight: 'bold' }}>ＥＶＡＬＵＡＴＥ.ａｉ</h1>
-        <TypewriterText text="Academic Grading Infrastructure for the AI Age" delay={40} className="brand-subtitle" style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: 'bold', fontFamily: "'Courier New', Courier, monospace", textTransform: 'uppercase', letterSpacing: '1px' }} />
+        <h1 className="brand-title" style={{ fontFamily: 'var(--font-family)', fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', letterSpacing: '2px', textShadow: '2px 2px 0px var(--panel-bg)', fontWeight: 'bold' }}>ＥＶＡＬＵＡＴＥ.ａｉ</h1>
+        <TypewriterText text="Academic Grading Infrastructure for the AI Age" delay={40} className="brand-subtitle" style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.75rem, 3vw, 1rem)', fontWeight: 'bold', fontFamily: "'Courier New', Courier, monospace", textTransform: 'uppercase', letterSpacing: '1px', wordWrap: 'break-word', whiteSpace: 'normal' }} />
       </div>
-      <div className="role-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', maxWidth: '800px', margin: '0 auto' }}>
+      <div className="role-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
         {[
           { id: 'Student', icon: Smartphone, label: 'Student Portal', desc: 'Log in with your details and OTP' },
           { id: 'Faculty', icon: ShieldCheck, label: 'Faculty Dashboard', desc: 'Secure entry for Lecturers & Admins' }
