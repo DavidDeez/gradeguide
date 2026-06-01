@@ -582,7 +582,7 @@ const Footer = () => (
     <style>{`
       @keyframes blockWrite {
         0% { width: 0; }
-        100% { width: 28ch; }
+        100% { width: 32ch; }
       }
       @keyframes blinkBlockCursor {
         50% { border-color: transparent; }
@@ -598,8 +598,8 @@ const Footer = () => (
         overflow: hidden;
         white-space: nowrap;
         border-right: 3px solid var(--text-muted);
-        animation: blockWrite 3s steps(28) forwards, blinkBlockCursor 0.7s step-end infinite;
-        width: 28ch;
+        animation: blockWrite 3s steps(32) forwards, blinkBlockCursor 0.7s step-end infinite;
+        width: 32ch;
       }
     `}</style>
     <div className="animated-handwriting">
