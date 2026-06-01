@@ -248,7 +248,7 @@ const GlobalStyles = () => (
 
 // --- Premium UI Components ---
 
-const TypewriterText = ({ text, delay = 50, className }) => {
+const TypewriterText = ({ text, delay = 50, className, style }) => {
   const [currentText, setCurrentText] = React.useState('');
   const [currentIndex, setCurrentIndex] = React.useState(0);
 
@@ -263,9 +263,8 @@ const TypewriterText = ({ text, delay = 50, className }) => {
   }, [currentIndex, delay, text]);
 
   return (
-    <p className={className}>
+    <p className={className} style={style}>
       {currentText}
-      <span style={{ animation: 'pulse 1s infinite' }}>█</span>
     </p>
   );
 };
@@ -2594,8 +2593,8 @@ const StudentLoginScreen = () => {
         <div style={{ display: 'inline-flex', padding: '20px', background: 'var(--panel-bg)', borderRadius: '8px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
           <Brain size={60} color="var(--text-main)" className="draw-icon" />
         </div>
-        <h1 className="brand-title">Evaluate</h1>
-        <TypewriterText text="Academic Grading Infrastructure for the AI Age" delay={40} style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: '500' }} />
+        <h1 className="brand-title" style={{ fontFamily: '"Old English Text MT", "Cloister Black", "Engravers Old English", "Pirata One", serif', fontSize: '4.5rem', letterSpacing: '2px', textShadow: '2px 2px 0px var(--panel-bg)' }}>Evaluate</h1>
+        <TypewriterText text="Academic Grading Infrastructure for the AI Age" delay={40} className="brand-subtitle" style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: 'bold', fontFamily: "'Courier New', Courier, monospace", textTransform: 'uppercase', letterSpacing: '1px' }} />
       </div>
       <div className="role-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', maxWidth: '800px', margin: '0 auto' }}>
         {[
