@@ -13,230 +13,135 @@ import {
 } from 'lucide-react';
 
 const GlobalStyles = () => (
-  <style dangerouslySetInnerHTML={{__html: `
+<style dangerouslySetInnerHTML={{__html: `
     :root {
-      --bg-dark: #0a0f1c;
-      --panel-bg: rgba(255, 255, 255, 0.03);
-      --panel-border: rgba(255, 255, 255, 0.08);
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --gradient-brand: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-      --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --danger: #ef4444;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --primary-hover: #c9d1d9;
+      --text-main: #c9d1d9;
+      --text-muted: #8b949e;
+      --danger: #f85149;
+      --success: #2ea043;
+      --warning: #d29922;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
     }
     * { box-sizing: border-box; }
     body {
       margin: 0; padding: 0; background: var(--bg-dark); color: var(--text-main);
       font-family: var(--font-family); min-height: 100vh; overflow-x: hidden;
       display: block !important;
+      line-height: 1.5;
     }
     .glass-panel {
-      background: var(--panel-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--panel-border); border-radius: 20px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2); transition: all 0.3s ease;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border); 
+      border-radius: 6px;
     }
     .btn {
       display: inline-flex; align-items: center; justify-content: center;
-      gap: 8px; padding: 12px 24px; border-radius: 12px;
-      font-weight: 600; cursor: pointer; transition: all 0.2s ease;
-      border: none; font-size: 0.95rem; white-space: nowrap;
+      gap: 8px; padding: 6px 16px; border-radius: 6px;
+      font-weight: 500; cursor: pointer; transition: 0.2s cubic-bezier(0.3, 0, 0.5, 1);
+      border: 1px solid var(--panel-border); font-size: 14px; white-space: nowrap;
+      background: #21262d; color: var(--text-main);
     }
-    .btn-primary { background: var(--gradient-brand); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4); }
+    .btn:hover { background: #30363d; border-color: #8b949e; }
+    
+    .btn-primary { 
+      background: var(--primary); color: var(--bg-dark); border-color: rgba(27,31,36,0.15); 
+    }
+    .btn-primary:hover { background: var(--primary-hover); border-color: rgba(27,31,36,0.15); }
+    
     .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--panel-border); }
-    .btn-outline:hover { background: rgba(255, 255, 255, 0.05); transform: translateY(-1px); }
+    .btn-outline:hover { background: #21262d; border-color: #8b949e; }
     
     .input-field {
-      width: 100%; padding: 14px 18px; border-radius: 12px;
-      background: rgba(0, 0, 0, 0.3); border: 1px solid var(--panel-border);
-      color: white; font-family: var(--font-family); outline: none;
-      transition: all 0.2s; font-size: 1rem;
+      width: 100%; padding: 6px 12px; border-radius: 6px;
+      background: #0d1117; border: 1px solid var(--panel-border);
+      color: var(--text-main); font-family: var(--font-family); outline: none;
+      font-size: 14px; line-height: 20px;
     }
-    .input-field:focus { border-color: var(--primary); background: rgba(0,0,0,0.4); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+    .input-field:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(240, 246, 252, 0.1); }
     
     .nav-tab {
-      padding: 16px 32px; cursor: pointer; font-weight: 600; color: var(--text-muted);
-      border-bottom: 2px solid transparent; transition: all 0.3s; white-space: nowrap;
+      padding: 8px 16px; cursor: pointer; font-weight: 500; color: var(--text-muted);
+      border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; font-size: 14px;
     }
-    .nav-tab.active { color: white; border-bottom-color: var(--primary); background: rgba(59, 130, 246, 0.05); }
+    .nav-tab:hover { color: var(--text-main); border-bottom-color: var(--panel-border); }
+    .nav-tab.active { color: var(--text-main); border-bottom-color: #f78166; font-weight: 600; }
     
     .role-card {
-      padding: 40px 24px; border-radius: 24px; border: 1px solid var(--panel-border);
-      background: rgba(255,255,255,0.01); cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px;
+      padding: 24px; border-radius: 6px; border: 1px solid var(--panel-border);
+      background: var(--panel-bg); cursor: pointer; transition: border-color 0.2s;
+      text-align: left; display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
     }
-    .role-card:hover { border-color: var(--primary); background: rgba(59,130,246,0.05); transform: translateY(-8px); }
-    .role-card.active { border-color: var(--primary); background: rgba(59,130,246,0.12); box-shadow: 0 10px 40px rgba(59,130,246,0.2); }
+    .role-card:hover { border-color: var(--text-muted); }
+    .role-card.active { border-color: var(--primary); }
     
-    .role-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 32px;
-      width: 100%;
-      max-width: 800px;
-    }
-    
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr;
-      gap: 32px;
-    }
-    
-    .two-col-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-    }
-    
-    .audit-grid {
-      display: grid;
-      grid-template-columns: 1fr 1.5fr;
-      gap: 32px;
-    }
-    
-    .score-detail-grid {
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: 32px;
-    }
+    .role-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; width: 100%; max-width: 800px; }
+    .dashboard-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; }
+    .two-col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .audit-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; }
+    .score-detail-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; }
     
     .header-content {
-      margin: 20px;
-      padding: 16px 40px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-radius: 24px;
+      margin: 16px; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;
+      border-radius: 6px; background: var(--panel-bg); border: 1px solid var(--panel-border);
     }
 
     @media (max-width: 1024px) {
       .role-grid, .dashboard-grid, .two-col-grid, .audit-grid, .score-detail-grid {
-        grid-template-columns: 1fr !important;
-        gap: 20px !important;
+        grid-template-columns: 1fr !important; gap: 16px !important;
       }
     }
 
     @media (max-width: 768px) {
       .dashboard-main { padding: 16px !important; }
-      .header-content {
-        margin: 10px !important;
-        padding: 12px 20px !important;
-        border-radius: 16px !important;
-        flex-direction: column !important;
-        gap: 12px !important;
-        text-align: center !important;
-      }
-      .header-brand-row {
-        flex-wrap: wrap !important;
-        justify-content: center !important;
-        gap: 10px !important;
-      }
-      .glass-panel { padding: 20px !important; }
+      .header-content { margin: 8px !important; padding: 12px !important; flex-direction: column !important; gap: 12px !important; }
+      .header-brand-row { flex-wrap: wrap !important; justify-content: center !important; }
+      .glass-panel { padding: 16px !important; }
       .btn-text { display: none; }
-      .nav-container { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; white-space: nowrap; padding-bottom: 8px; }
-      .brand-title { font-size: 2.8rem !important; letter-spacing: -1px !important; }
-      .auth-title { font-size: 1.6rem !important; }
-      .otp-input { width: 42px !important; height: 50px !important; font-size: 1.3rem !important; }
-      .otp-container { gap: 6px !important; }
-      .main-layout { flex-direction: column; margin: 0 16px; gap: 20px; }
+      .nav-container { overflow-x: auto; flex-wrap: nowrap !important; }
+      .main-layout { flex-direction: column; margin: 0 8px; gap: 16px; }
       .side-menu { 
-        position: fixed !important;
-        top: 0 !important;
-        left: -320px !important;
-        height: 100vh !important;
-        z-index: 2000 !important;
-        background: var(--bg-dark) !important;
-        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        margin: 0 !important;
-        padding-top: 32px !important;
-        box-shadow: 4px 0 24px rgba(0,0,0,0.5) !important;
-        display: flex !important;
+        position: fixed !important; top: 0 !important; left: -320px !important; height: 100vh !important;
+        z-index: 2000 !important; background: var(--panel-bg) !important; padding-top: 24px !important;
+        border-right: 1px solid var(--panel-border) !important; transition: left 0.2s !important;
       }
-      .side-menu.open {
-        left: 0 !important;
-      }
+      .side-menu.open { left: 0 !important; }
       .mobile-menu-btn { display: block !important; }
     }
 
     .mobile-menu-btn { display: none; }
-    .drawer-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-      z-index: 1500; animation: fadeIn 0.3s ease;
-    }
-
-    .main-layout {
-      display: flex;
-      gap: 32px;
-      align-items: flex-start;
-      margin: 0 40px;
-    }
-    .side-menu {
-      width: 260px;
-      position: sticky;
-      top: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+    .drawer-overlay { position: fixed; inset: 0; background: rgba(1,4,9,0.8); z-index: 1500; }
+    .main-layout { display: flex; gap: 24px; align-items: flex-start; margin: 0 24px; }
+    .side-menu { width: 256px; position: sticky; top: 24px; display: flex; flex-direction: column; gap: 4px; }
+    
     .side-nav-tab {
-      padding: 14px 20px;
-      border-radius: 12px;
-      cursor: pointer;
-      color: var(--text-muted);
-      font-weight: 500;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 0.95rem;
+      padding: 8px 16px; border-radius: 6px; cursor: pointer; color: var(--text-main);
+      transition: background 0.2s; display: flex; align-items: center; gap: 12px; font-size: 14px;
     }
-    .side-nav-tab:hover {
-      background: rgba(255,255,255,0.05);
-      color: var(--text-main);
-    }
-    .side-nav-tab.active {
-      background: rgba(59, 130, 246, 0.1);
-      color: var(--primary);
-      box-shadow: inset 3px 0 0 var(--primary);
-    }
+    .side-nav-tab:hover { background: #21262d; }
+    .side-nav-tab.active { background: #21262d; font-weight: 600; }
 
     .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
-      display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px;
+      position: fixed; inset: 0; background: rgba(1,4,9,0.8);
+      display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 16px;
     }
-    .animate-spin { animation: spin 1s linear infinite; }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
-    .scrollbar::-webkit-scrollbar { width: 8px; }
-    .scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
     
-    .badge { padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
-    .badge-primary { background: rgba(59, 130, 246, 0.2); color: var(--primary); }
-    .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
-
-    .auth-card {
-      width: 100%; max-width: 460px;
-      animation: slideUp 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
-    }
+    .badge { padding: 2px 8px; border-radius: 2em; font-size: 12px; font-weight: 500; border: 1px solid var(--panel-border); }
+    .badge-primary { background: rgba(56,139,253,0.1); color: #79c0ff; border-color: rgba(56,139,253,0.4); }
+    .badge-success { background: rgba(46,160,67,0.1); color: #56d364; border-color: rgba(46,160,67,0.4); }
+    
+    .auth-card { width: 100%; max-width: 400px; }
     .otp-input {
-      width: 56px; height: 64px; text-align: center; font-size: 1.6rem; font-weight: 900;
-      border-radius: 16px; background: rgba(0,0,0,0.3); border: 2px solid var(--panel-border);
-      color: white; outline: none; transition: all 0.2s;
+      width: 48px; height: 56px; text-align: center; font-size: 24px; font-weight: 600;
+      border-radius: 6px; background: #0d1117; border: 1px solid var(--panel-border);
+      color: var(--text-main); outline: none;
     }
-    .otp-input:focus { border-color: var(--primary); background: rgba(59,130,246,0.08); box-shadow: 0 0 0 4px rgba(59,130,246,0.15); }
-    .auth-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-    .divider { display: flex; align-items: center; gap: 16px; color: var(--text-muted); font-size: 0.85rem; margin: 20px 0; }
-    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--panel-border); }
-    .brand-title { font-size: 4rem; font-weight: 900; margin: 0 0 16px 0; background: var(--gradient-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -2px; }
-    .auth-title { margin: 0 0 6px 0; font-size: 2rem; font-weight: 900; background: var(--gradient-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .otp-container { display: flex; gap: 10px; justify-content: center; margin-bottom: 28px; }
+    .otp-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(240, 246, 252, 0.1); }
+    .auth-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
+    
+    .brand-title { font-size: 32px; font-weight: 600; margin: 0 0 8px 0; color: var(--text-main); letter-spacing: -0.5px; }
+    .auth-title { margin: 0 0 8px 0; font-size: 24px; font-weight: 400; color: var(--text-main); }
+    .otp-container { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; }
   `}} />
 );
 
@@ -693,7 +598,7 @@ export default function EvaluateApp() {
     <div className="modal-overlay">
       <div className="glass-panel scrollbar" style={{ width: '100%', maxWidth: '500px', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-          <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}><Settings size={28} color="var(--primary)"/> AI Configuration</h2>
+          <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}><Settings size={28} color="var(--text-main)"/> AI Configuration</h2>
           <button className="btn-outline" style={{ padding: '8px', border: 'none' }} onClick={() => setShowSettings(false)}><X size={24} /></button>
         </div>
         
@@ -754,7 +659,7 @@ export default function EvaluateApp() {
           <p style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
             <AlertCircle size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
             {aiSettings.provider === 'openrouter' ? (
-              <>Get a 100% free key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold' }}>openrouter.ai/keys</a></>
+              <>Get a 100% free key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 'bold' }}>openrouter.ai/keys</a></>
             ) : 'Keys are stored locally in your browser and never shared.'}
           </p>
         </div>
@@ -776,7 +681,7 @@ export default function EvaluateApp() {
         <div className="glass-panel scrollbar" style={{ width: '100%', maxWidth: '850px', padding: '40px', maxHeight: '90vh', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', borderBottom: '1px solid var(--panel-border)', paddingBottom: '24px' }}>
             <div>
-              <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>AI Compliance & Grading Review</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '1px' }}>AI Compliance & Grading Review</span>
               <h2 style={{ margin: '4px 0 0 0', fontSize: '1.8rem' }}>{ass?.title || 'Detailed AI Report Card'}</h2>
               <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Student Reference ID: {selectedSub.studentId}</p>
             </div>
@@ -784,7 +689,7 @@ export default function EvaluateApp() {
           </div>
 
           {/* Score & General Status Bar */}
-          <div className="score-detail-grid" style={{ marginBottom: '40px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--panel-border)', padding: '24px', borderRadius: '20px' }}>
+          <div className="score-detail-grid" style={{ marginBottom: '40px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--panel-border)', padding: '24px', borderRadius: '6px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <ScoreRing score={percentage} size={130} strokeWidth={11} />
             </div>
@@ -846,7 +751,7 @@ export default function EvaluateApp() {
                         </span>
                         <div style={{ display: 'grid', gap: '8px' }}>
                           {res.strengths.map((str, sIdx) => (
-                            <div key={sIdx} style={{ fontSize: '0.9rem', color: 'var(--text-main)', background: 'rgba(16, 185, 129, 0.03)', padding: '10px 14px', borderRadius: '8px', borderLeft: '2px solid var(--success)' }}>
+                            <div key={sIdx} style={{ fontSize: '0.9rem', color: 'var(--text-main)', background: 'rgba(46,160,67,0.1)', padding: '10px 14px', borderRadius: '8px', borderLeft: '2px solid var(--success)' }}>
                               {str}
                             </div>
                           ))}
@@ -862,7 +767,7 @@ export default function EvaluateApp() {
                         </span>
                         <div style={{ display: 'grid', gap: '8px' }}>
                           {res.improvements.map((imp, iIdx) => (
-                            <div key={iIdx} style={{ fontSize: '0.9rem', color: 'var(--text-main)', background: 'rgba(245, 158, 11, 0.03)', padding: '10px 14px', borderRadius: '8px', borderLeft: '2px solid var(--warning)' }}>
+                            <div key={iIdx} style={{ fontSize: '0.9rem', color: 'var(--text-main)', background: 'rgba(210,153,34,0.1)', padding: '10px 14px', borderRadius: '8px', borderLeft: '2px solid var(--warning)' }}>
                               {imp}
                             </div>
                           ))}
@@ -907,7 +812,7 @@ export default function EvaluateApp() {
         <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '32px', textAlign: 'left', animation: 'slideUp 0.3s ease' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldCheck size={24} color="var(--primary)" /> Secure Access
+              <ShieldCheck size={24} color="var(--text-main)" /> Secure Access
             </h3>
             <button className="btn-outline" style={{ padding: '6px', border: 'none' }} onClick={() => setLoginModalRole(null)}>
               <X size={20} />
@@ -932,7 +837,7 @@ export default function EvaluateApp() {
             </div>
 
             {loginError && (
-              <div style={{ color: 'var(--danger)', fontSize: '0.8rem', background: 'rgba(239, 68, 68, 0.08)', padding: '10px 14px', borderRadius: '8px', borderLeft: '2px solid var(--danger)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ color: 'var(--danger)', fontSize: '0.8rem', background: 'rgba(248,81,73,0.1)', padding: '10px 14px', borderRadius: '8px', borderLeft: '2px solid var(--danger)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <AlertCircle size={14} /> {loginError}
               </div>
             )}
@@ -954,13 +859,13 @@ export default function EvaluateApp() {
       </div>
       <div className="role-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', maxWidth: '800px', margin: '0 auto' }}>
         <div className="role-card" onClick={() => { setRole('Lecturer'); setLecturerTab('build'); }}>
-          <ShieldCheck size={48} color="var(--primary)" />
+          <ShieldCheck size={48} color="var(--text-main)" />
           <h3 style={{ margin: 0 }}>Lecturer Dashboard</h3>
           <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Manage assessments, grading, and students</p>
           <div className="btn btn-outline" style={{ marginTop: 'auto', width: '100%' }}>Enter <ChevronRight size={16}/></div>
         </div>
         <div className="role-card" onClick={() => { setRole('Admin'); setLecturerTab('audit'); }}>
-          <Settings size={48} color="var(--primary)" />
+          <Settings size={48} color="var(--text-main)" />
           <h3 style={{ margin: 0 }}>Admin Portal</h3>
           <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>System configuration and API management</p>
           <div className="btn btn-outline" style={{ marginTop: 'auto', width: '100%' }}>Enter <ChevronRight size={16}/></div>
@@ -1064,7 +969,7 @@ export default function EvaluateApp() {
                 <label style={{ display: 'block', marginBottom: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Specific Assessment Context Material (Optional)</label>
                 <div className="two-col-grid" style={{ marginBottom: '16px' }}>
                   <div className="role-card" style={{ padding: '24px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)' }} onClick={() => setShowCam(true)}>
-                    <Camera size={32} color="var(--primary)" />
+                    <Camera size={32} color="var(--text-main)" />
                     <h4 style={{ margin: '8px 0 0 0' }}>Scan Printed Copy</h4>
                     <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>AI-powered OCR via Vision</p>
                   </div>
@@ -1108,7 +1013,7 @@ export default function EvaluateApp() {
                 {newQuestions.map((q, idx) => (
                   <div key={q.id} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--panel-border)', padding: '20px', borderRadius: '12px' }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 'bold' }}>QUESTION #{idx + 1}</label>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-main)', fontWeight: 'bold' }}>QUESTION #{idx + 1}</label>
                       <textarea 
                         className="input-field" 
                         rows={2} 
@@ -1223,7 +1128,7 @@ export default function EvaluateApp() {
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{a.questions.length} Questions</span>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button className="btn-outline" style={{ padding: '8px', border: 'none', color: 'var(--primary)' }} onClick={() => {
+                      <button className="btn-outline" style={{ padding: '8px', border: 'none', color: 'var(--text-main)' }} onClick={() => {
                         setNewTitle(a.title);
                         setNewQuestions(a.questions.map(q => ({ id: Date.now() + Math.random(), text: q.text, maxMarks: q.maxMarks })));
                         setAssessmentContext({ text: a.contextText || '', pdfBase64: a.contextPdfBase64 || null, pdfName: a.contextPdfBase64 ? 'Linked Context' : '' });
@@ -1296,7 +1201,7 @@ export default function EvaluateApp() {
                     </button>
                     
                     {script.result && (
-                      <div style={{ marginTop: '20px', padding: '20px', background: 'rgba(16,185,129,0.05)', border: '1px solid var(--success)', borderRadius: '12px', animation: 'fadeIn 0.5s ease' }}>
+                      <div style={{ marginTop: '20px', padding: '20px', background: 'rgba(46,160,67,0.1)', border: '1px solid var(--success)', borderRadius: '12px', animation: 'fadeIn 0.5s ease' }}>
                         <h3 style={{ margin: '0 0 12px 0', color: 'var(--success)' }}>Score: {script.result.score}/100</h3>
                         <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>{script.result.feedback}</p>
                       </div>
@@ -1325,7 +1230,7 @@ export default function EvaluateApp() {
           <div style={{ display: 'grid', gap: '20px' }}>
             {/* Pending Retake Requests Sub-Section */}
             {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
-              <div style={{ background: 'rgba(245, 158, 11, 0.02)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '28px', borderRadius: '20px', marginBottom: '16px' }}>
+              <div style={{ background: 'rgba(210,153,34,0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '28px', borderRadius: '6px', marginBottom: '16px' }}>
                 <h3 style={{ margin: '0 0 16px 0', color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <AlertCircle size={20} /> Retake Requests Pending Approval
                 </h3>
@@ -1333,7 +1238,7 @@ export default function EvaluateApp() {
                   {retakeRequests.filter(r => r.status === 'pending').map(req => (
                     <div key={req.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--panel-border)', flexWrap: 'wrap', gap: '12px' }}>
                       <div>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 'bold' }}>{req.studentId}</span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-main)', fontWeight: 'bold' }}>{req.studentId}</span>
                         <h4 style={{ margin: '4px 0 0 0' }}>Requesting to retake: {req.title}</h4>
                       </div>
                       <div style={{ display: 'flex', gap: '12px' }}>
@@ -1355,15 +1260,15 @@ export default function EvaluateApp() {
             
             {/* Student Messages Sub-Section */}
             {studentMessages.length > 0 && (
-              <div style={{ background: 'rgba(59, 130, 246, 0.02)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '28px', borderRadius: '20px', marginBottom: '16px' }}>
-                <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ background: 'rgba(59, 130, 246, 0.02)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '28px', borderRadius: '6px', marginBottom: '16px' }}>
+                <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <AlertCircle size={20} /> Urgent Student Messages
                 </h3>
                 <div style={{ display: 'grid', gap: '12px' }}>
                   {studentMessages.map(msg => (
                     <div key={msg.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--panel-border)', flexWrap: 'wrap', gap: '12px' }}>
                       <div style={{ flex: 1 }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 'bold' }}>{msg.studentId} • {msg.date}</span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-main)', fontWeight: 'bold' }}>{msg.studentId} • {msg.date}</span>
                         <p style={{ margin: '8px 0 0 0', lineHeight: '1.4' }}>"{msg.msg}"</p>
                       </div>
                       <button className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '0.85rem', color: 'var(--text-muted)' }} onClick={() => {
@@ -1406,7 +1311,7 @@ export default function EvaluateApp() {
               return (
                 <div key={i} className="glass-panel" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                   <div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold', textTransform: 'uppercase' }}>Student Matric Number: {sub.studentId}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-main)', fontWeight: 'bold', textTransform: 'uppercase' }}>Student Matric Number: {sub.studentId}</span>
                     <h3 style={{ margin: '4px 0 8px 0' }}>Assessment: {ass?.title || 'Unknown'}</h3>
                     <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Timestamp: {sub.timestamp || 'Recent Submission'}</p>
                     {sub.authenticity && (
@@ -1437,7 +1342,7 @@ export default function EvaluateApp() {
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
                 <div>
-                  <h3 style={{ marginTop: 0, color: 'var(--primary)' }}>Add Individual Student</h3>
+                  <h3 style={{ marginTop: 0, color: 'var(--text-main)' }}>Add Individual Student</h3>
                   <div style={{ marginBottom: '16px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem' }}>Full Name</label>
                     <input className="input-field" id="newStudName" placeholder="e.g. John Doe" />
@@ -1470,7 +1375,7 @@ const name = document.getElementById('newStudName').value.trim();
                 </div>
 
                 <div>
-                  <h3 style={{ marginTop: 0, color: 'var(--primary)' }}>Bulk Import (CSV)</h3>
+                  <h3 style={{ marginTop: 0, color: 'var(--text-main)' }}>Bulk Import (CSV)</h3>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Format: Name, MatricNo, Email (one per line)</p>
                   <textarea id="bulkStudCSV" className="input-field scrollbar" rows={6} placeholder="John Doe, 2001, john@edu.com\nJane Smith, 2002, jane@edu.com"></textarea>
                   <button className="btn btn-outline" style={{ marginTop: '16px' }} onClick={() => {
@@ -1497,7 +1402,7 @@ const text = document.getElementById('bulkStudCSV').value;
               </div>
 
               <div style={{ marginTop: '40px' }}>
-                <h3 style={{ color: 'var(--primary)', marginBottom: '16px' }}>Registered Students ({students.length})</h3>
+                <h3 style={{ color: 'var(--text-main)', marginBottom: '16px' }}>Registered Students ({students.length})</h3>
                 <div style={{ maxHeight: '400px', overflowY: 'auto' }} className="scrollbar">
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
                     <thead style={{ background: 'rgba(255,255,255,0.05)', position: 'sticky', top: 0 }}>
@@ -1512,7 +1417,7 @@ const text = document.getElementById('bulkStudCSV').value;
                       {students.map(s => (
                         <tr key={s.matricNo} style={{ borderBottom: '1px solid var(--panel-border)' }}>
                           <td style={{ padding: '12px' }}>{s.name}</td>
-                          <td style={{ padding: '12px', fontFamily: 'monospace', color: 'var(--primary)' }}>{s.matricNo}</td>
+                          <td style={{ padding: '12px', fontFamily: 'monospace', color: 'var(--text-main)' }}>{s.matricNo}</td>
                           <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{s.email}</td>
                           <td style={{ padding: '12px', textAlign: 'right' }}>
                             <button className="btn btn-outline" style={{ padding: '6px 10px', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} onClick={() => {
@@ -1535,7 +1440,7 @@ const text = document.getElementById('bulkStudCSV').value;
             {/* Left Column: AI Engine Config */}
             <div className="glass-panel" style={{ padding: '32px', alignSelf: 'start' }}>
               <h3 style={{ margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Sliders color="var(--primary)" size={24} /> AI Engine Config
+                <Sliders color="var(--text-main)" size={24} /> AI Engine Config
               </h3>
               
               <div style={{ marginBottom: '20px' }}>
@@ -1595,23 +1500,23 @@ const text = document.getElementById('bulkStudCSV').value;
                 <p style={{ marginTop: '10px', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
                   <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
                   {aiSettings.provider === 'openrouter' ? (
-                    <>Get a free key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold' }}>openrouter.ai</a></>
+                    <>Get a free key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 'bold' }}>openrouter.ai</a></>
                   ) : 'Keys are saved securely in your browser cache.'}
                 </p>
               </div>
               
-              <div style={{ padding: '16px', background: 'rgba(16, 185, 129, 0.03)', border: '1px solid rgba(16, 185, 129, 0.1)', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ padding: '16px', background: 'rgba(46,160,67,0.1)', border: '1px solid rgba(16, 185, 129, 0.1)', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <CheckCircle size={16} /> API Key Auto-Saved & Initialized
               </div>
 
               {/* EmailJS Config Section */}
               <div style={{ marginTop: '28px', paddingTop: '24px', borderTop: '1px solid var(--panel-border)' }}>
                 <h4 style={{ margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Activity size={18} color="var(--primary)" /> Email Delivery (EmailJS)
+                  <Activity size={18} color="var(--text-main)" /> Email Delivery (EmailJS)
                 </h4>
                 <p style={{ margin: '0 0 16px 0', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
                   Configure EmailJS to send OTP verification codes and auto-email results to students.{' '}
-                  <a href="https://emailjs.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: '600' }}>Get free account →</a>
+                  <a href="https://emailjs.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-main)', fontWeight: '600' }}>Get free account →</a>
                 </p>
                 {[
                   { key: 'emailjsPublicKey', label: 'Public Key', placeholder: 'e.g. abc123XYZ...' },
@@ -1638,7 +1543,7 @@ const text = document.getElementById('bulkStudCSV').value;
               {/* Analytics Sub-Cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px' }}>
                 <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '12px', borderRadius: '12px', color: 'var(--primary)' }}>
+                  <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '12px', borderRadius: '12px', color: 'var(--text-main)' }}>
                     <ShieldCheck size={24} />
                   </div>
                   <div>
@@ -1647,7 +1552,7 @@ const text = document.getElementById('bulkStudCSV').value;
                   </div>
                 </div>
                 <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '12px', borderRadius: '12px', color: 'var(--success)' }}>
+                  <div style={{ background: 'rgba(46,160,67,0.1)', padding: '12px', borderRadius: '12px', color: 'var(--success)' }}>
                     <Book size={24} />
                   </div>
                   <div>
@@ -1656,7 +1561,7 @@ const text = document.getElementById('bulkStudCSV').value;
                   </div>
                 </div>
                 <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '12px', borderRadius: '12px', color: 'var(--warning)' }}>
+                  <div style={{ background: 'rgba(210,153,34,0.1)', padding: '12px', borderRadius: '12px', color: 'var(--warning)' }}>
                     <FileBadge size={24} />
                   </div>
                   <div>
@@ -1686,7 +1591,7 @@ const text = document.getElementById('bulkStudCSV').value;
                     return (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'rgba(255,255,255,0.01)', borderRadius: '10px', border: '1px solid var(--panel-border)', flexWrap: 'wrap', gap: '12px' }}>
                         <div>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold', textTransform: 'uppercase' }}>Matric Number: {sub.studentId}</span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-main)', fontWeight: 'bold', textTransform: 'uppercase' }}>Matric Number: {sub.studentId}</span>
                           <h4 style={{ margin: '2px 0 0 0', fontSize: '0.9rem' }}>Exam: {ass?.title || 'Unknown Exam'}</h4>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -1707,7 +1612,7 @@ const text = document.getElementById('bulkStudCSV').value;
               </div>
 
               {/* Developer / Testing Controls */}
-              <div className="glass-panel" style={{ padding: '32px', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.02)' }}>
+              <div className="glass-panel" style={{ padding: '32px', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(248,81,73,0.1)' }}>
                 <h3 style={{ margin: '0 0 16px 0', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Trash2 size={20} /> Developer & Database Tools
                 </h3>
@@ -1715,7 +1620,7 @@ const text = document.getElementById('bulkStudCSV').value;
                   Manage your offline local database. Export your data to switch devices without losing exams!
                 </p>
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  <button className="btn btn-outline" style={{ flex: 1, borderColor: 'var(--primary)', color: 'var(--primary)' }} onClick={async () => {
+                  <button className="btn btn-outline" style={{ flex: 1, borderColor: 'var(--primary)', color: 'var(--text-main)' }} onClick={async () => {
                     const { data: dbData, error } = await supabase.from('app_state').select('data').eq('id', 1).single();
                     if (error || !dbData) return alert('No database found to backup!');
                     const data = JSON.stringify(dbData.data);
@@ -1878,7 +1783,7 @@ const text = document.getElementById('bulkStudCSV').value;
               
               return (
                 <div key={a.id} className="glass-panel" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  <div style={{ background: 'var(--gradient-brand)', width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Book color="white" size={24}/></div>
+                  <div style={{ background: 'var(--primary)', width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Book color="white" size={24}/></div>
                   <h3 style={{ margin: 0 }}>{a.title}</h3>
                   <p style={{ margin: 0, color: 'var(--text-muted)', flex: 1 }}>{a.questions.length} Questions found.</p>
                   
@@ -1908,7 +1813,7 @@ const text = document.getElementById('bulkStudCSV').value;
                         );
                       } else if (retakeReq.status === 'approved') {
                         return (
-                          <button className="btn btn-primary" style={{ width: '100%', background: 'var(--gradient-brand)' }} onClick={() => {
+                          <button className="btn btn-primary" style={{ width: '100%', background: 'var(--primary)' }} onClick={() => {
                             setRetakeRequests(retakeRequests.filter(r => !(r.studentId === studentId && r.assessmentId === a.id)));
                             setActiveExam(a);
                           }}>
@@ -1943,7 +1848,7 @@ const text = document.getElementById('bulkStudCSV').value;
               return (
                 <div key={i} className="glass-panel" style={{ padding: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
                   <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                    <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '16px', borderRadius: '16px', color: 'var(--primary)' }}>
+                    <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '16px', borderRadius: '16px', color: 'var(--text-main)' }}>
                       <FileBadge size={32} />
                     </div>
                     <div>
@@ -1978,7 +1883,7 @@ const text = document.getElementById('bulkStudCSV').value;
             <h2 style={{ marginTop: 0, marginBottom: '24px' }}>Help & Support</h2>
             
             <div style={{ marginBottom: '32px' }}>
-              <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: 'var(--primary)' }}>Contact Lecturer</h3>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: 'var(--text-main)' }}>Contact Lecturer</h3>
               <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Urgent issue with an exam or grading? Send a direct message to your lecturer.</p>
               <textarea className="input-field scrollbar" rows={4} placeholder="Type your message here..." id="lecturerMsg"></textarea>
               <button className="btn btn-primary" style={{ marginTop: '12px', width: '100%', padding: '14px' }} onClick={() => {
@@ -1992,7 +1897,7 @@ const text = document.getElementById('bulkStudCSV').value;
             </div>
 
             <div style={{ borderTop: '1px solid var(--panel-border)', paddingTop: '24px' }}>
-              <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: 'var(--primary)' }}>System Support</h3>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: 'var(--text-main)' }}>System Support</h3>
               <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Experiencing technical difficulties? Please reach out to the system administrator.</p>
               <a href="mailto:admin@evaluate.com" className="btn btn-outline" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '14px' }}>
                 Contact Technical Admin
@@ -2032,8 +1937,8 @@ const text = document.getElementById('bulkStudCSV').value;
       <div className="auth-screen">
         <div className="auth-card">
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{ display: 'inline-flex', padding: '16px', background: 'var(--panel-bg)', borderRadius: '20px', border: '1px solid var(--panel-border)', marginBottom: '16px' }}>
-              <Brain size={40} color="var(--primary)" />
+            <div style={{ display: 'inline-flex', padding: '16px', background: 'var(--panel-bg)', borderRadius: '6px', border: '1px solid var(--panel-border)', marginBottom: '16px' }}>
+              <Brain size={40} color="var(--text-main)" />
             </div>
             <h1 className="auth-title">Create Account</h1>
             <p style={{ color: 'var(--text-muted)', margin: 0 }}>Join Evaluate — Register as a Student</p>
@@ -2058,7 +1963,7 @@ const text = document.getElementById('bulkStudCSV').value;
                 <input className="input-field" type="password" inputMode="numeric" maxLength={4} placeholder="••••" value={form.pin} onChange={e => setForm({...form, pin: e.target.value})} />
                 <p style={{ margin: '8px 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>You will use this PIN to log in.</p>
               </div>
-              {err && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
+              {err && <div style={{ background: 'rgba(248,81,73,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
               <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }} disabled={loading}>
                 {loading ? <Activity className="animate-spin" /> : <><CheckCircle size={18}/> Send Verification OTP</>}
               </button>
@@ -2145,16 +2050,16 @@ const text = document.getElementById('bulkStudCSV').value;
       <div className="auth-screen">
         <div className="auth-card">
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{ display: 'inline-flex', padding: '16px', background: 'rgba(16,185,129,0.1)', borderRadius: '20px', border: '1px solid rgba(16,185,129,0.2)', marginBottom: '16px' }}>
+            <div style={{ display: 'inline-flex', padding: '16px', background: 'rgba(46,160,67,0.1)', borderRadius: '6px', border: '1px solid rgba(16,185,129,0.2)', marginBottom: '16px' }}>
               <CheckCircle size={40} color="var(--success)" />
             </div>
             <h1 className="auth-title" style={{ background: 'none', WebkitTextFillColor: 'inherit' }}>Verify Email</h1>
             <p style={{ color: 'var(--text-muted)', margin: 0 }}>Enter the 6-digit code sent to</p>
-            <p style={{ color: 'var(--primary)', fontWeight: '700', margin: '4px 0 0 0' }}>{pendingOtp?.email}</p>
+            <p style={{ color: 'var(--text-main)', fontWeight: '700', margin: '4px 0 0 0' }}>{pendingOtp?.email}</p>
           </div>
           <div className="glass-panel" style={{ padding: '32px' }}>
             {!aiSettings.emailjsPublicKey && (
-              <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '14px', padding: '16px 20px', marginBottom: '24px', textAlign: 'center' }}>
+              <div style={{ background: 'rgba(248,81,73,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '14px', padding: '16px 20px', marginBottom: '24px', textAlign: 'center' }}>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--danger)', fontWeight: '600' }}>⚠ Email delivery not configured. Ask your Lecturer to set up EmailJS in the Faculty Dashboard → System Audit & Engine.</p>
               </div>
             )}
@@ -2164,13 +2069,13 @@ const text = document.getElementById('bulkStudCSV').value;
                   value={d} onChange={e => handleDigit(e.target.value, i)} onKeyDown={e => handleKeyDown(e, i)} onPaste={handlePaste} />
               ))}
             </div>
-            {authError && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)', textAlign: 'center' }}>{authError}</div>}
+            {authError && <div style={{ background: 'rgba(248,81,73,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)', textAlign: 'center' }}>{authError}</div>}
             <button className="btn btn-primary" style={{ width: '100%', padding: '16px' }} onClick={handleVerify}>
               <CheckCircle size={18}/> Verify & Complete Registration
             </button>
             <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Didn't receive it?{' '}
-              <span style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: '600' }} onClick={handleResend}>Resend OTP</span>
+              <span style={{ color: 'var(--text-main)', cursor: 'pointer', fontWeight: '600' }} onClick={handleResend}>Resend OTP</span>
             </p>
             <button className="btn btn-outline" style={{ width: '100%', marginTop: '10px', fontSize: '0.85rem' }} onClick={() => setAuthScreen('student-signup')}>
               ← Back to Sign Up
@@ -2206,8 +2111,8 @@ const StudentLoginScreen = () => {
       <div className="auth-screen">
         <div className="auth-card">
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{ display: 'inline-flex', padding: '16px', background: 'var(--panel-bg)', borderRadius: '20px', border: '1px solid var(--panel-border)', marginBottom: '16px' }}>
-              <Brain size={40} color="var(--primary)" />
+            <div style={{ display: 'inline-flex', padding: '16px', background: 'var(--panel-bg)', borderRadius: '6px', border: '1px solid var(--panel-border)', marginBottom: '16px' }}>
+              <Brain size={40} color="var(--text-main)" />
             </div>
             <h1 className="auth-title">Welcome Back</h1>
             <p style={{ color: 'var(--text-muted)', margin: 0 }}>Log in to your Student Portal</p>
@@ -2228,7 +2133,7 @@ const StudentLoginScreen = () => {
                 <p style={{ margin: '8px 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>This was sent to your email by your Lecturer.</p>
               </div>
               
-              {err && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
+              {err && <div style={{ background: 'rgba(248,81,73,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '0.85rem', color: 'var(--danger)' }}>{err}</div>}
               
               <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }}>
                 <LogOut size={18}/> Log In
@@ -2249,8 +2154,8 @@ const StudentLoginScreen = () => {
   const LoginScreen = () => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
       <div style={{ textAlign: 'center', marginBottom: '60px', animation: 'fadeIn 1s ease' }}>
-        <div style={{ display: 'inline-flex', padding: '20px', background: 'var(--panel-bg)', borderRadius: '30px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
-          <Brain size={60} color="var(--primary)" />
+        <div style={{ display: 'inline-flex', padding: '20px', background: 'var(--panel-bg)', borderRadius: '8px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
+          <Brain size={60} color="var(--text-main)" />
         </div>
         <h1 className="brand-title">Evaluate</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: '500' }}>Academic Grading Infrastructure for the AI Age</p>
@@ -2270,7 +2175,7 @@ const StudentLoginScreen = () => {
               setPasswordInput('');
             }
           }}>
-            <r.icon size={48} color="var(--primary)" />
+            <r.icon size={48} color="var(--text-main)" />
             <h3 style={{ margin: 0 }}>{r.label}</h3>
             <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>{r.desc}</p>
             <div className="btn btn-outline" style={{ marginTop: 'auto', width: '100%' }}>Enter <ChevronRight size={16}/></div>
@@ -2294,24 +2199,24 @@ const StudentLoginScreen = () => {
     <>
       <GlobalStyles />
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <header className="glass-panel header-content" style={{ margin: '20px', padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '24px' }}>
+        <header className="glass-panel header-content" style={{ margin: '20px', padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '6px' }}>
           <div className="header-brand-row" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <Menu className="mobile-menu-btn" size={28} style={{ cursor: 'pointer', color: 'var(--primary)', marginRight: '8px' }} onClick={() => setIsMobileMenuOpen(true)} />
-            <Brain color="var(--primary)" size={32} />
+            <Menu className="mobile-menu-btn" size={28} style={{ cursor: 'pointer', color: 'var(--text-main)', marginRight: '8px' }} onClick={() => setIsMobileMenuOpen(true)} />
+            <Brain color="var(--text-main)" size={32} />
             <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 'bold' }}>Evaluate</h2>
             <div style={{ width: '1px', height: '24px', background: 'var(--panel-border)', margin: '0 8px' }}></div>
             <span className="badge badge-primary">{role === 'Lecturer' ? 'Faculty' : role}</span>
             {role === 'Student' && studentProfile && (
               <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '500' }}>
-                {studentProfile.name} · <span style={{ color: 'var(--primary)' }}>{studentProfile.matricNo}</span>
+                {studentProfile.name} · <span style={{ color: 'var(--text-main)' }}>{studentProfile.matricNo}</span>
               </span>
             )}
             {dbSyncing ? (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--primary)', background: 'rgba(59, 130, 246, 0.1)', padding: '4px 10px', borderRadius: '12px', transition: 'all 0.3s' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-main)', background: 'rgba(59, 130, 246, 0.1)', padding: '4px 10px', borderRadius: '12px', transition: 'all 0.3s' }}>
                 <Activity size={12} /> Syncing to Cloud...
               </span>
             ) : (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--success)', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 10px', borderRadius: '12px', transition: 'all 0.3s' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--success)', background: 'rgba(46,160,67,0.1)', padding: '4px 10px', borderRadius: '12px', transition: 'all 0.3s' }}>
                 <CheckCircle size={12} /> Saved to Cloud
               </span>
             )}
