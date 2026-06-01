@@ -578,8 +578,33 @@ const ScoreRing = ({ score, size = 120, strokeWidth = 10 }) => {
 };
 
 const Footer = () => (
-  <footer style={{ textAlign: 'center', padding: '24px 0', fontSize: '0.75rem', color: 'var(--text-muted)', width: '100%', marginTop: 'auto' }}>
-    Developed by David Olukayode
+  <footer style={{ textAlign: 'center', padding: '24px 0', width: '100%', marginTop: 'auto' }}>
+    <style>{`
+      @keyframes blockWrite {
+        0% { width: 0; }
+        100% { width: 28ch; }
+      }
+      @keyframes blinkBlockCursor {
+        50% { border-color: transparent; }
+      }
+      .animated-handwriting {
+        display: inline-block;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-family: 'Courier New', Courier, monospace;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        overflow: hidden;
+        white-space: nowrap;
+        border-right: 3px solid var(--text-muted);
+        animation: blockWrite 3s steps(28) forwards, blinkBlockCursor 0.7s step-end infinite;
+        width: 28ch;
+      }
+    `}</style>
+    <div className="animated-handwriting">
+      Developed by David Olukayode
+    </div>
   </footer>
 );
 
