@@ -460,7 +460,7 @@ const MatrixBackground = () => {
     let height = canvas.height = window.innerHeight;
     
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
-    const fontSize = 16;
+    const fontSize = 10;
     let columns = width / fontSize;
     const drops = [];
     
@@ -470,15 +470,24 @@ const MatrixBackground = () => {
 
     const draw = () => {
       // translucent black background to create fade effect
-      ctx.fillStyle = 'rgba(13, 17, 23, 0.05)';
+      ctx.fillStyle = 'rgba(13, 17, 23, 0.08)';
       ctx.fillRect(0, 0, width, height);
       
-      // text color: github gray
-      ctx.fillStyle = 'rgba(201, 209, 217, 0.35)';
       ctx.font = fontSize + 'px monospace';
       
       for (let i = 0; i < drops.length; i++) {
         const text = letters.charAt(Math.floor(Math.random() * letters.length));
+        
+        // mostly gray/black, with rare red/green
+        const colorRand = Math.random();
+        if (colorRand > 0.98) {
+          ctx.fillStyle = 'rgba(248, 81, 73, 0.45)'; // red
+        } else if (colorRand > 0.96) {
+          ctx.fillStyle = 'rgba(46, 160, 67, 0.45)'; // green
+        } else {
+          ctx.fillStyle = 'rgba(139, 148, 158, 0.15)'; // mostly dark gray
+        }
+        
         ctx.fillText(text, i * fontSize, drops[i] * fontSize);
         
         if (drops[i] * fontSize > height && Math.random() > 0.975) {
@@ -488,7 +497,7 @@ const MatrixBackground = () => {
       }
     };
     
-    const interval = setInterval(draw, 33);
+    const interval = setInterval(draw, 80);
     
     const handleResize = () => {
       width = canvas.width = window.innerWidth;
@@ -2659,12 +2668,12 @@ const StudentLoginScreen = () => {
   );
 // ─── Route Auth Screens ───────────────────────────────────────────────────
   if (!role) {
-    if (authScreen === 'student-login') return <><GlobalStyles /><MatrixBackground /><MatrixBackground /><TerminalBackground /><StudentLoginScreen /></>;
-    return <><GlobalStyles /><MatrixBackground /><MatrixBackground /><TerminalBackground /><LoginScreen />{loginModalRole && RoleLoginModal()}</>;
+    if (authScreen === 'student-login') return <><GlobalStyles /><MatrixBackground /><TerminalBackground /><StudentLoginScreen /></>;
+    return <><GlobalStyles /><MatrixBackground /><TerminalBackground /><LoginScreen />{loginModalRole && RoleLoginModal()}</>;
   }
 
   if (role === 'FacultyHub') {
-    return <><GlobalStyles /><MatrixBackground /><MatrixBackground /><TerminalBackground /><FacultyHubScreen /></>;
+    return <><GlobalStyles /><MatrixBackground /><TerminalBackground /><FacultyHubScreen /></>;
   }
 
   return (
