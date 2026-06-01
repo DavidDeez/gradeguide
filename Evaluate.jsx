@@ -2595,15 +2595,25 @@ const StudentLoginScreen = () => {
   // ─── Landing Screen ───────────────────────────────────────────────────────
   
   
-  const LoginScreen = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px' }}>
-      <div style={{ textAlign: 'center', marginBottom: 'clamp(30px, 8vw, 60px)', animation: 'fadeIn 1s ease', width: '100%' }}>
-        <div style={{ display: 'inline-flex', padding: 'clamp(12px, 4vw, 20px)', background: 'var(--panel-bg)', borderRadius: '8px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
-          <Brain size={60} color="var(--text-main)" className="draw-icon" style={{ width: 'clamp(40px, 10vw, 60px)', height: 'clamp(40px, 10vw, 60px)' }} />
+  const LoginScreen = () => {
+    const [animKey, setAnimKey] = React.useState(0);
+    
+    React.useEffect(() => {
+      const interval = setInterval(() => {
+        setAnimKey(prev => prev + 1);
+      }, 15000);
+      return () => clearInterval(interval);
+    }, []);
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 'clamp(30px, 8vw, 60px)', animation: 'fadeIn 1s ease', width: '100%' }}>
+          <div style={{ display: 'inline-flex', padding: 'clamp(12px, 4vw, 20px)', background: 'var(--panel-bg)', borderRadius: '8px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
+            <Brain key={`brain-${animKey}`} size={60} color="var(--text-main)" className="draw-icon" style={{ width: 'clamp(40px, 10vw, 60px)', height: 'clamp(40px, 10vw, 60px)' }} />
+          </div>
+          <h1 className="brand-title" style={{ fontFamily: 'var(--font-family)', fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', letterSpacing: '2px', textShadow: '2px 2px 0px var(--panel-bg)', fontWeight: 'bold' }}>ＥＶＡＬＵＡＴＥ.ａｉ</h1>
+          <TypewriterText key={`type-${animKey}`} text="Academic Grading Infrastructure for the AI Age" delay={40} className="brand-subtitle" style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.75rem, 3vw, 1rem)', fontWeight: 'bold', fontFamily: "'Courier New', Courier, monospace", textTransform: 'uppercase', letterSpacing: '1px', wordWrap: 'break-word', whiteSpace: 'normal' }} />
         </div>
-        <h1 className="brand-title" style={{ fontFamily: 'var(--font-family)', fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', letterSpacing: '2px', textShadow: '2px 2px 0px var(--panel-bg)', fontWeight: 'bold' }}>ＥＶＡＬＵＡＴＥ.ａｉ</h1>
-        <TypewriterText text="Academic Grading Infrastructure for the AI Age" delay={40} className="brand-subtitle" style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.75rem, 3vw, 1rem)', fontWeight: 'bold', fontFamily: "'Courier New', Courier, monospace", textTransform: 'uppercase', letterSpacing: '1px', wordWrap: 'break-word', whiteSpace: 'normal' }} />
-      </div>
       <div className="role-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
         {[
           { id: 'Student', icon: Smartphone, label: 'Student Portal', desc: 'Log in with your details and OTP' },
@@ -2626,9 +2636,10 @@ const StudentLoginScreen = () => {
           </SpotlightCard>
         ))}
       </div>
-      <Footer />
+      <Footer key={`footer-${animKey}`} />
     </div>
   );
+};
 // ─── Route Auth Screens ───────────────────────────────────────────────────
   if (!role) {
     if (authScreen === 'student-login') return <><GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><TerminalBackground /><StudentLoginScreen /></>;
