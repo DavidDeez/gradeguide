@@ -591,7 +591,8 @@ const Footer = () => (
         100% { width: 32ch; }
       }
       @keyframes blinkBlockCursor {
-        50% { border-color: transparent; }
+        0%, 100% { border-color: transparent; }
+        50% { border-color: var(--text-muted); }
       }
       .animated-handwriting {
         display: inline-block;
@@ -603,8 +604,8 @@ const Footer = () => (
         letter-spacing: 1px;
         overflow: hidden;
         white-space: nowrap;
-        border-right: 3px solid var(--text-muted);
-        animation: blockWrite 3s steps(32) forwards, blinkBlockCursor 0.7s step-end infinite;
+        border-right: 3px solid transparent;
+        animation: blockWrite 3s steps(32) forwards, blinkBlockCursor 0.7s step-end 5;
         width: 32ch;
       }
     `}</style>
