@@ -211,14 +211,11 @@ const GlobalStyles = () => (
     
     .terminal-bg-container {
       position: fixed; bottom: 0; left: 0; width: 100%; height: 40vh; z-index: -1;
-      overflow: hidden; pointer-events: none; opacity: 0.15;
-      background: linear-gradient(to top, rgba(13,17,23,0) 0%, #0d1117 100%);
-      font-family: monospace; font-size: 0.8rem; line-height: 1.4; color: var(--text-muted);
-      padding: 20px; display: flex; flex-direction: column; justify-content: flex-end;
-    }
-    .terminal-bg-container::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(to bottom, #0d1117 0%, transparent 100%); z-index: 1;
+      overflow: hidden; pointer-events: none; opacity: 0.25;
+      font-family: monospace; font-size: 0.85rem; line-height: 1.5; color: var(--text-muted);
+      padding: 30px; display: flex; flex-direction: column; justify-content: flex-end;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50%);
+      mask-image: linear-gradient(to bottom, transparent 0%, black 50%);
     }
 
 
@@ -230,6 +227,15 @@ const GlobalStyles = () => (
     }
     .biplane-flyer {
       position: fixed; z-index: -1; animation: flyTelegram 18s linear infinite; opacity: 0.25;
+    }
+
+
+    @keyframes spinPropeller3D {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .propeller-3d {
+      animation: spinPropeller3D 0.1s linear infinite;
     }
 
   `}} />
@@ -358,40 +364,46 @@ const SkeletonBlock = ({ width, height, style }) => (
 
 const FlyingBiplaneLogo = () => (
   <div className="biplane-flyer">
-    <svg width="200" height="150" viewBox="0 0 200 150" fill="none" stroke="var(--text-main)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'grayscale(100%)' }}>
-      {/* Tail */}
-      <path d="M 30,60 L 10,40 L 10,80 Z" fill="var(--bg-dark)" />
-      
-      {/* Body */}
-      <rect x="30" y="50" width="110" height="20" rx="10" fill="var(--bg-dark)" />
-      
-      {/* Wings */}
-      <rect x="50" y="35" width="80" height="8" rx="4" fill="var(--bg-dark)" />
-      <rect x="50" y="77" width="80" height="8" rx="4" fill="var(--bg-dark)" />
-      
-      {/* Wing Struts */}
-      <line x1="60" y1="43" x2="60" y2="77" />
-      <line x1="120" y1="43" x2="120" y2="77" />
-      <line x1="90" y1="43" x2="90" y2="77" />
-      
-      {/* Wheel Struts */}
-      <line x1="70" y1="85" x2="60" y2="105" />
-      <line x1="110" y1="85" x2="100" y2="105" />
-      
-      {/* Wheels */}
-      <circle cx="60" cy="105" r="10" fill="var(--bg-dark)" />
-      <circle cx="60" cy="105" r="3" fill="var(--text-main)" />
-      <circle cx="100" cy="105" r="10" fill="var(--bg-dark)" />
-      <circle cx="100" cy="105" r="3" fill="var(--text-main)" />
-      
-      {/* Nose */}
-      <path d="M 140,50 C 150,50 155,55 155,60 C 155,65 150,70 140,70 Z" fill="var(--bg-dark)" />
-      
-      {/* Rotating Propeller */}
-      <g className="propeller" style={{ transformOrigin: '155px 60px' }}>
-        <ellipse cx="155" cy="60" rx="4" ry="35" fill="var(--text-main)" />
-        <ellipse cx="155" cy="60" rx="35" ry="4" fill="var(--text-main)" />
-        <circle cx="155" cy="60" r="5" fill="var(--bg-dark)" />
+    <svg width="240" height="200" viewBox="0 0 240 200" fill="none" style={{ filter: 'grayscale(100%)' }}>
+      <g transform="translate(40, 20)">
+        {/* Tail (vertical stabilizer) */}
+        <path d="M 20 80 L 20 40 L 40 60 L 40 80 Z" fill="#8b949e" />
+        <path d="M 20 40 L 40 60 L 35 55 L 15 35 Z" fill="#c9d1d9" />
+        
+        {/* Fuselage (body) - isometric */}
+        <path d="M 20 80 L 140 120 L 140 140 L 20 100 Z" fill="#30363d" /> {/* side */}
+        <path d="M 20 80 L 140 120 L 130 110 L 10 70 Z" fill="#8b949e" /> {/* top */}
+        <path d="M 140 120 A 10 10 0 0 0 140 140 A 10 10 0 0 0 140 120" fill="#c9d1d9" /> {/* nose cone */}
+        
+        {/* Bottom Wing */}
+        <path d="M 80 115 L 140 155 L 130 165 L 70 125 Z" fill="#30363d" /> {/* top surface near */}
+        <path d="M 140 155 L 130 165 L 130 170 L 140 160 Z" fill="#161b22" /> {/* edge near */}
+        <path d="M 80 115 L 60 75 L 50 85 L 70 125 Z" fill="#161b22" opacity="0.8" /> {/* top surface far */}
+        
+        {/* Wheels */}
+        <circle cx="110" cy="170" r="12" fill="#161b22" />
+        <circle cx="110" cy="170" r="4" fill="#c9d1d9" />
+        
+        <circle cx="80" cy="140" r="10" fill="#161b22" />
+        <circle cx="80" cy="140" r="3" fill="#c9d1d9" />
+        
+        {/* Struts */}
+        <line x1="85" y1="105" x2="85" y2="75" stroke="#c9d1d9" strokeWidth="2" strokeLinecap="round" />
+        <line x1="125" y1="130" x2="125" y2="100" stroke="#c9d1d9" strokeWidth="2" strokeLinecap="round" />
+        <line x1="65" y1="80" x2="65" y2="50" stroke="#8b949e" strokeWidth="2" strokeLinecap="round" />
+        
+        {/* Top Wing */}
+        <path d="M 80 75 L 140 115 L 130 125 L 70 85 Z" fill="#8b949e" /> {/* top surface near */}
+        <path d="M 140 115 L 130 125 L 130 130 L 140 120 Z" fill="#30363d" /> {/* edge near */}
+        <path d="M 80 75 L 60 35 L 50 45 L 70 85 Z" fill="#8b949e" /> {/* top surface far */}
+        <path d="M 60 35 L 50 45 L 50 50 L 60 40 Z" fill="#30363d" /> {/* edge far */}
+        
+        {/* Propeller Group */}
+        <g className="propeller-3d" style={{ transformOrigin: '140px 130px' }}>
+          <ellipse cx="140" cy="130" rx="4" ry="45" fill="#c9d1d9" opacity="0.9" />
+          <ellipse cx="140" cy="130" rx="45" ry="4" fill="#8b949e" opacity="0.9" />
+          <circle cx="140" cy="130" r="6" fill="#161b22" />
+        </g>
       </g>
     </svg>
   </div>
