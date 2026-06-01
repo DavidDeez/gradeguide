@@ -2592,6 +2592,7 @@ const StudentLoginScreen = () => {
       <div style={{ textAlign: 'center', marginBottom: '60px', animation: 'fadeIn 1s ease' }}>
         <div style={{ display: 'inline-flex', padding: '20px', background: 'var(--panel-bg)', borderRadius: '8px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
           <Brain size={60} color="var(--text-main)" className="draw-icon" />
+        </div>
         <h1 className="brand-title" style={{ fontFamily: 'var(--font-family)', fontSize: '3rem', letterSpacing: '2px', textShadow: '2px 2px 0px var(--panel-bg)', fontWeight: 'bold' }}>ＥＶＡＬＵＡＴＥ...</h1>
         <TypewriterText text="Academic Grading Infrastructure for the AI Age" delay={40} className="brand-subtitle" style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: 'bold', fontFamily: "'Courier New', Courier, monospace", textTransform: 'uppercase', letterSpacing: '1px' }} />
       </div>
