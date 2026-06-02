@@ -2728,7 +2728,17 @@ const StudentLoginScreen = () => {
             )}
           </div>
           <div className="header-actions" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} onClick={() => { setRole(null); setStudentProfile(null); setAuthScreen('landing'); }}><LogOut size={18}/> <span className="btn-text">Exit</span></button>
+            <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} onClick={() => { 
+              if (role === 'Lecturer' || role === 'Admin') {
+                setRole('FacultyHub');
+              } else {
+                setRole(null); 
+                setStudentProfile(null); 
+                setAuthScreen('landing'); 
+              }
+            }}>
+              <LogOut size={18}/> <span className="btn-text">Exit</span>
+            </button>
           </div>
         </header>
         <main className="dashboard-main" style={{ flex: 1, padding: '0 20px 60px 20px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
