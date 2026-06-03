@@ -1614,12 +1614,10 @@ export default function EvaluateApp() {
   
 
   const RoleLoginModal = () => {
-    const [loading, setLoading] = useState(false);
-
     const handleLogin = async (e) => {
       e.preventDefault();
       setLoginError('');
-      setLoading(true);
+      setAuthLoading(true);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: 'admin@evaluate.com',
@@ -1632,7 +1630,7 @@ export default function EvaluateApp() {
         setRole('FacultyHub');
         setLoginModalRole(null);
       }
-      setLoading(false);
+      setAuthLoading(false);
     };
 
     return (
@@ -1671,8 +1669,8 @@ export default function EvaluateApp() {
               </div>
             )}
 
-            <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', padding: '14px', marginTop: '8px' }}>
-              {loading ? <Activity className="animate-spin" size={20} style={{ margin: '0 auto' }}/> : "Authorize Entry"}
+            <button type="submit" className="btn btn-primary" disabled={authLoading} style={{ width: '100%', padding: '14px', marginTop: '8px' }}>
+              {authLoading ? <Activity className="animate-spin" size={20} style={{ margin: '0 auto' }}/> : "Authorize Entry"}
             </button>
           </form>
         </div>
@@ -3214,7 +3212,7 @@ const StudentLoginScreen = () => {
 // ─── Route Auth Screens ───────────────────────────────────────────────────
   if (!role) {
     if (authScreen === 'student-login') return <><GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><TerminalBackground /><StudentLoginScreen /></>;
-    return <><GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><TerminalBackground /><LoginScreen />{loginModalRole && <RoleLoginModal />}</>;
+    return <><GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><TerminalBackground /><LoginScreen />{loginModalRole && RoleLoginModal()}</>;
   }
 
   if (role === 'FacultyHub') {
@@ -3262,11 +3260,11 @@ const StudentLoginScreen = () => {
           </div>
         </header>
         <main className="dashboard-main" style={{ flex: 1, padding: '0 20px 60px 20px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-          {(role === 'Lecturer' || role === 'Admin') && <LecturerDashboard />}
-          {role === 'Student' && <StudentDashboard />}
+          {(role === 'Lecturer' || role === 'Admin') && LecturerDashboard()}
+          {role === 'Student' && StudentDashboard()}
         </main>
-        {selectedSub && <DetailedCorrectionsModal />}
-        {loginModalRole && <RoleLoginModal />}
+        {selectedSub && DetailedCorrectionsModal()}
+        {loginModalRole && RoleLoginModal()}
         
         <div className="toast-container">
           {toasts.map(t => (
