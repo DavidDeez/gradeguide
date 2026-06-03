@@ -695,6 +695,7 @@ const Footer = () => (
 );
 
 export default function EvaluateApp() {
+  const lastInfractionTime = React.useRef(0);
   const [role, setRole] = useState(() => {
     return localStorage.getItem('gg_main_role') || null;
   });
@@ -763,11 +764,13 @@ export default function EvaluateApp() {
   const [lecturerTab, setLecturerTab] = useState('build');
   const [showCam, setShowCam] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [newDuration, setNewDuration] = useState('30');
   const [newQuestions, setNewQuestions] = useState([{ id: 1, text: '', maxMarks: 10 }]);
   const [assessmentContext, setAssessmentContext] = useState({ text: '', pdfBase64: null, pdfName: '' });
   const [editingAssessmentId, setEditingAssessmentId] = useState(null);
   
   const [activeExam, setActiveExam] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(null);
   const [examAnswers, setExamAnswers] = useState({});
   const [examInfractions, setExamInfractions] = React.useState(0);
   const [examLoading, setExamLoading] = useState(false);
@@ -848,9 +851,13 @@ export default function EvaluateApp() {
     }
     const handleFocusLoss = () => {
       if (document.hidden || !document.hasFocus()) {
-        setExamInfractions(prev => prev + 1);
-        if (window.showToast) {
-          window.showToast("WARNING: Tab switch / Focus loss detected. This has been logged.", "error");
+        const now = Date.now();
+        if (now - lastInfractionTime.current > 3000) {
+          lastInfractionTime.current = now;
+          setExamInfractions(prev => prev + 1);
+          if (window.showToast) {
+            window.showToast("WARNING: Tab switch / Focus loss detected. This has been logged.", "error");
+          }
         }
       }
     };
@@ -861,6 +868,33 @@ export default function EvaluateApp() {
       document.removeEventListener('visibilitychange', handleFocusLoss);
     };
   }, [activeExam]);
+
+  // Exam Countdown Timer
+  React.useEffect(() => {
+    if (!activeExam || !activeExam.duration) {
+      setTimeLeft(null);
+      return;
+    }
+    const endTime = Date.now() + (activeExam.duration * 60000);
+    
+    setTimeLeft(activeExam.duration * 60);
+
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      
+      if (remaining === 0) {
+        clearInterval(interval);
+        const submitBtn = document.getElementById('submitExamBtn');
+        if (submitBtn && !submitBtn.disabled) {
+          if (window.showToast) window.showToast("Time's up! Auto-submitting exam...", "warning");
+          submitBtn.click();
+        }
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeExam]);
+
   const [bulkState, setBulkState] = useState({ guideText: '', guideBase64: null, guideMime: '', scripts: [] });
   const [bulkScannerCam, setBulkScannerCam] = useState({ active: false, target: null, idx: null });
   const studentId = studentProfile ? studentProfile.matricNo : 'Guest';
@@ -1606,14 +1640,26 @@ export default function EvaluateApp() {
                 {showCam && <CameraModal onClose={() => setShowCam(false)} onExtract={t => setAssessmentContext(p => ({...p, text: p.text + '\n' + t}))} />}
               </div>
 
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Assessment Title</label>
-                <input 
-                  className="input-field" 
-                  placeholder="e.g. Introduction to AI Ethics Midterm" 
-                  value={newTitle} 
-                  onChange={e => setNewTitle(e.target.value)} 
-                />
+              <div style={{ marginBottom: '24px', display: 'flex', gap: '16px' }}>
+                <div style={{ flex: 3 }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Assessment Title</label>
+                  <input 
+                    className="input-field" 
+                    placeholder="e.g. Introduction to AI Ethics Midterm" 
+                    value={newTitle} 
+                    onChange={e => setNewTitle(e.target.value)} 
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Duration (Mins)</label>
+                  <input 
+                    type="number"
+                    min="1"
+                    className="input-field" 
+                    value={newDuration} 
+                    onChange={e => setNewDuration(e.target.value)} 
+                  />
+                </div>
               </div>
 
               <label style={{ display: 'block', marginBottom: '16px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Questions & Marks</label>
@@ -1677,8 +1723,9 @@ export default function EvaluateApp() {
                     style={{ flex: 1, color: 'var(--warning)', borderColor: 'rgba(245, 158, 11, 0.2)' }}
                     onClick={() => {
                       setNewTitle('');
+                      setNewDuration('30');
+                      setAssessmentContext({ text: '', pdfBase64: null, pdfName: '', fileMime: '' });
                       setNewQuestions([{ id: Date.now(), text: '', maxMarks: 10 }]);
-                      setAssessmentContext({ text: '', pdfBase64: null, pdfName: '' });
                       setEditingAssessmentId(null);
                     }}
                   >
@@ -1696,6 +1743,7 @@ export default function EvaluateApp() {
                     const createdExam = {
                       id: editingAssessmentId || Date.now(),
                       title: newTitle.trim(),
+                      duration: parseInt(newDuration, 10) || 30,
                       published: true,
                       contextText: assessmentContext.text,
                       contextPdfBase64: assessmentContext.pdfBase64,
@@ -1715,8 +1763,9 @@ export default function EvaluateApp() {
                     }
                     
                     setNewTitle('');
+                    setNewDuration('30');
+                    setAssessmentContext({ text: '', pdfBase64: null, pdfName: '', fileMime: '' });
                     setNewQuestions([{ id: Date.now(), text: '', maxMarks: 10 }]);
-                    setAssessmentContext({ text: '', pdfBase64: null, pdfName: '' });
                     setEditingAssessmentId(null);
                     window.showToast(`Assessment "${createdExam.title}" has been successfully ${editingAssessmentId ? 'updated' : 'published'} to the Student Portal!`);
                   }}
@@ -1737,11 +1786,12 @@ export default function EvaluateApp() {
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{a.questions.length} Questions</span>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button className="btn-outline" style={{ padding: '8px', border: 'none', color: 'var(--text-main)' }} onClick={() => {
-                        setNewTitle(a.title);
-                        setNewQuestions(a.questions.map(q => ({ id: Date.now() + Math.random(), text: q.text, maxMarks: q.maxMarks })));
-                        setAssessmentContext({ text: a.contextText || '', pdfBase64: a.contextPdfBase64 || null, pdfName: a.contextPdfBase64 ? 'Linked Context' : '' });
+                      <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => {
                         setEditingAssessmentId(a.id);
+                        setNewTitle(a.title);
+                        setNewDuration(a.duration ? a.duration.toString() : '30');
+                        setAssessmentContext({ text: a.contextText || '', pdfBase64: a.contextPdfBase64 || null, pdfName: 'Digital Copy (Loaded)', fileMime: a.contextFileMime || '' });
+                        setNewQuestions(a.questions.map(q => ({ id: Date.now() + Math.random(), text: q.text, maxMarks: q.maxMarks })));
                         window.scrollTo(0, 0);
                       }}>
                         <Edit size={18} />
@@ -2321,7 +2371,13 @@ const text = document.getElementById('bulkStudCSV').value;
       <div className="glass-panel" style={{ padding: '40px', maxWidth: '800px', margin: '0 auto', animation: 'slideUp 0.4s ease' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
           <h2 style={{ margin: 0 }}>{activeExam.title}</h2>
-          <button className="btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => {
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {timeLeft !== null && (
+              <div className="badge badge-success" style={{ fontSize: '1rem', padding: '8px 16px', background: timeLeft < 60 ? 'var(--danger)' : 'rgba(255,255,255,0.1)' }}>
+                ⏱️ {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
+              </div>
+            )}
+            <button className="btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => {
             if (window.confirm("Are you sure you want to go back? Your current answers will be lost.")) {
               setActiveExam(null);
               setExamAnswers({});
@@ -2351,7 +2407,7 @@ const text = document.getElementById('bulkStudCSV').value;
           </button>
         </div>
 
-        <button className="btn btn-primary" style={{ width: '100%', padding: '18px' }} disabled={examLoading} onClick={async () => {
+        <button id="submitExamBtn" className="btn btn-primary" style={{ width: '100%', padding: '18px' }} disabled={examLoading} onClick={async () => {
           setExamLoading(true);
           try {
             const uploadPayload = studentUpload ? [studentUpload] : [];
