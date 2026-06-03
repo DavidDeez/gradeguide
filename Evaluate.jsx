@@ -1322,7 +1322,7 @@ export default function EvaluateApp() {
 
   const DetailedCorrectionsModal = () => {
     if (!selectedSub) return null;
-    const ass = assessments.find(a => String(a.id) === String(selectedSub.assessmentId));
+    const ass = assessments.find(a => a.id == selectedSub.assessmentId);
     const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 0;
     const totalScore = selectedSub.results ? selectedSub.results.reduce((acc, r) => acc + r.score, 0) : 0;
     const percentage = totalMaxMarks > 0 ? Math.round((totalScore / totalMaxMarks) * 100) : 0;
@@ -1925,7 +1925,7 @@ export default function EvaluateApp() {
                         <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }} onClick={() => {
                           setRetakeRequests(retakeRequests.map(r => r.id === req.id ? { ...r, status: 'approved' } : r));
                           // Clear the student's previous submission for this assessment so they can take it fresh!
-                          setSubmissions(submissions.filter(sub => !(sub.assessmentId === req.assessmentId && sub.studentId === req.studentId)));
+                          setSubmissions(submissions.filter(sub => !(sub.assessmentId == req.assessmentId && sub.studentId == req.studentId)));
                           window.showToast(`Retake request approved for ${req.studentId}! Their previous submission was cleared.`);
                         }}>Approve Retake</button>
                       </div>
@@ -1963,7 +1963,7 @@ export default function EvaluateApp() {
                 if (submissions.length === 0) return window.showToast('No grades to export.');
                 let csv = 'Matric Number,Exam Title,Score,Max Marks,Percentage,Authenticity Score,Timestamp\n';
                 submissions.forEach(sub => {
-                  const ass = assessments.find(a => a.id === sub.assessmentId);
+                  const ass = assessments.find(a => a.id == sub.assessmentId);
                   const title = ass ? ass.title : 'Unknown';
                   const totalMax = ass ? ass.questions.reduce((a,q) => a + (q.maxMarks||10), 0) : 0;
                   const score = sub.results ? sub.results.reduce((a,r) => a + r.score, 0) : 0;
@@ -1980,7 +1980,7 @@ export default function EvaluateApp() {
             </div>
 
             {submissions.map((sub, i) => {
-              const ass = assessments.find(a => a.id === sub.assessmentId);
+              const ass = assessments.find(a => a.id == sub.assessmentId);
               const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 0;
               const totalScore = sub.results ? sub.results.reduce((acc, r) => acc + r.score, 0) : 0;
               const percentage = totalMaxMarks > 0 ? Math.round((totalScore / totalMaxMarks) * 100) : 0;
@@ -2265,7 +2265,7 @@ const text = document.getElementById('bulkStudCSV').value;
 
                 <div style={{ display: 'grid', gap: '12px' }}>
                   {submissions.map((sub, i) => {
-                    const ass = assessments.find(a => a.id === sub.assessmentId);
+                    const ass = assessments.find(a => a.id == sub.assessmentId);
                     const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 0;
                     const totalScore = sub.results ? sub.results.reduce((acc, r) => acc + r.score, 0) : 0;
                     const percentage = totalMaxMarks > 0 ? Math.round((totalScore / totalMaxMarks) * 100) : 0;
@@ -2500,8 +2500,8 @@ const text = document.getElementById('bulkStudCSV').value;
         {studentTabState === 'exams' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
             {assessments.map(a => {
-              const hasSubmitted = submissions.some(sub => sub.assessmentId === a.id && sub.studentId === studentId);
-              const retakeReq = retakeRequests.find(r => r.studentId === studentId && r.assessmentId === a.id);
+              const hasSubmitted = submissions.some(sub => sub.assessmentId == a.id && sub.studentId == studentId);
+              const retakeReq = retakeRequests.find(r => r.studentId == studentId && r.assessmentId == a.id);
               
               return (
                 <div key={a.id} className="glass-panel" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -2536,7 +2536,7 @@ const text = document.getElementById('bulkStudCSV').value;
                       } else if (retakeReq.status === 'approved') {
                         return (
                           <button className="btn btn-primary" style={{ width: '100%', background: 'var(--primary)' }} onClick={() => {
-                            setRetakeRequests(retakeRequests.filter(r => !(r.studentId === studentId && r.assessmentId === a.id)));
+                            setRetakeRequests(retakeRequests.filter(r => !(r.studentId == studentId && r.assessmentId == a.id)));
                             setActiveExam(a);
                           }}>
                             Begin Retake Exam
@@ -2562,7 +2562,7 @@ const text = document.getElementById('bulkStudCSV').value;
         {studentTabState === 'results' && (
           <div style={{ display: 'grid', gap: '20px' }}>
             {submissions.map((sub, i) => {
-              const ass = assessments.find(a => a.id === sub.assessmentId);
+              const ass = assessments.find(a => a.id == sub.assessmentId);
               const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 0;
               const totalScore = sub.results ? sub.results.reduce((acc, r) => acc + r.score, 0) : 0;
               const percentage = totalMaxMarks > 0 ? Math.round((totalScore / totalMaxMarks) * 100) : 0;
