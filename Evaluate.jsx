@@ -1322,7 +1322,7 @@ export default function EvaluateApp() {
 
   const DetailedCorrectionsModal = () => {
     if (!selectedSub) return null;
-    const ass = assessments.find(a => a.id === selectedSub.assessmentId);
+    const ass = assessments.find(a => String(a.id) === String(selectedSub.assessmentId));
     const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 0;
     const totalScore = selectedSub.results ? selectedSub.results.reduce((acc, r) => acc + r.score, 0) : 0;
     const percentage = totalMaxMarks > 0 ? Math.round((totalScore / totalMaxMarks) * 100) : 0;
