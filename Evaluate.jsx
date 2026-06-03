@@ -762,7 +762,6 @@ export default function EvaluateApp() {
   const [submissions, setSubmissions] = useState([]);
   
   // Faculty Auto-Pilot State
-  const [autoPilotEnabled, setAutoPilotEnabled] = useState(false);
   const [autoPilotLogs, setAutoPilotLogs] = useState([]);
 
   // Focus-safe Dashboard States
@@ -1295,8 +1294,8 @@ export default function EvaluateApp() {
     let active = true;
     let timer;
     const processQueue = async () => {
-      // It must be enabled, set to background strategy, and the user must be logged in as Faculty
-      if (!autoPilotEnabled || role !== 'FacultyHub' || aiSettings.gradingStrategy !== 'background') {
+      // It must be set to background strategy, and the user must be logged in as Faculty
+      if (role !== 'FacultyHub' || aiSettings.gradingStrategy !== 'background') {
         if (active) timer = setTimeout(processQueue, 2000);
         return;
       }
@@ -1367,7 +1366,7 @@ export default function EvaluateApp() {
       if (active) timer = setTimeout(processQueue, 2000);
     };
 
-    if (autoPilotEnabled && role === 'FacultyHub' && aiSettings.gradingStrategy === 'background') {
+    if (role === 'FacultyHub' && aiSettings.gradingStrategy === 'background') {
       processQueue();
     }
     
@@ -1375,7 +1374,7 @@ export default function EvaluateApp() {
       active = false;
       clearTimeout(timer);
     };
-  }, [autoPilotEnabled, role, aiSettings.gradingStrategy]);
+  }, [role, aiSettings.gradingStrategy]);
 
   // --- Student Polling Hook (Moved to global scope to prevent React Hooks crash) ---
   useEffect(() => {
@@ -1421,14 +1420,6 @@ export default function EvaluateApp() {
           </select>
         </div>
         
-        <div style={{ marginBottom: '24px' }}>
-          <label style={{ display: 'block', marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Grading Strategy</label>
-          <select className="input-field" value={aiSettings.gradingStrategy || 'background'} onChange={e => setAiSettings({...aiSettings, gradingStrategy: e.target.value})}>
-            <option value="background">Auto-Pilot (Grade silently in background)</option>
-            <option value="instant">Instant (Grade immediately when student submits)</option>
-          </select>
-        </div>
-
         {aiSettings.provider === 'openrouter' && (
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>OpenRouter Free Model</label>
@@ -2347,11 +2338,11 @@ const text = document.getElementById('bulkStudCSV').value;
                 <p style={{ margin: 0, color: 'var(--text-muted)', maxWidth: '600px' }}>Leave this tab open to automatically grade pending exams from 1,000+ students without hitting API Rate Limits.</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', padding: '12px 24px', borderRadius: '30px' }}>
-                <span style={{ fontWeight: 'bold', color: autoPilotEnabled ? 'var(--success)' : 'var(--text-muted)' }}>
-                  {autoPilotEnabled ? '🟢 RUNNING' : '🔴 OFFLINE'}
+                <span style={{ fontWeight: 'bold', color: aiSettings.gradingStrategy === 'background' ? 'var(--success)' : 'var(--text-muted)' }}>
+                  {aiSettings.gradingStrategy === 'background' ? '🟢 RUNNING' : '🔴 OFFLINE'}
                 </span>
                 <label className="switch" style={{ margin: 0 }}>
-                  <input type="checkbox" checked={autoPilotEnabled} onChange={e => setAutoPilotEnabled(e.target.checked)} />
+                  <input type="checkbox" checked={aiSettings.gradingStrategy === 'background'} onChange={e => setAiSettings({...aiSettings, gradingStrategy: e.target.checked ? 'background' : 'instant'})} />
                   <span className="slider round"></span>
                 </label>
               </div>
@@ -2375,11 +2366,11 @@ const text = document.getElementById('bulkStudCSV').value;
             <div className="glass-panel" style={{ padding: '32px' }}>
               <h4 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}><Terminal size={18}/> Node Terminal</h4>
               <div className="scrollbar" style={{ background: '#0d1117', borderRadius: '8px', padding: '16px', height: '300px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.85rem', color: '#00ff00', border: '1px solid #30363d' }}>
-                {!autoPilotEnabled && <div style={{ color: '#8b949e' }}>[System] Auto-Pilot is currently offline. Toggle the switch above to start polling.</div>}
+                {aiSettings.gradingStrategy !== 'background' && <div style={{ color: '#8b949e' }}>[System] Auto-Pilot is currently offline. Instant Grading on Submit is active.</div>}
                 {autoPilotLogs.map((log, i) => (
                   <div key={i} style={{ marginBottom: '8px', opacity: 1 - (i * 0.1) }}>{log}</div>
                 ))}
-                {autoPilotEnabled && autoPilotLogs.length === 0 && (
+                {aiSettings.gradingStrategy === 'background' && autoPilotLogs.length === 0 && (
                   <div style={{ color: '#8b949e' }}>[System] Auto-Pilot Online. Polling database for pending exams...</div>
                 )}
               </div>
@@ -2403,14 +2394,6 @@ const text = document.getElementById('bulkStudCSV').value;
                   <option value="gemini">Google Gemini 1.5 Direct</option>
                   <option value="anthropic">Anthropic Claude 3.7</option>
                   <option value="huggingface">HuggingFace Inference</option>
-                </select>
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>Grading Strategy</label>
-                <select className="input-field" value={aiSettings.gradingStrategy || 'background'} onChange={e => setAiSettings({...aiSettings, gradingStrategy: e.target.value})}>
-                  <option value="background">Auto-Pilot (Grade silently in background)</option>
-                  <option value="instant">Instant (Grade immediately when student submits)</option>
                 </select>
               </div>
 
