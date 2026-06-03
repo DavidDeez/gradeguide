@@ -932,7 +932,7 @@ export default function EvaluateApp() {
 
         if (stdRes.data) {
           const mappedStd = stdRes.data.map(row => ({
-            matricNo: row.matric_no, name: row.name, email: row.email
+            matricNo: row.matric_no, name: row.name, email: row.email, pin: row.pin
           }));
           setStudents(mappedStd);
         }
@@ -2248,7 +2248,7 @@ const name = document.getElementById('newStudName').value.trim();
                     if(students.find(s => s.email.toLowerCase() === email.toLowerCase())) return window.showToast("Email exists!");
                     
                     const otp = String(Math.floor(100000 + Math.random() * 900000));
-                    supabase.from('students').insert({ matric_no: matricNo, name: name, email: email })
+                    supabase.from('students').insert({ matric_no: matricNo, name: name, email: email, pin: otp })
                       .then(({error}) => {
                         if (error) return window.showToast("Failed to add student to database. Ensure matric number is unique.");
                         setStudents([{ name, matricNo, email, pin: otp }, ...students]);
@@ -2278,7 +2278,7 @@ const text = document.getElementById('bulkStudCSV').value;
                       }
                     });
                     if(added.length > 0) {
-                      const insertPayload = added.map(a => ({ matric_no: a.matricNo, name: a.name, email: a.email }));
+                      const insertPayload = added.map(a => ({ matric_no: a.matricNo, name: a.name, email: a.email, pin: a.pin }));
                       supabase.from('students').insert(insertPayload).then(({error}) => {
                         if (error) return window.showToast("Failed to bulk import into database.");
                         setStudents([...added, ...students]);
@@ -3010,7 +3010,7 @@ const text = document.getElementById('bulkStudCSV').value;
       if (entered !== pendingOtp.code) return setAuthError('Incorrect OTP. Please check your email.');
       // Register student
       const profile = { name: pendingOtp.name, matricNo: pendingOtp.matricNo, email: pendingOtp.email, pin: pendingOtp.pin };
-      supabase.from('students').insert({ matric_no: profile.matricNo, name: profile.name, email: profile.email }).then(({error}) => {
+      supabase.from('students').insert({ matric_no: profile.matricNo, name: profile.name, email: profile.email, pin: profile.pin }).then(({error}) => {
         if (!error) setStudents(prev => [...prev, profile]);
       });
       setStudentProfile(profile);
