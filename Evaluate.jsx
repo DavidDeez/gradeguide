@@ -721,7 +721,8 @@ export default function EvaluateApp() {
     emailjsPublicKey: 'OFoJSMtD5Dy663OcN',
     emailjsServiceId: 'service_669uej4',
     emailjsOtpTemplateId: 'template_sh27d68',
-    emailjsResultsTemplateId: ''
+    emailjsResultsTemplateId: '',
+    gradingStrategy: 'background'
   });
 
   // Auth state with LocalStorage Persistence
@@ -1417,6 +1418,14 @@ export default function EvaluateApp() {
             <option value="gemini">Google Gemini 1.5 Direct (CORS blocked in browser)</option>
             <option value="anthropic">Anthropic Claude 3.7</option>
             <option value="huggingface">HuggingFace Inference</option>
+          </select>
+        </div>
+        
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{ display: 'block', marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Grading Strategy</label>
+          <select className="input-field" value={aiSettings.gradingStrategy || 'background'} onChange={e => setAiSettings({...aiSettings, gradingStrategy: e.target.value})}>
+            <option value="background">Auto-Pilot (Grade silently in background)</option>
+            <option value="instant">Instant (Grade immediately when student submits)</option>
           </select>
         </div>
 
@@ -2397,6 +2406,14 @@ const text = document.getElementById('bulkStudCSV').value;
                 </select>
               </div>
 
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>Grading Strategy</label>
+                <select className="input-field" value={aiSettings.gradingStrategy || 'background'} onChange={e => setAiSettings({...aiSettings, gradingStrategy: e.target.value})}>
+                  <option value="background">Auto-Pilot (Grade silently in background)</option>
+                  <option value="instant">Instant (Grade immediately when student submits)</option>
+                </select>
+              </div>
+
               {aiSettings.provider === 'openrouter' && (
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>Model Version</label>
@@ -2708,6 +2725,20 @@ const text = document.getElementById('bulkStudCSV').value;
               timestamp: new Date().toLocaleString()
             };
             
+            // 0. Check Grading Strategy
+            if (aiSettings.gradingStrategy === 'instant') {
+              if (window.showToast) window.showToast("Instant Grading Enabled. AI is evaluating your exam...", "info");
+              try {
+                const aiResult = await markSubmission(activeExam, examAnswers, uploadPayload);
+                newSub.results = aiResult.results;
+                newSub.authenticity = aiResult.authenticity;
+                newSub.authenticity_reason = aiResult.authenticityReason;
+                newSub.status = 'graded';
+              } catch(e) {
+                if (window.showToast) window.showToast("Instant grading failed. Falling back to background queue.", "warning");
+              }
+            }
+
             // 1. Insert directly to the dedicated SQL table
             const { error } = await supabase.from('submissions').insert([newSub]);
             if (error) {
