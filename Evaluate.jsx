@@ -761,7 +761,7 @@ export default function EvaluateApp() {
   const [submissions, setSubmissions] = useState([]);
   
   // Faculty Auto-Pilot State
-  const [autoPilotEnabled, setAutoPilotEnabled] = useState(false);
+  const [autoPilotEnabled, setAutoPilotEnabled] = useState(true);
   const [autoPilotLogs, setAutoPilotLogs] = useState([]);
 
   // Focus-safe Dashboard States
@@ -1273,39 +1273,55 @@ export default function EvaluateApp() {
     );
   };
 
-  // --- Auto-Pilot Queue Processor ---
+  // --- Auto-Pilot Queue Processor (Fully Autonomous SQL Node) ---
   useEffect(() => {
     let active = true;
     let timer;
     const processQueue = async () => {
-      if (!autoPilotEnabled || loginModalRole !== 'lecturer') return;
+      // It must be enabled and the user must be logged in as lecturer
+      if (!autoPilotEnabled || loginModalRole !== 'lecturer') {
+        if (active) timer = setTimeout(processQueue, 2000);
+        return;
+      }
       
       try {
-        const { data, error } = await supabase.from('app_state').select('data').eq('id', 1).single();
-        if (data && data.data && data.data.submissions) {
-          const allSubs = data.data.submissions;
-          const pendingSubIndex = allSubs.findIndex(sub => sub.status === 'pending');
+        // 1. Live Sync: Fetch fresh submissions to keep the Faculty Dashboard UI completely real-time
+        const { data: allSubs } = await supabase.from('submissions').select('*').order('created_at', { ascending: false });
+        if (allSubs) {
+          const mappedSubs = allSubs.map(row => ({
+            id: row.id, assessmentId: row.assessment_id, studentId: row.student_id,
+            studentName: row.student_name, studentEmail: row.student_email, answers: row.answers || {},
+            files: row.files || [], results: row.results, status: row.status, infractions: row.infractions,
+            authenticity: row.authenticity, authenticityReason: row.authenticity_reason, timestamp: row.timestamp
+          }));
+          setSubmissions(mappedSubs);
           
-          if (pendingSubIndex !== -1 && active) {
-            const pendingSub = allSubs[pendingSubIndex];
+          // 2. Find the oldest pending submission in the queue
+          const pendingSubs = mappedSubs.filter(sub => sub.status === 'pending');
+          // Since we ordered by created_at DESC, the oldest is at the end of the pending list
+          const pendingSub = pendingSubs.length > 0 ? pendingSubs[pendingSubs.length - 1] : null;
+          
+          if (pendingSub && active) {
             setAutoPilotLogs(prev => [`[${new Date().toLocaleTimeString()}] Detected pending exam for ${pendingSub.studentId}. Grading...`, ...prev].slice(0, 10));
             
-            // Lock it so it doesn't get picked up by another concurrent loop
-            allSubs[pendingSubIndex].status = 'processing';
-            await supabase.from('app_state').upsert({ id: 1, data: { ...data.data, submissions: allSubs } });
+            // 3. Lock it by setting status to 'processing' directly in the SQL table
+            await supabase.from('submissions').update({ status: 'processing' }).eq('id', pendingSub.id);
             
-            const ass = data.data.assessments.find(a => a.id == pendingSub.assessmentId);
+            // 4. Fetch the assessment details to grade it
+            const { data: appData } = await supabase.from('app_state').select('data').eq('id', 1).single();
+            const ass = appData?.data?.assessments?.find(a => a.id == pendingSub.assessmentId);
+            
             if (ass) {
-              const response = await markSubmission(ass, pendingSub.answers, pendingSub.files || []);
+              const response = await markSubmission(ass, pendingSub.answers || {}, pendingSub.files || []);
               const results = response.results || response;
               
-              allSubs[pendingSubIndex].results = results;
-              allSubs[pendingSubIndex].authenticity = response.authenticity || null;
-              allSubs[pendingSubIndex].authenticityReason = response.authenticityReason || '';
-              allSubs[pendingSubIndex].status = 'graded';
-              
-              await supabase.from('app_state').upsert({ id: 1, data: { ...data.data, submissions: allSubs } });
-              setSubmissions(allSubs); // update local state
+              // 5. Save grades back to SQL table
+              await supabase.from('submissions').update({
+                results: results,
+                authenticity: response.authenticity || null,
+                authenticity_reason: response.authenticityReason || '',
+                status: 'graded'
+              }).eq('id', pendingSub.id);
               
               setAutoPilotLogs(prev => [`[${new Date().toLocaleTimeString()}] Successfully graded ${pendingSub.studentId}.`, ...prev].slice(0, 10));
               
@@ -1317,9 +1333,8 @@ export default function EvaluateApp() {
                 setAutoPilotLogs(prev => [`[${new Date().toLocaleTimeString()}] Dispatched Email to ${pendingSub.studentEmail}.`, ...prev].slice(0, 10));
               }
             } else {
-              // assessment deleted, mark as failed
-              allSubs[pendingSubIndex].status = 'failed';
-              await supabase.from('app_state').upsert({ id: 1, data: { ...data.data, submissions: allSubs } });
+              // Assessment deleted
+              await supabase.from('submissions').update({ status: 'failed' }).eq('id', pendingSub.id);
               setAutoPilotLogs(prev => [`[${new Date().toLocaleTimeString()}] Failed to grade ${pendingSub.studentId}: Assessment not found.`, ...prev].slice(0, 10));
             }
           }
@@ -1328,8 +1343,8 @@ export default function EvaluateApp() {
         console.error("AutoPilot Error:", err);
       }
       
-      // Delay before next poll/grade to respect Rate Limits
-      if (active) timer = setTimeout(processQueue, 5000);
+      // Delay before next poll/grade. Sped up to 2000ms.
+      if (active) timer = setTimeout(processQueue, 2000);
     };
 
     if (autoPilotEnabled && loginModalRole === 'lecturer') {
