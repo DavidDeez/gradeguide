@@ -659,7 +659,33 @@ const Footer = () => (
         animation: blockWrite 3s steps(32) forwards, blinkBlockCursor 0.7s step-end 5;
         width: 32ch;
       }
-    `}</style>
+      /* Toast Notifications */
+    .toast-container {
+      position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+    }
+    .toast {
+      background: rgba(13, 17, 23, 0.9); border: 1px solid var(--panel-border);
+      backdrop-filter: blur(10px); color: var(--text-main);
+      padding: 16px 24px; border-radius: 8px; font-weight: 500; font-size: 0.9rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      animation: slideIn 0.3s ease forwards;
+      pointer-events: auto; display: flex; align-items: center; gap: 12px;
+      max-width: 350px;
+    }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.error { border-left: 4px solid var(--danger); }
+    .toast.info { border-left: 4px solid var(--primary); }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+  `}</style>
     <div className="animated-handwriting">
       Developed by David Olukayode
     </div>
@@ -746,7 +772,70 @@ export default function EvaluateApp() {
   const [studentUpload, setStudentUpload] = useState(null);
 
   const [retakeRequests, setRetakeRequests] = useState([]);
-  const [studentMessages, setStudentMessages] = useState([]);
+  const [studentMessages, setStudentMessages] = React.useState([]);
+  
+  const [toasts, setToasts] = React.useState([]);
+
+  React.useEffect(() => {
+    window.showToast = (msg, type = 'info') => {
+      const id = Date.now() + Math.random();
+      setToasts(t => [...t, { id, msg, type }]);
+      setTimeout(() => {
+        setToasts(t => t.filter(toast => toast.id !== id));
+      }, 4000);
+    };
+
+    // Cyberpunk Audio Engine
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const playHoverSound = () => {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.05);
+    };
+
+    const playClickSound = () => {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.1);
+    };
+
+    const handleMouseOver = (e) => {
+      if (e.target.closest('.btn') || e.target.closest('.role-card') || e.target.closest('.spotlight-wrapper')) {
+        playHoverSound();
+      }
+    };
+    const handleClick = (e) => {
+      if (e.target.closest('.btn') || e.target.closest('.role-card') || e.target.closest('.spotlight-wrapper')) {
+        playClickSound();
+      }
+    };
+
+    document.addEventListener('mouseover', handleMouseOver);
+    document.addEventListener('click', handleClick);
+
+    return () => {
+      document.removeEventListener('mouseover', handleMouseOver);
+      document.removeEventListener('click', handleClick);
+    };
+  }, []);
   const [bulkState, setBulkState] = useState({ guideText: '', guideBase64: null, guideMime: '', scripts: [] });
   const [bulkScannerCam, setBulkScannerCam] = useState({ active: false, target: null, idx: null });
   const studentId = studentProfile ? studentProfile.matricNo : 'Guest';
@@ -759,7 +848,7 @@ export default function EvaluateApp() {
         const { data: dbData, error } = await supabase.from('app_state').select('data').eq('id', 1).single();
         if (error) {
           console.error("Error loading from Supabase:", error);
-          alert("Database connection failed. Please refresh the page.");
+          window.showToast("Database connection failed. Please refresh the page.");
           return; // DO NOT set isLoaded to true, prevents wiping DB
         }
         if (dbData) {
@@ -799,7 +888,7 @@ export default function EvaluateApp() {
         .then(({error}) => { 
           if (error) {
             console.error("Error saving to Supabase:", error);
-            alert("CRITICAL DATABASE ERROR: Supabase rejected the save! Your Row Level Security (RLS) policies are blocking writes. Please run the SQL script to disable RLS restrictions.");
+            window.showToast("CRITICAL DATABASE ERROR: Supabase rejected the save! Your Row Level Security (RLS) policies are blocking writes. Please run the SQL script to disable RLS restrictions.");
           }
         })
         .finally(() => setTimeout(() => setDbSyncing(false), 800));
@@ -1031,7 +1120,7 @@ export default function EvaluateApp() {
       finalScripts[idx].loading = false;
       setBulkState({...bulkState, scripts: finalScripts});
     } catch(e) {
-      alert("Grading failed: " + e.message);
+      window.showToast("Grading failed: " + e.message);
       const finalScripts = [...bulkState.scripts];
       finalScripts[idx].loading = false;
       setBulkState({...bulkState, scripts: finalScripts});
@@ -1049,7 +1138,7 @@ export default function EvaluateApp() {
     useEffect(() => {
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         .then(s => { if(videoRef.current) videoRef.current.srcObject = s; })
-        .catch(() => alert("Camera access failed. Use HTTPS."));
+        .catch(() => window.showToast("Camera access failed. Use HTTPS."));
     }, []);
 
     const capture = async () => {
@@ -1064,7 +1153,7 @@ export default function EvaluateApp() {
         const text = "[Image captured successfully. The AI Vision Engine will read this directly during grading]";
         onExtract(text, b64);
         onClose();
-      } catch (e) { alert(e.message); }
+      } catch (e) { window.showToast(e.message); }
       setCapturing(false);
     };
 
@@ -1386,7 +1475,7 @@ export default function EvaluateApp() {
         reader.onload = ev => setCourseMaterial({ ...courseMaterial, text: ev.target.result, pdfBase64: null, pdfName: '' });
         reader.readAsText(file);
       } else {
-        alert("Unsupported file type. Please use PDF or Text.");
+        window.showToast("Unsupported file type. Please use PDF or Text.");
       }
     };
 
@@ -1401,7 +1490,7 @@ export default function EvaluateApp() {
         reader.onload = ev => setAssessmentContext({ ...assessmentContext, text: ev.target.result, pdfBase64: null, pdfName: '' });
         reader.readAsText(file);
       } else {
-        alert("Unsupported file type. Please use PDF or Text.");
+        window.showToast("Unsupported file type. Please use PDF or Text.");
       }
     };
 
@@ -1575,9 +1664,9 @@ export default function EvaluateApp() {
                   className="btn btn-primary" 
                   style={{ flex: 1 }}
                   onClick={() => {
-                    if (!newTitle.trim()) { alert("Please enter an assessment title."); return; }
+                    if (!newTitle.trim()) { window.showToast("Please enter an assessment title."); return; }
                     const invalidQ = newQuestions.find(q => !q.text.trim());
-                    if (invalidQ) { alert("Please enter text for all questions."); return; }
+                    if (invalidQ) { window.showToast("Please enter text for all questions."); return; }
                     
                     const createdExam = {
                       id: editingAssessmentId || Date.now(),
@@ -1604,7 +1693,7 @@ export default function EvaluateApp() {
                     setNewQuestions([{ id: Date.now(), text: '', maxMarks: 10 }]);
                     setAssessmentContext({ text: '', pdfBase64: null, pdfName: '' });
                     setEditingAssessmentId(null);
-                    alert(`Assessment "${createdExam.title}" has been successfully ${editingAssessmentId ? 'updated' : 'published'} to the Student Portal!`);
+                    window.showToast(`Assessment "${createdExam.title}" has been successfully ${editingAssessmentId ? 'updated' : 'published'} to the Student Portal!`);
                   }}
                 >
                   <Save size={18} /> {editingAssessmentId ? 'Update Assessment' : 'Save & Publish'}
@@ -1744,7 +1833,7 @@ export default function EvaluateApp() {
                           setRetakeRequests(retakeRequests.map(r => r.id === req.id ? { ...r, status: 'approved' } : r));
                           // Clear the student's previous submission for this assessment so they can take it fresh!
                           setSubmissions(submissions.filter(sub => !(sub.assessmentId === req.assessmentId && sub.studentId === req.studentId)));
-                          alert(`Retake request approved for ${req.studentId}! Their previous submission was cleared.`);
+                          window.showToast(`Retake request approved for ${req.studentId}! Their previous submission was cleared.`);
                         }}>Approve Retake</button>
                       </div>
                     </div>
@@ -1778,7 +1867,7 @@ export default function EvaluateApp() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <h3 style={{ margin: 0 }}>Graded Submissions</h3>
               <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => {
-                if (submissions.length === 0) return alert('No grades to export.');
+                if (submissions.length === 0) return window.showToast('No grades to export.');
                 let csv = 'Matric Number,Exam Title,Score,Max Marks,Percentage,Authenticity Score,Timestamp\n';
                 submissions.forEach(sub => {
                   const ass = assessments.find(a => a.id === sub.assessmentId);
@@ -1854,14 +1943,14 @@ export default function EvaluateApp() {
 const name = document.getElementById('newStudName').value.trim();
                     const matricNo = document.getElementById('newStudMatric').value.trim();
                     const email = document.getElementById('newStudEmail').value.trim();
-                    if(!name || !matricNo || !email) return alert("All fields are required.");
-                    if(students.find(s => s.matricNo.toLowerCase() === matricNo.toLowerCase())) return alert("Matric Number exists!");
-                    if(students.find(s => s.email.toLowerCase() === email.toLowerCase())) return alert("Email exists!");
+                    if(!name || !matricNo || !email) return window.showToast("All fields are required.");
+                    if(students.find(s => s.matricNo.toLowerCase() === matricNo.toLowerCase())) return window.showToast("Matric Number exists!");
+                    if(students.find(s => s.email.toLowerCase() === email.toLowerCase())) return window.showToast("Email exists!");
                     
                     const otp = String(Math.floor(100000 + Math.random() * 900000));
                     setStudents([{ name, matricNo, email, pin: otp }, ...students]);
                     sendOtpEmail(email, name, otp); // Send email in background
-                    alert(`Student added. An OTP (${otp}) was emailed to them for login.`);
+                    window.showToast(`Student added. An OTP (${otp}) was emailed to them for login.`);
                     
                     document.getElementById('newStudName').value = '';
                     document.getElementById('newStudMatric').value = '';
@@ -1887,10 +1976,10 @@ const text = document.getElementById('bulkStudCSV').value;
                     });
                     if(added.length > 0) {
                       setStudents([...added, ...students]);
-                      alert(`Successfully imported ${added.length} students! OTP emails are being sent.`);
+                      window.showToast(`Successfully imported ${added.length} students! OTP emails are being sent.`);
                       document.getElementById('bulkStudCSV').value = '';
                     } else {
-                      alert("No valid new students found to import. Check format and duplicates.");
+                      window.showToast("No valid new students found to import. Check format and duplicates.");
                     }
                   }}>Import CSV</button>
                 </div>
@@ -2117,7 +2206,7 @@ const text = document.getElementById('bulkStudCSV').value;
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                   <button className="btn btn-outline" style={{ flex: 1, borderColor: 'var(--primary)', color: 'var(--text-main)' }} onClick={async () => {
                     const { data: dbData, error } = await supabase.from('app_state').select('data').eq('id', 1).single();
-                    if (error || !dbData) return alert('No database found to backup!');
+                    if (error || !dbData) return window.showToast('No database found to backup!');
                     const data = JSON.stringify(dbData.data);
                     const blob = new Blob([data], { type: 'application/json' });
                     const a = document.createElement('a');
@@ -2135,10 +2224,10 @@ const text = document.getElementById('bulkStudCSV').value;
                         const data = JSON.parse(ev.target.result);
                         if (data.assessments) {
                           await supabase.from('app_state').upsert({ id: 1, data: data });
-                          alert('Database restored successfully! The page will now reload.');
+                          window.showToast('Database restored successfully! The page will now reload.');
                           window.location.reload();
                         } else throw new Error();
-                      } catch(err) { alert('Invalid backup file.'); }
+                      } catch(err) { window.showToast('Invalid backup file.'); }
                     };
                     reader.readAsText(file);
                   }} />
@@ -2149,10 +2238,54 @@ const text = document.getElementById('bulkStudCSV').value;
                   <button className="btn btn-outline" style={{ flex: 1, color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => {
                     if (window.confirm("Are you sure you want to delete all registered students?")) {
                       setStudents([]);
-                      alert("Students database wiped. You can now re-register with your test emails.");
+                      window.showToast("Students database wiped. You can now re-register with your test emails.");
                     }
                   }}>
                     <Trash2 size={16} /> Delete Students
+                  </button>
+                  <button className="btn btn-outline" style={{ flex: 1, color: '#a371f7', borderColor: '#a371f7' }} onClick={() => {
+                    if (window.confirm("This will add mock students, an exam, and submissions. Proceed?")) {
+                      const mockStudents = [
+                        { id: Date.now()+1, name: "Alice Cyber", matricNo: "MOCK001", email: "alice@mock.com", pin: "111111" },
+                        { id: Date.now()+2, name: "Bob Synth", matricNo: "MOCK002", email: "bob@mock.com", pin: "222222" },
+                        { id: Date.now()+3, name: "Charlie Hacker", matricNo: "MOCK003", email: "charlie@mock.com", pin: "333333" }
+                      ];
+                      setStudents(prev => [...prev, ...mockStudents]);
+                      
+                      const mockAssessmentId = Date.now() + 4;
+                      const mockAssessment = {
+                        id: mockAssessmentId,
+                        title: "Midterm: Intro to Artificial Intelligence",
+                        duration: 30,
+                        questions: [
+                          { id: 'q1', text: "Explain the difference between supervised and unsupervised learning.", maxMarks: 10 },
+                          { id: 'q2', text: "What is backpropagation in neural networks?", maxMarks: 10 }
+                        ],
+                        published: true
+                      };
+                      setAssessments(prev => [...prev, mockAssessment]);
+                      
+                      const mockSubmissions = mockStudents.map((s, i) => ({
+                        id: Date.now() + 5 + i,
+                        assessmentId: mockAssessmentId,
+                        studentId: s.matricNo,
+                        timestamp: new Date().toISOString(),
+                        answers: {
+                          'q1': "Supervised learning uses labeled data to train models, while unsupervised learning finds patterns in unlabeled data.",
+                          'q2': "Backpropagation is an algorithm used to calculate the gradient of the loss function with respect to the weights in an artificial neural network."
+                        },
+                        results: [
+                          { qId: 'q1', score: 8 + (i%3), feedback: "Good explanation of the core concepts." },
+                          { qId: 'q2', score: 7 + (i%4), feedback: "Adequate definition, could be more detailed." }
+                        ],
+                        authenticity: 95 - (i*5)
+                      }));
+                      setSubmissions(prev => [...prev, ...mockSubmissions]);
+                      
+                      window.showToast("Demo Data Seeded Successfully!", "success");
+                    }
+                  }}>
+                    <Zap size={16} /> Seed Demo Data
                   </button>
                 </div>
               </div>
@@ -2229,7 +2362,7 @@ const text = document.getElementById('bulkStudCSV').value;
             if (studentProfile) {
               localStorage.removeItem(`draft_${studentProfile.matricNo}_${activeExam.id}`);
             }
-          } catch(e) { alert(e.message); }
+          } catch(e) { window.showToast(e.message); }
           setExamLoading(false);
         }}>
           {examLoading ? <Activity className="animate-spin" /> : <><CheckCircle size={20}/> Submit for AI Grading</>}
@@ -2295,7 +2428,7 @@ const text = document.getElementById('bulkStudCSV').value;
                               status: 'pending'
                             };
                             setRetakeRequests([...retakeRequests, newReq]);
-                            alert("Your retake request has been successfully sent to the lecturer!");
+                            window.showToast("Your retake request has been successfully sent to the lecturer!");
                           }}>
                             Request Retake Permission
                           </button>
@@ -2383,11 +2516,11 @@ const text = document.getElementById('bulkStudCSV').value;
               <textarea className="input-field scrollbar" rows={4} placeholder="Type your message here..." id="lecturerMsg"></textarea>
               <button className="btn btn-primary" style={{ marginTop: '12px', width: '100%', padding: '14px' }} onClick={() => {
                 const msgInput = document.getElementById('lecturerMsg');
-                if (!msgInput.value.trim()) return alert('Please enter a message.');
+                if (!msgInput.value.trim()) return window.showToast('Please enter a message.');
                 const newMsg = { id: Date.now(), studentId, msg: msgInput.value.trim(), date: new Date().toLocaleString() };
                 setStudentMessages(prev => [...prev, newMsg]);
                 msgInput.value = '';
-                alert('Your message has been safely delivered to the faculty dashboard!');
+                window.showToast('Your message has been safely delivered to the faculty dashboard!');
               }}>Send Message to Lecturer</button>
             </div>
 
@@ -2538,7 +2671,7 @@ const text = document.getElementById('bulkStudCSV').value;
       const newOtp = String(Math.floor(100000 + Math.random() * 900000));
       await sendOtpEmail(pendingOtp.email, pendingOtp.name, newOtp);
       setPendingOtp({ ...pendingOtp, code: newOtp, expiry: Date.now() + 600000 });
-      alert('A new OTP has been sent to your email!');
+      window.showToast('A new OTP has been sent to your email!');
     };
 
     return (
@@ -2747,6 +2880,18 @@ const StudentLoginScreen = () => {
         </main>
         {selectedSub && DetailedCorrectionsModal()}
         {loginModalRole && RoleLoginModal()}
+        
+        <div className="toast-container">
+          {toasts.map(t => (
+            <div key={t.id} className={`toast ${t.type}`}>
+              {t.type === 'success' && <CheckCircle size={18} color="var(--success)" />}
+              {t.type === 'error' && <AlertCircle size={18} color="var(--danger)" />}
+              {t.type === 'info' && <Info size={18} color="var(--primary)" />}
+              <span style={{ lineHeight: '1.4' }}>{t.msg}</span>
+            </div>
+          ))}
+        </div>
+
         <Footer />
       </div>
     </>
