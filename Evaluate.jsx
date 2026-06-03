@@ -907,6 +907,7 @@ export default function EvaluateApp() {
 
   useEffect(() => {
     const loadData = async () => {
+      try {
         const [appStateRes, subRes] = await Promise.all([
           supabase.from('app_state').select('data').eq('id', 1).single(),
           supabase.from('submissions').select('*').order('created_at', { ascending: false })
