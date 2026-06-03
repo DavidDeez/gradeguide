@@ -759,6 +759,10 @@ export default function EvaluateApp() {
   const [courseMaterial, setCourseMaterial] = useState({ text: '', pdfBase64: null, pdfName: '' });
   const [assessments, setAssessments] = useState([]);
   const [submissions, setSubmissions] = useState([]);
+  
+  // Faculty Auto-Pilot State
+  const [autoPilotEnabled, setAutoPilotEnabled] = useState(false);
+  const [autoPilotLogs, setAutoPilotLogs] = useState([]);
 
   // Focus-safe Dashboard States
   const [lecturerTab, setLecturerTab] = useState('build');
@@ -1245,6 +1249,75 @@ export default function EvaluateApp() {
     );
   };
 
+  // --- Auto-Pilot Queue Processor ---
+  useEffect(() => {
+    let active = true;
+    let timer;
+    const processQueue = async () => {
+      if (!autoPilotEnabled || loginModalRole !== 'lecturer') return;
+      
+      try {
+        const { data, error } = await supabase.from('app_state').select('data').eq('id', 1).single();
+        if (data && data.data && data.data.submissions) {
+          const allSubs = data.data.submissions;
+          const pendingSubIndex = allSubs.findIndex(sub => sub.status === 'pending');
+          
+          if (pendingSubIndex !== -1 && active) {
+            const pendingSub = allSubs[pendingSubIndex];
+            setAutoPilotLogs(prev => [`[${new Date().toLocaleTimeString()}] Detected pending exam for ${pendingSub.studentId}. Grading...`, ...prev].slice(0, 10));
+            
+            // Lock it so it doesn't get picked up by another concurrent loop
+            allSubs[pendingSubIndex].status = 'processing';
+            await supabase.from('app_state').upsert({ id: 1, data: { ...data.data, submissions: allSubs } });
+            
+            const ass = data.data.assessments.find(a => a.id == pendingSub.assessmentId);
+            if (ass) {
+              const response = await markSubmission(ass, pendingSub.answers, pendingSub.files || []);
+              const results = response.results || response;
+              
+              allSubs[pendingSubIndex].results = results;
+              allSubs[pendingSubIndex].authenticity = response.authenticity || null;
+              allSubs[pendingSubIndex].authenticityReason = response.authenticityReason || '';
+              allSubs[pendingSubIndex].status = 'graded';
+              
+              await supabase.from('app_state').upsert({ id: 1, data: { ...data.data, submissions: allSubs } });
+              setSubmissions(allSubs); // update local state
+              
+              setAutoPilotLogs(prev => [`[${new Date().toLocaleTimeString()}] Successfully graded ${pendingSub.studentId}.`, ...prev].slice(0, 10));
+              
+              if (pendingSub.studentEmail) {
+                const profile = { email: pendingSub.studentEmail, name: pendingSub.studentName, matricNo: pendingSub.studentId };
+                const totalMax = ass.questions.reduce((a, q) => a + (q.maxMarks || 10), 0);
+                const totalScore = results.reduce((a, r) => a + r.score, 0);
+                sendResultsEmail(profile, ass.title, results, totalScore, totalMax);
+                setAutoPilotLogs(prev => [`[${new Date().toLocaleTimeString()}] Dispatched Email to ${pendingSub.studentEmail}.`, ...prev].slice(0, 10));
+              }
+            } else {
+              // assessment deleted, mark as failed
+              allSubs[pendingSubIndex].status = 'failed';
+              await supabase.from('app_state').upsert({ id: 1, data: { ...data.data, submissions: allSubs } });
+              setAutoPilotLogs(prev => [`[${new Date().toLocaleTimeString()}] Failed to grade ${pendingSub.studentId}: Assessment not found.`, ...prev].slice(0, 10));
+            }
+          }
+        }
+      } catch (err) {
+        console.error("AutoPilot Error:", err);
+      }
+      
+      // Delay before next poll/grade to respect Rate Limits
+      if (active) timer = setTimeout(processQueue, 5000);
+    };
+
+    if (autoPilotEnabled && loginModalRole === 'lecturer') {
+      processQueue();
+    }
+    
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [autoPilotEnabled, loginModalRole]);
+
   const SettingsModal = () => (
     <div className="modal-overlay">
       <div className="glass-panel scrollbar" style={{ width: '100%', maxWidth: '500px', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -1592,6 +1665,14 @@ export default function EvaluateApp() {
                   </span>
                 )}
               </div>
+              <div className={`side-nav-tab ${lecturerTab === 'queue' ? 'active' : ''}`} onClick={() => { setLecturerTab('queue'); setIsMobileMenuOpen(false); }}>
+                🤖 Auto-Pilot Queue
+                {submissions.filter(s => s.status === 'pending').length > 0 && (
+                  <span className="badge" style={{ marginLeft: 'auto', background: 'var(--warning)', color: '#000' }}>
+                    {submissions.filter(s => s.status === 'pending').length}
+                  </span>
+                )}
+              </div>
             </>
           )}
           <div className={`side-nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}>⚙️ System Audit & Engine</div>
@@ -1610,6 +1691,14 @@ export default function EvaluateApp() {
                   {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
                     <span className="badge badge-success" style={{ marginLeft: '8px', background: 'var(--danger)', color: 'white' }}>
                       {retakeRequests.filter(r => r.status === 'pending').length} New
+                    </span>
+                  )}
+                </div>
+                <div className={`nav-tab ${lecturerTab === 'queue' ? 'active' : ''}`} onClick={() => setLecturerTab('queue')}>
+                  Auto-Pilot Queue
+                  {submissions.filter(s => s.status === 'pending').length > 0 && (
+                    <span className="badge" style={{ marginLeft: '8px', background: 'var(--warning)', color: '#000' }}>
+                      {submissions.filter(s => s.status === 'pending').length}
                     </span>
                   )}
                 </div>
@@ -2120,6 +2209,54 @@ const text = document.getElementById('bulkStudCSV').value;
           </div>
         )}
 
+        {lecturerTab === 'queue' && (
+          <div style={{ display: 'grid', gap: '24px', animation: 'fadeIn 0.4s ease' }}>
+            <div className="glass-panel" style={{ padding: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>🤖 Auto-Pilot Grading Node</h3>
+                <p style={{ margin: 0, color: 'var(--text-muted)', maxWidth: '600px' }}>Leave this tab open to automatically grade pending exams from 1,000+ students without hitting API Rate Limits.</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', padding: '12px 24px', borderRadius: '30px' }}>
+                <span style={{ fontWeight: 'bold', color: autoPilotEnabled ? 'var(--success)' : 'var(--text-muted)' }}>
+                  {autoPilotEnabled ? '🟢 RUNNING' : '🔴 OFFLINE'}
+                </span>
+                <label className="switch" style={{ margin: 0 }}>
+                  <input type="checkbox" checked={autoPilotEnabled} onChange={e => setAutoPilotEnabled(e.target.checked)} />
+                  <span className="slider round"></span>
+                </label>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
+              <div className="glass-panel stat-card" style={{ padding: '24px', textAlign: 'center' }}>
+                <h4 style={{ margin: '0 0 12px 0', color: 'var(--text-muted)' }}>Pending Queue</h4>
+                <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--warning)' }}>{submissions.filter(s => s.status === 'pending').length}</div>
+              </div>
+              <div className="glass-panel stat-card" style={{ padding: '24px', textAlign: 'center' }}>
+                <h4 style={{ margin: '0 0 12px 0', color: 'var(--text-muted)' }}>Currently Grading</h4>
+                <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>{submissions.filter(s => s.status === 'processing').length}</div>
+              </div>
+              <div className="glass-panel stat-card" style={{ padding: '24px', textAlign: 'center' }}>
+                <h4 style={{ margin: '0 0 12px 0', color: 'var(--text-muted)' }}>Successfully Graded</h4>
+                <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--success)' }}>{submissions.filter(s => s.status === 'graded').length}</div>
+              </div>
+            </div>
+
+            <div className="glass-panel" style={{ padding: '32px' }}>
+              <h4 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}><Terminal size={18}/> Node Terminal</h4>
+              <div className="scrollbar" style={{ background: '#0d1117', borderRadius: '8px', padding: '16px', height: '300px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.85rem', color: '#00ff00', border: '1px solid #30363d' }}>
+                {!autoPilotEnabled && <div style={{ color: '#8b949e' }}>[System] Auto-Pilot is currently offline. Toggle the switch above to start polling.</div>}
+                {autoPilotLogs.map((log, i) => (
+                  <div key={i} style={{ marginBottom: '8px', opacity: 1 - (i * 0.1) }}>{log}</div>
+                ))}
+                {autoPilotEnabled && autoPilotLogs.length === 0 && (
+                  <div style={{ color: '#8b949e' }}>[System] Auto-Pilot Online. Polling database for pending exams...</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {lecturerTab === 'audit' && (
           <div className="audit-grid" style={{ animation: 'fadeIn 0.5s ease' }}>
             
@@ -2389,6 +2526,24 @@ const text = document.getElementById('bulkStudCSV').value;
   };
 
   const StudentDashboard = () => {
+    useEffect(() => {
+      let interval;
+      if (studentTabState === 'results') {
+        const hasPending = submissions.some(sub => sub.studentId == studentId && sub.status === 'pending');
+        if (hasPending) {
+          interval = setInterval(async () => {
+            try {
+              const { data, error } = await supabase.from('app_state').select('data').eq('id', 1).single();
+              if (data && data.data.submissions) {
+                setSubmissions(data.data.submissions);
+              }
+            } catch (err) {}
+          }, 4000);
+        }
+      }
+      return () => clearInterval(interval);
+    }, [studentTabState, submissions, studentId]);
+
     if (activeExam) return (
       <div className="glass-panel" style={{ padding: '40px', maxWidth: '800px', margin: '0 auto', animation: 'slideUp 0.4s ease' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
@@ -2434,29 +2589,27 @@ const text = document.getElementById('bulkStudCSV').value;
           setExamLoading(true);
           try {
             const uploadPayload = studentUpload ? [studentUpload] : [];
-            const response = await markSubmission(activeExam, examAnswers, uploadPayload);
-            const results = response.results || response; // Backwards compatibility for old format
-            const totalMax = activeExam.questions.reduce((a, q) => a + (q.maxMarks || 10), 0);
-            const totalScore = results.reduce((a, r) => a + r.score, 0);
             const newSub = { 
+              id: Date.now(), // Generate a unique ID for queue tracking
               assessmentId: activeExam.id, 
               studentId: studentId,
               studentName: studentProfile?.name || studentId,
               studentEmail: studentProfile?.email || '',
-              answers: examAnswers, 
-              results,
+              answers: examAnswers,
+              files: uploadPayload,
+              results: null, // Pending grading
+              status: 'pending',
               infractions: examInfractions,
-              authenticity: response.authenticity || null,
-              authenticityReason: response.authenticityReason || '',
+              authenticity: null,
+              authenticityReason: '',
               timestamp: new Date().toLocaleString()
             };
             setSubmissions(prev => [...prev, newSub]);
             setActiveExam(null);
-            setSelectedSub(newSub);
-            // Auto-send results email
-            if (studentProfile?.email) {
-              sendResultsEmail(studentProfile, activeExam.title, results, totalScore, totalMax);
-            }
+            
+            // Do not select submission so it doesn't try to render results
+            if (window.showToast) window.showToast("Exam Submitted Successfully! It is now in the grading queue.", "success");
+            
             if (studentProfile) {
               localStorage.removeItem(`draft_${studentProfile.matricNo}_${activeExam.id}`);
             }
@@ -2582,7 +2735,11 @@ const text = document.getElementById('bulkStudCSV').value;
                       <p style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                         Submitted on: {sub.timestamp || 'Recent'}
                       </p>
-                      <span className="badge badge-success" style={{ fontSize: '0.7rem', marginRight: '8px' }}>AI Graded</span>
+                      {sub.status === 'pending' ? (
+                        <span className="badge" style={{ fontSize: '0.7rem', marginRight: '8px', background: 'var(--warning)', color: '#000' }}>Grading in Queue...</span>
+                      ) : (
+                        <span className="badge badge-success" style={{ fontSize: '0.7rem', marginRight: '8px' }}>AI Graded</span>
+                      )}
                       {sub.infractions > 0 && (
                         <span className="badge" style={{ fontSize: '0.7rem', background: 'var(--danger)', color: 'white' }}>
                           ⚠️ Flagged: Focus Loss ({sub.infractions}x)
@@ -2592,10 +2749,18 @@ const text = document.getElementById('bulkStudCSV').value;
                   </div>
                   
                   <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                    <ScoreRing score={percentage} size={70} strokeWidth={7} />
-                    <button className="btn btn-outline" style={{ padding: '10px 20px', fontSize: '0.85rem' }} onClick={() => setSelectedSub(sub)}>
-                      <Eye size={16} /> Get Corrections
-                    </button>
+                    {sub.status === 'pending' ? (
+                      <div style={{ padding: '10px 20px', color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="spinner" style={{ width: '14px', height: '14px' }}></div> Waiting for Auto-Pilot...
+                      </div>
+                    ) : (
+                      <>
+                        <ScoreRing score={percentage} size={70} strokeWidth={7} />
+                        <button className="btn btn-outline" style={{ padding: '10px 20px', fontSize: '0.85rem' }} onClick={() => setSelectedSub(sub)}>
+                          <Eye size={16} /> Get Corrections
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               );
