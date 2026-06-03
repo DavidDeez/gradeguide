@@ -762,7 +762,7 @@ export default function EvaluateApp() {
   const [submissions, setSubmissions] = useState([]);
   
   // Faculty Auto-Pilot State
-  const [autoPilotEnabled, setAutoPilotEnabled] = useState(true);
+  const [autoPilotEnabled, setAutoPilotEnabled] = useState(false);
   const [autoPilotLogs, setAutoPilotLogs] = useState([]);
 
   // Focus-safe Dashboard States
@@ -1295,8 +1295,8 @@ export default function EvaluateApp() {
     let active = true;
     let timer;
     const processQueue = async () => {
-      // It must be enabled and the user must be logged in as lecturer
-      if (!autoPilotEnabled || loginModalRole !== 'lecturer') {
+      // It must be enabled, set to background strategy, and the user must be logged in as Faculty
+      if (!autoPilotEnabled || role !== 'FacultyHub' || aiSettings.gradingStrategy !== 'background') {
         if (active) timer = setTimeout(processQueue, 2000);
         return;
       }
@@ -1367,7 +1367,7 @@ export default function EvaluateApp() {
       if (active) timer = setTimeout(processQueue, 2000);
     };
 
-    if (autoPilotEnabled && loginModalRole === 'lecturer') {
+    if (autoPilotEnabled && role === 'FacultyHub' && aiSettings.gradingStrategy === 'background') {
       processQueue();
     }
     
@@ -1375,7 +1375,7 @@ export default function EvaluateApp() {
       active = false;
       clearTimeout(timer);
     };
-  }, [autoPilotEnabled, loginModalRole]);
+  }, [autoPilotEnabled, role, aiSettings.gradingStrategy]);
 
   // --- Student Polling Hook (Moved to global scope to prevent React Hooks crash) ---
   useEffect(() => {
