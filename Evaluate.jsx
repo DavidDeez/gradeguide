@@ -1814,8 +1814,8 @@ export default function EvaluateApp() {
                       }}>
                         <Edit size={18} />
                       </button>
-                      <button className="btn-outline" style={{ padding: '8px', border: 'none' }} onClick={() => setAssessments(assessments.filter(x => x.id !== a.id))}>
-                        <Trash2 size={18} color="var(--danger)"/>
+                      <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'var(--danger)', color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => setAssessments(assessments.filter(x => x.id !== a.id))}>
+                        <Trash2 size={16} /> Remove
                       </button>
                     </div>
                   </div>
