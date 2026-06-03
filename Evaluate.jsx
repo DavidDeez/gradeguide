@@ -908,9 +908,11 @@ export default function EvaluateApp() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [appStateRes, subRes] = await Promise.all([
+        const [appStateRes, subRes, assRes, stdRes] = await Promise.all([
           supabase.from('app_state').select('data').eq('id', 1).single(),
-          supabase.from('submissions').select('*').order('created_at', { ascending: false })
+          supabase.from('submissions').select('*').order('created_at', { ascending: false }),
+          supabase.from('assessments').select('*').order('created_at', { ascending: false }),
+          supabase.from('students').select('*').order('created_at', { ascending: false })
         ]);
         
         if (appStateRes.error) {
@@ -918,12 +920,26 @@ export default function EvaluateApp() {
           window.showToast("Database connection failed. Please refresh the page.");
           return; // DO NOT set isLoaded to true, prevents wiping DB
         }
+
+        if (assRes.data) {
+          const mappedAss = assRes.data.map(row => ({
+            id: row.id, title: row.title, duration: row.duration,
+            questions: row.questions || [], published: row.published,
+            contextText: row.context_text, contextPdfBase64: row.context_pdf_base64, contextFileMime: row.context_file_mime
+          }));
+          setAssessments(mappedAss);
+        }
+
+        if (stdRes.data) {
+          const mappedStd = stdRes.data.map(row => ({
+            matricNo: row.matric_no, name: row.name, email: row.email
+          }));
+          setStudents(mappedStd);
+        }
         
         if (appStateRes.data) {
           const d = appStateRes.data.data;
-          setAssessments(d.assessments || []);
           setRetakeRequests(d.retakeRequests || []);
-          setStudents(d.students || []);
           setStudentMessages(d.studentMessages || []);
           const loadedSettings = d.settings || {};
           if (loadedSettings.openrouterModel === 'google/gemini-flash-1.5-free') {
@@ -969,8 +985,8 @@ export default function EvaluateApp() {
   useEffect(() => {
     if (isLoaded) {
       setDbSyncing(true);
-      // NOTE: submissions are now stored entirely separately in the SQL table
-      const payload = { assessments, settings: aiSettings, retakeRequests, students, studentMessages };
+      // NOTE: submissions, assessments, and students are now stored in dedicated SQL tables
+      const payload = { settings: aiSettings, retakeRequests, studentMessages };
       supabase.from('app_state').upsert({ id: 1, data: payload })
         .then(({error}) => { 
           if (error) {
@@ -980,7 +996,7 @@ export default function EvaluateApp() {
         })
         .finally(() => setTimeout(() => setDbSyncing(false), 800));
     }
-  }, [isLoaded, assessments, aiSettings, retakeRequests, students, studentMessages]);
+  }, [isLoaded, aiSettings, retakeRequests, studentMessages]);
 
 
   // --- Student Draft Auto-Save ---
@@ -1308,8 +1324,11 @@ export default function EvaluateApp() {
             await supabase.from('submissions').update({ status: 'processing' }).eq('id', pendingSub.id);
             
             // 4. Fetch the assessment details to grade it
-            const { data: appData } = await supabase.from('app_state').select('data').eq('id', 1).single();
-            const ass = appData?.data?.assessments?.find(a => a.id == pendingSub.assessmentId);
+            const { data: assData } = await supabase.from('assessments').select('*').eq('id', pendingSub.assessmentId).single();
+            const ass = assData ? { 
+              id: assData.id, title: assData.title, duration: assData.duration, questions: assData.questions, published: assData.published,
+              contextText: assData.context_text, contextPdfBase64: assData.context_pdf_base64, contextFileMime: assData.context_file_mime 
+            } : null;
             
             if (ass) {
               const response = await markSubmission(ass, pendingSub.answers || {}, pendingSub.files || []);
@@ -1595,15 +1614,26 @@ export default function EvaluateApp() {
   
 
   const RoleLoginModal = () => {
-    const handleLogin = (e) => {
+    const [email, setEmail] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleLogin = async (e) => {
       e.preventDefault();
       setLoginError('');
-      if (passwordInput === 'admin') {
+      setLoading(true);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: passwordInput
+      });
+
+      if (error) {
+        setLoginError(error.message);
+      } else {
         setRole('FacultyHub');
         setLoginModalRole(null);
-      } else {
-        setLoginError('Invalid Faculty Password');
       }
+      setLoading(false);
     };
 
     return (
@@ -1619,12 +1649,24 @@ export default function EvaluateApp() {
           </div>
           
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px', lineHeight: '1.4' }}>
-            You are attempting to access the high-privilege **Faculty Dashboard**. Please enter the global faculty password to continue.
+            You are attempting to access the high-privilege **Faculty Dashboard**. Please sign in with your official faculty credentials.
           </p>
 
           <form onSubmit={handleLogin} style={{ display: 'grid', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Faculty Password</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Faculty Email</label>
+              <input 
+                type="email" 
+                className="input-field" 
+                placeholder="faculty@evaluate.com" 
+                required 
+                autoFocus
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Password</label>
               <input 
                 type="password" 
                 className="input-field" 
@@ -1641,8 +1683,8 @@ export default function EvaluateApp() {
               </div>
             )}
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '14px', marginTop: '8px' }}>
-              Authorize Entry
+            <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', padding: '14px', marginTop: '8px' }}>
+              {loading ? <Activity className="animate-spin" size={20} style={{ margin: '0 auto' }}/> : "Authorize Entry"}
             </button>
           </form>
         </div>
@@ -1929,9 +1971,22 @@ export default function EvaluateApp() {
                     };
                     
                     if (editingAssessmentId) {
-                      setAssessments(assessments.map(a => a.id === editingAssessmentId ? createdExam : a));
+                      supabase.from('assessments').update({
+                        title: createdExam.title, duration: createdExam.duration, questions: createdExam.questions,
+                        context_text: createdExam.contextText, context_pdf_base64: createdExam.contextPdfBase64, context_file_mime: createdExam.contextFileMime
+                      }).eq('id', editingAssessmentId).then(({error}) => {
+                        if (!error) setAssessments(assessments.map(a => a.id === editingAssessmentId ? createdExam : a));
+                        else window.showToast("Failed to update database.");
+                      });
                     } else {
-                      setAssessments([createdExam, ...assessments]);
+                      supabase.from('assessments').insert({
+                        id: createdExam.id, title: createdExam.title, duration: createdExam.duration, questions: createdExam.questions,
+                        context_text: createdExam.contextText, context_pdf_base64: createdExam.contextPdfBase64, context_file_mime: createdExam.contextFileMime,
+                        published: true
+                      }).then(({error}) => {
+                        if (!error) setAssessments([createdExam, ...assessments]);
+                        else window.showToast("Failed to save to database. Are you logged in properly?");
+                      });
                     }
                     
                     setNewTitle('');
@@ -1970,7 +2025,10 @@ export default function EvaluateApp() {
                       </button>
                       <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'var(--danger)', color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => {
                         if (window.confirm(`Are you sure you want to permanently delete "${a.title}"? This cannot be undone.`)) {
-                          setAssessments(assessments.filter(x => x.id !== a.id));
+                          supabase.from('assessments').delete().eq('id', a.id).then(({error}) => {
+                            if (!error) setAssessments(assessments.filter(x => x.id !== a.id));
+                            else window.showToast("Failed to delete from database.");
+                          });
                         }
                       }}>
                         <Trash2 size={16} /> Remove
@@ -2204,13 +2262,16 @@ const name = document.getElementById('newStudName').value.trim();
                     if(students.find(s => s.email.toLowerCase() === email.toLowerCase())) return window.showToast("Email exists!");
                     
                     const otp = String(Math.floor(100000 + Math.random() * 900000));
-                    setStudents([{ name, matricNo, email, pin: otp }, ...students]);
-                    sendOtpEmail(email, name, otp); // Send email in background
-                    window.showToast(`Student added. An OTP (${otp}) was emailed to them for login.`);
-                    
-                    document.getElementById('newStudName').value = '';
-                    document.getElementById('newStudMatric').value = '';
-                    document.getElementById('newStudEmail').value = '';
+                    supabase.from('students').insert({ matric_no: matricNo, name: name, email: email })
+                      .then(({error}) => {
+                        if (error) return window.showToast("Failed to add student to database. Ensure matric number is unique.");
+                        setStudents([{ name, matricNo, email, pin: otp }, ...students]);
+                        sendOtpEmail(email, name, otp); // Send email in background
+                        window.showToast(`Student added. An OTP (${otp}) was emailed to them for login.`);
+                        document.getElementById('newStudName').value = '';
+                        document.getElementById('newStudMatric').value = '';
+                        document.getElementById('newStudEmail').value = '';
+                      });
                   }}>+ Add Student</button>
                 </div>
 
@@ -2231,9 +2292,13 @@ const text = document.getElementById('bulkStudCSV').value;
                       }
                     });
                     if(added.length > 0) {
-                      setStudents([...added, ...students]);
-                      window.showToast(`Successfully imported ${added.length} students! OTP emails are being sent.`);
-                      document.getElementById('bulkStudCSV').value = '';
+                      const insertPayload = added.map(a => ({ matric_no: a.matricNo, name: a.name, email: a.email }));
+                      supabase.from('students').insert(insertPayload).then(({error}) => {
+                        if (error) return window.showToast("Failed to bulk import into database.");
+                        setStudents([...added, ...students]);
+                        window.showToast(`Successfully imported ${added.length} students! OTP emails are being sent.`);
+                        document.getElementById('bulkStudCSV').value = '';
+                      });
                     } else {
                       window.showToast("No valid new students found to import. Check format and duplicates.");
                     }
@@ -2261,7 +2326,12 @@ const text = document.getElementById('bulkStudCSV').value;
                           <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{s.email}</td>
                           <td style={{ padding: '12px', textAlign: 'right' }}>
                             <button className="btn btn-outline" style={{ padding: '6px 10px', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} onClick={() => {
-                              if(window.confirm(`Remove ${s.name}?`)) setStudents(students.filter(stud => stud.matricNo !== s.matricNo));
+                              if(window.confirm(`Remove ${s.name}?`)) {
+                                supabase.from('students').delete().eq('matric_no', s.matricNo).then(({error}) => {
+                                  if (!error) setStudents(students.filter(stud => stud.matricNo !== s.matricNo));
+                                  else window.showToast("Failed to remove student from database.");
+                                });
+                              }
                             }}>Remove</button>
                           </td>
                         </tr>
@@ -2954,7 +3024,9 @@ const text = document.getElementById('bulkStudCSV').value;
       if (entered !== pendingOtp.code) return setAuthError('Incorrect OTP. Please check your email.');
       // Register student
       const profile = { name: pendingOtp.name, matricNo: pendingOtp.matricNo, email: pendingOtp.email, pin: pendingOtp.pin };
-      setStudents(prev => [...prev, profile]);
+      supabase.from('students').insert({ matric_no: profile.matricNo, name: profile.name, email: profile.email }).then(({error}) => {
+        if (!error) setStudents(prev => [...prev, profile]);
+      });
       setStudentProfile(profile);
       setPendingOtp(null);
       setOtpDigits(['','','','','','']);
