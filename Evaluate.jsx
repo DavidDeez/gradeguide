@@ -10,7 +10,7 @@ import {
   BarChart, X, Plus, Trash2, Check, Video, Layout, LogOut, 
   FileBadge, Sliders, Play, Save, ChevronRight, Activity, 
   ShieldCheck, Brain, Star, Smartphone, AlertCircle, Eye, Edit, Download, Menu,
-  Send, Terminal
+  Send, Terminal, Zap, Info
 } from 'lucide-react';
 
 const GlobalStyles = () => (
