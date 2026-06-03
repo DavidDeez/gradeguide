@@ -1015,7 +1015,11 @@ export default function EvaluateApp() {
         },
         aiSettings.emailjsPublicKey
       );
-    } catch(e) { console.error('EmailJS results error:', e); }
+      if (window.showToast) window.showToast("EmailJS: Results successfully delivered!", "success");
+    } catch(e) { 
+      console.error('EmailJS results error:', e);
+      if (window.showToast) window.showToast("EmailJS Failed: " + (e.text || e.message || "Check your EmailJS setup"), "error");
+    }
   };
 
   const callAI = async (prompt, system, files = []) => {
@@ -1337,7 +1341,6 @@ export default function EvaluateApp() {
                 <button className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }} onClick={() => {
                   const profile = { email: selectedSub.studentEmail, name: selectedSub.studentName, matricNo: selectedSub.studentId };
                   sendResultsEmail(profile, ass?.title, selectedSub.results, totalScore, totalMaxMarks);
-                  if (window.showToast) window.showToast("Results email dispatched to student!");
                 }}>
                   <Send size={16} /> Resend Results Email
                 </button>
