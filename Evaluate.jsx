@@ -2804,12 +2804,11 @@ const StudentLoginScreen = () => {
       e.preventDefault();
       setErr('');
       const found = students.find(s => 
-        s.name.toLowerCase() === form.name.toLowerCase() && 
-        s.matricNo.toLowerCase() === form.matricNo.toLowerCase() && 
-        s.pin === form.pin
+        s.matricNo.toLowerCase() === form.matricNo.trim().toLowerCase() && 
+        s.pin === form.pin.trim()
       );
       
-      if (!found) return setErr('Invalid credentials. Please check your Name, Matric Number, and Password.');
+      if (!found) return setErr('Invalid credentials. Please check your Matric Number and PIN.');
       
       setStudentProfile(found);
       setRole('Student');
@@ -2828,10 +2827,6 @@ const StudentLoginScreen = () => {
           </div>
           <div className="glass-panel" style={{ padding: '32px' }}>
             <form onSubmit={handleLogin}>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Full Name</label>
-                <input className="input-field" placeholder="e.g. John Doe" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
-              </div>
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Matric Number</label>
                 <input className="input-field" placeholder="e.g. 200101234" value={form.matricNo} onChange={e => setForm({...form, matricNo: e.target.value})} required />
