@@ -1332,7 +1332,18 @@ export default function EvaluateApp() {
               <h2 style={{ margin: '4px 0 0 0', fontSize: '1.8rem' }}>{ass?.title || 'Detailed AI Report Card'}</h2>
               <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Student Reference ID: {selectedSub.studentId}</p>
             </div>
-            <button className="btn-outline" style={{ padding: '8px', border: 'none' }} onClick={() => setSelectedSub(null)}><X size={24} /></button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {selectedSub.studentEmail && (
+                <button className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }} onClick={() => {
+                  const profile = { email: selectedSub.studentEmail, name: selectedSub.studentName, matricNo: selectedSub.studentId };
+                  sendResultsEmail(profile, ass?.title, selectedSub.results, totalScore, totalMaxMarks);
+                  if (window.showToast) window.showToast("Results email dispatched to student!");
+                }}>
+                  <Send size={16} /> Resend Results Email
+                </button>
+              )}
+              <button className="btn-outline" style={{ padding: '8px', border: 'none' }} onClick={() => setSelectedSub(null)}><X size={24} /></button>
+            </div>
           </div>
 
           {/* Score & General Status Bar */}
