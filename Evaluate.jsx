@@ -2385,6 +2385,7 @@ const text = document.getElementById('bulkStudCSV').value;
           }}>
             <X size={16}/> Back
           </button>
+          </div>
         </div>
         {activeExam.questions.map(q => (
           <div key={q.id} style={{ marginBottom: '32px' }}>
