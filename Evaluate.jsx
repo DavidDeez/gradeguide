@@ -550,6 +550,8 @@ const ParticleBackground = () => {
     };
   }, []);
 
+
+
   return (
     <canvas 
       ref={canvasRef} 
@@ -767,6 +769,7 @@ export default function EvaluateApp() {
   
   const [activeExam, setActiveExam] = useState(null);
   const [examAnswers, setExamAnswers] = useState({});
+  const [examInfractions, setExamInfractions] = React.useState(0);
   const [examLoading, setExamLoading] = useState(false);
   const [studentTabState, setStudentTabState] = useState('exams');
   const [studentUpload, setStudentUpload] = useState(null);
@@ -836,6 +839,28 @@ export default function EvaluateApp() {
       document.removeEventListener('click', handleClick);
     };
   }, []);
+
+  // Anti-Cheat Focus Loss Detection
+  React.useEffect(() => {
+    if (!activeExam) {
+      setExamInfractions(0);
+      return;
+    }
+    const handleFocusLoss = () => {
+      if (document.hidden || !document.hasFocus()) {
+        setExamInfractions(prev => prev + 1);
+        if (window.showToast) {
+          window.showToast("WARNING: Tab switch / Focus loss detected. This has been logged.", "error");
+        }
+      }
+    };
+    window.addEventListener('blur', handleFocusLoss);
+    document.addEventListener('visibilitychange', handleFocusLoss);
+    return () => {
+      window.removeEventListener('blur', handleFocusLoss);
+      document.removeEventListener('visibilitychange', handleFocusLoss);
+    };
+  }, [activeExam]);
   const [bulkState, setBulkState] = useState({ guideText: '', guideBase64: null, guideMime: '', scripts: [] });
   const [bulkScannerCam, setBulkScannerCam] = useState({ active: false, target: null, idx: null });
   const studentId = studentProfile ? studentProfile.matricNo : 'Guest';
@@ -1897,7 +1922,12 @@ export default function EvaluateApp() {
                   <div>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-main)', fontWeight: 'bold', textTransform: 'uppercase' }}>Student Matric Number: {sub.studentId}</span>
                     <h3 style={{ margin: '4px 0 8px 0' }}>Assessment: {ass?.title || 'Unknown'}</h3>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Timestamp: {sub.timestamp || 'Recent Submission'}</p>
+                    <p style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Timestamp: {sub.timestamp || 'Recent Submission'}</p>
+                    {sub.infractions > 0 && (
+                      <span className="badge" style={{ marginTop: '0', display: 'inline-flex', alignItems: 'center', background: 'var(--danger)', color: 'white', marginRight: '8px', padding: '4px 8px', gap: '4px' }}>
+                        <AlertCircle size={12} /> Focus Lost {sub.infractions}x
+                      </span>
+                    )}
                     {sub.authenticity && (
                       <span className="badge" style={{ marginTop: '8px', display: 'inline-block', background: sub.authenticity > 80 ? 'var(--success)' : (sub.authenticity > 50 ? 'var(--warning)' : 'var(--danger)'), color: 'white' }}>
                         Authenticity: {sub.authenticity}%
@@ -2177,6 +2207,11 @@ const text = document.getElementById('bulkStudCSV').value;
                         <div>
                           <span style={{ fontSize: '0.75rem', color: 'var(--text-main)', fontWeight: 'bold', textTransform: 'uppercase' }}>Matric Number: {sub.studentId}</span>
                           <h4 style={{ margin: '2px 0 0 0', fontSize: '0.9rem' }}>Exam: {ass?.title || 'Unknown Exam'}</h4>
+                          {sub.infractions > 0 && (
+                            <div style={{ marginTop: '6px', fontSize: '0.75rem', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
+                              <AlertCircle size={12} /> Tab switched {sub.infractions} times!
+                            </div>
+                          )}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                           <ScoreRing score={percentage} size={42} strokeWidth={4} />
@@ -2244,7 +2279,7 @@ const text = document.getElementById('bulkStudCSV').value;
                     <Trash2 size={16} /> Delete Students
                   </button>
                   <button className="btn btn-outline" style={{ flex: 1, color: '#a371f7', borderColor: '#a371f7' }} onClick={() => {
-                    if (window.confirm("This will add mock students, an exam, and submissions. Proceed?")) {
+                    if (window.confirm("This will add mock students and an exam for you to take live. Proceed?")) {
                       const mockStudents = [
                         { id: Date.now()+1, name: "Alice Cyber", matricNo: "MOCK001", email: "alice@mock.com", pin: "111111" },
                         { id: Date.now()+2, name: "Bob Synth", matricNo: "MOCK002", email: "bob@mock.com", pin: "222222" },
@@ -2264,23 +2299,6 @@ const text = document.getElementById('bulkStudCSV').value;
                         published: true
                       };
                       setAssessments(prev => [...prev, mockAssessment]);
-                      
-                      const mockSubmissions = mockStudents.map((s, i) => ({
-                        id: Date.now() + 5 + i,
-                        assessmentId: mockAssessmentId,
-                        studentId: s.matricNo,
-                        timestamp: new Date().toISOString(),
-                        answers: {
-                          'q1': "Supervised learning uses labeled data to train models, while unsupervised learning finds patterns in unlabeled data.",
-                          'q2': "Backpropagation is an algorithm used to calculate the gradient of the loss function with respect to the weights in an artificial neural network."
-                        },
-                        results: [
-                          { qId: 'q1', score: 8 + (i%3), feedback: "Good explanation of the core concepts." },
-                          { qId: 'q2', score: 7 + (i%4), feedback: "Adequate definition, could be more detailed." }
-                        ],
-                        authenticity: 95 - (i*5)
-                      }));
-                      setSubmissions(prev => [...prev, ...mockSubmissions]);
                       
                       window.showToast("Demo Data Seeded Successfully!", "success");
                     }
@@ -2348,6 +2366,7 @@ const text = document.getElementById('bulkStudCSV').value;
               studentEmail: studentProfile?.email || '',
               answers: examAnswers, 
               results,
+              infractions: examInfractions,
               authenticity: response.authenticity || null,
               authenticityReason: response.authenticityReason || '',
               timestamp: new Date().toLocaleString()
@@ -2484,7 +2503,12 @@ const text = document.getElementById('bulkStudCSV').value;
                       <p style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                         Submitted on: {sub.timestamp || 'Recent'}
                       </p>
-                      <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>AI Graded</span>
+                      <span className="badge badge-success" style={{ fontSize: '0.7rem', marginRight: '8px' }}>AI Graded</span>
+                      {sub.infractions > 0 && (
+                        <span className="badge" style={{ fontSize: '0.7rem', background: 'var(--danger)', color: 'white' }}>
+                          ⚠️ Flagged: Focus Loss ({sub.infractions}x)
+                        </span>
+                      )}
                     </div>
                   </div>
                   
