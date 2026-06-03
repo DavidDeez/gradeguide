@@ -1814,7 +1814,11 @@ export default function EvaluateApp() {
                       }}>
                         <Edit size={18} />
                       </button>
-                      <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'var(--danger)', color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => setAssessments(assessments.filter(x => x.id !== a.id))}>
+                      <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'var(--danger)', color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => {
+                        if (window.confirm(`Are you sure you want to permanently delete "${a.title}"? This cannot be undone.`)) {
+                          setAssessments(assessments.filter(x => x.id !== a.id));
+                        }
+                      }}>
                         <Trash2 size={16} /> Remove
                       </button>
                     </div>
