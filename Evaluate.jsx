@@ -2557,9 +2557,15 @@ const text = document.getElementById('bulkStudCSV').value;
         if (hasPending) {
           interval = setInterval(async () => {
             try {
-              const { data, error } = await supabase.from('app_state').select('data').eq('id', 1).single();
-              if (data && data.data.submissions) {
-                setSubmissions(data.data.submissions);
+              const { data: subRes, error } = await supabase.from('submissions').select('*').order('created_at', { ascending: false });
+              if (subRes) {
+                const mappedSubs = subRes.map(row => ({
+                  id: row.id, assessmentId: row.assessment_id, studentId: row.student_id,
+                  studentName: row.student_name, studentEmail: row.student_email, answers: row.answers || {},
+                  files: row.files || [], results: row.results, status: row.status, infractions: row.infractions,
+                  authenticity: row.authenticity, authenticityReason: row.authenticity_reason, timestamp: row.timestamp
+                }));
+                setSubmissions(mappedSubs);
               }
             } catch (err) {}
           }, 4000);
