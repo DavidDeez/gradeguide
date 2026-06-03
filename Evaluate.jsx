@@ -1342,6 +1342,32 @@ export default function EvaluateApp() {
     };
   }, [autoPilotEnabled, loginModalRole]);
 
+  // --- Student Polling Hook (Moved to global scope to prevent React Hooks crash) ---
+  useEffect(() => {
+    let interval;
+    if (studentTabState === 'results') {
+      const hasPending = submissions.some(sub => sub.studentId == studentId && sub.status === 'pending');
+      if (hasPending) {
+        interval = setInterval(async () => {
+          try {
+            const { data: subRes, error } = await supabase.from('submissions').select('*').order('created_at', { ascending: false });
+            if (subRes) {
+              const mappedSubs = subRes.map(row => ({
+                id: row.id, assessmentId: row.assessment_id, studentId: row.student_id,
+                studentName: row.student_name, studentEmail: row.student_email, answers: row.answers || {},
+                files: row.files || [], results: row.results, status: row.status, infractions: row.infractions,
+                authenticity: row.authenticity, authenticityReason: row.authenticity_reason, timestamp: row.timestamp
+              }));
+              setSubmissions(mappedSubs);
+            }
+          } catch (err) {}
+        }, 4000);
+      }
+    }
+    return () => clearInterval(interval);
+  }, [studentTabState, submissions, studentId]);
+
+
   const SettingsModal = () => (
     <div className="modal-overlay">
       <div className="glass-panel scrollbar" style={{ width: '100%', maxWidth: '500px', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -2550,30 +2576,6 @@ const text = document.getElementById('bulkStudCSV').value;
   };
 
   const StudentDashboard = () => {
-    useEffect(() => {
-      let interval;
-      if (studentTabState === 'results') {
-        const hasPending = submissions.some(sub => sub.studentId == studentId && sub.status === 'pending');
-        if (hasPending) {
-          interval = setInterval(async () => {
-            try {
-              const { data: subRes, error } = await supabase.from('submissions').select('*').order('created_at', { ascending: false });
-              if (subRes) {
-                const mappedSubs = subRes.map(row => ({
-                  id: row.id, assessmentId: row.assessment_id, studentId: row.student_id,
-                  studentName: row.student_name, studentEmail: row.student_email, answers: row.answers || {},
-                  files: row.files || [], results: row.results, status: row.status, infractions: row.infractions,
-                  authenticity: row.authenticity, authenticityReason: row.authenticity_reason, timestamp: row.timestamp
-                }));
-                setSubmissions(mappedSubs);
-              }
-            } catch (err) {}
-          }, 4000);
-        }
-      }
-      return () => clearInterval(interval);
-    }, [studentTabState, submissions, studentId]);
-
     if (activeExam) return (
       <div className="glass-panel" style={{ padding: '40px', maxWidth: '800px', margin: '0 auto', animation: 'slideUp 0.4s ease' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
