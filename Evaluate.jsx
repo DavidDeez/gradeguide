@@ -907,17 +907,20 @@ export default function EvaluateApp() {
 
   useEffect(() => {
     const loadData = async () => {
-      try {
-        const { data: dbData, error } = await supabase.from('app_state').select('data').eq('id', 1).single();
-        if (error) {
-          console.error("Error loading from Supabase:", error);
+        const [appStateRes, subRes] = await Promise.all([
+          supabase.from('app_state').select('data').eq('id', 1).single(),
+          supabase.from('submissions').select('*').order('created_at', { ascending: false })
+        ]);
+        
+        if (appStateRes.error) {
+          console.error("Error loading app_state:", appStateRes.error);
           window.showToast("Database connection failed. Please refresh the page.");
           return; // DO NOT set isLoaded to true, prevents wiping DB
         }
-        if (dbData) {
-          const d = dbData.data;
+        
+        if (appStateRes.data) {
+          const d = appStateRes.data.data;
           setAssessments(d.assessments || []);
-          setSubmissions(d.submissions || []);
           setRetakeRequests(d.retakeRequests || []);
           setStudents(d.students || []);
           setStudentMessages(d.studentMessages || []);
@@ -933,6 +936,25 @@ export default function EvaluateApp() {
             { id: 2, title: 'Transparency', text: 'What is the importance of "Explainable AI" in healthcare?', maxMarks: 10 }
           ]}]);
         }
+        
+        if (subRes.data) {
+          const mappedSubs = subRes.data.map(row => ({
+            id: row.id,
+            assessmentId: row.assessment_id,
+            studentId: row.student_id,
+            studentName: row.student_name,
+            studentEmail: row.student_email,
+            answers: row.answers || {},
+            files: row.files || [],
+            results: row.results,
+            status: row.status,
+            infractions: row.infractions,
+            authenticity: row.authenticity,
+            authenticityReason: row.authenticity_reason,
+            timestamp: row.timestamp
+          }));
+          setSubmissions(mappedSubs);
+        }
       } catch (e) {
         console.error("Fatal error loading from Supabase:", e);
         return;
@@ -946,7 +968,8 @@ export default function EvaluateApp() {
   useEffect(() => {
     if (isLoaded) {
       setDbSyncing(true);
-      const payload = { assessments, submissions, settings: aiSettings, retakeRequests, students, studentMessages };
+      // NOTE: submissions are now stored entirely separately in the SQL table
+      const payload = { assessments, settings: aiSettings, retakeRequests, students, studentMessages };
       supabase.from('app_state').upsert({ id: 1, data: payload })
         .then(({error}) => { 
           if (error) {
@@ -956,7 +979,7 @@ export default function EvaluateApp() {
         })
         .finally(() => setTimeout(() => setDbSyncing(false), 800));
     }
-  }, [isLoaded, assessments, submissions, aiSettings, retakeRequests, students, studentMessages]);
+  }, [isLoaded, assessments, aiSettings, retakeRequests, students, studentMessages]);
 
 
   // --- Student Draft Auto-Save ---
@@ -2590,24 +2613,41 @@ const text = document.getElementById('bulkStudCSV').value;
           try {
             const uploadPayload = studentUpload ? [studentUpload] : [];
             const newSub = { 
-              id: Date.now(), // Generate a unique ID for queue tracking
-              assessmentId: activeExam.id, 
-              studentId: studentId,
-              studentName: studentProfile?.name || studentId,
-              studentEmail: studentProfile?.email || '',
+              id: Date.now().toString(), // Generate a unique ID for queue tracking
+              assessment_id: activeExam.id.toString(), 
+              student_id: studentId.toString(),
+              student_name: studentProfile?.name || studentId.toString(),
+              student_email: studentProfile?.email || '',
               answers: examAnswers,
               files: uploadPayload,
               results: null, // Pending grading
               status: 'pending',
               infractions: examInfractions,
               authenticity: null,
-              authenticityReason: '',
+              authenticity_reason: '',
               timestamp: new Date().toLocaleString()
             };
-            setSubmissions(prev => [...prev, newSub]);
+            
+            // 1. Insert directly to the dedicated SQL table
+            const { error } = await supabase.from('submissions').insert([newSub]);
+            if (error) {
+              console.error("Database Insert Error:", error);
+              window.showToast("Failed to submit exam. Please check your network and try again.");
+              setExamLoading(false);
+              return;
+            }
+            
+            // 2. Map snake_case back to camelCase for local React State
+            const localSub = {
+              id: newSub.id, assessmentId: newSub.assessment_id, studentId: newSub.student_id,
+              studentName: newSub.student_name, studentEmail: newSub.student_email, answers: newSub.answers,
+              files: newSub.files, results: newSub.results, status: newSub.status, infractions: newSub.infractions,
+              authenticity: newSub.authenticity, authenticityReason: newSub.authenticity_reason, timestamp: newSub.timestamp
+            };
+            
+            setSubmissions(prev => [localSub, ...prev]);
             setActiveExam(null);
             
-            // Do not select submission so it doesn't try to render results
             if (window.showToast) window.showToast("Exam Submitted Successfully! It is now in the grading queue.", "success");
             
             if (studentProfile) {
