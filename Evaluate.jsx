@@ -1614,7 +1614,6 @@ export default function EvaluateApp() {
   
 
   const RoleLoginModal = () => {
-    const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleLogin = async (e) => {
@@ -1623,7 +1622,7 @@ export default function EvaluateApp() {
       setLoading(true);
       
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
+        email: 'admin@evaluate.com',
         password: passwordInput
       });
 
@@ -1654,24 +1653,13 @@ export default function EvaluateApp() {
 
           <form onSubmit={handleLogin} style={{ display: 'grid', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Faculty Email</label>
-              <input 
-                type="email" 
-                className="input-field" 
-                placeholder="faculty@evaluate.com" 
-                required 
-                autoFocus
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Password</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Faculty Password</label>
               <input 
                 type="password" 
                 className="input-field" 
                 placeholder="Enter password" 
                 required 
+                autoFocus
                 value={passwordInput}
                 onChange={e => setPasswordInput(e.target.value)}
               />
@@ -3226,7 +3214,7 @@ const StudentLoginScreen = () => {
 // ─── Route Auth Screens ───────────────────────────────────────────────────
   if (!role) {
     if (authScreen === 'student-login') return <><GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><TerminalBackground /><StudentLoginScreen /></>;
-    return <><GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><TerminalBackground /><LoginScreen />{loginModalRole && RoleLoginModal()}</>;
+    return <><GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><TerminalBackground /><LoginScreen />{loginModalRole && <RoleLoginModal />}</>;
   }
 
   if (role === 'FacultyHub') {
@@ -3274,11 +3262,11 @@ const StudentLoginScreen = () => {
           </div>
         </header>
         <main className="dashboard-main" style={{ flex: 1, padding: '0 20px 60px 20px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-          {(role === 'Lecturer' || role === 'Admin') && LecturerDashboard()}
-          {role === 'Student' && StudentDashboard()}
+          {(role === 'Lecturer' || role === 'Admin') && <LecturerDashboard />}
+          {role === 'Student' && <StudentDashboard />}
         </main>
-        {selectedSub && DetailedCorrectionsModal()}
-        {loginModalRole && RoleLoginModal()}
+        {selectedSub && <DetailedCorrectionsModal />}
+        {loginModalRole && <RoleLoginModal />}
         
         <div className="toast-container">
           {toasts.map(t => (
