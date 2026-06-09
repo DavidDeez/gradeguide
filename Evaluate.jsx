@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import uiLogo from './assets/ui_logo.png';
+import uiLogo from './src/assets/ui_logo.png';
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = 'https://rnayaaqjbkbuiderdngu.supabase.co';
