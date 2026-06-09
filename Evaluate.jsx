@@ -3191,11 +3191,13 @@ const StudentLoginScreen = () => {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', position: 'relative' }}>
-        <div style={{ position: 'absolute', top: 'clamp(12px, 3vw, 24px)', left: 'clamp(12px, 3vw, 24px)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', animation: 'fadeIn 1s ease' }}>
-          <img src={uiLogo} alt="UI Logo" style={{ width: 'clamp(35px, 8vw, 50px)', height: 'clamp(35px, 8vw, 50px)', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', fontFamily: 'var(--font-family)' }}>
-            <span style={{ fontWeight: 'bold', fontSize: 'clamp(0.6rem, 2.5vw, 0.8rem)', letterSpacing: '1px', textTransform: 'uppercase', lineHeight: '1.2' }}>University of Ibadan</span>
-            <span style={{ fontSize: 'clamp(0.45rem, 1.8vw, 0.6rem)', color: 'var(--text-main)', letterSpacing: '1.5px', fontWeight: 'bold', opacity: 0.8 }}>ICT CYBER SECURITY</span>
+        <div style={{ position: 'absolute', top: 'clamp(8px, 2vw, 16px)', left: 'clamp(8px, 2vw, 16px)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0px', animation: 'fadeIn 1s ease' }}>
+          <div style={{ width: 'clamp(35px, 8vw, 45px)', height: 'clamp(35px, 8vw, 45px)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <img src={uiLogo} alt="UI Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.5)', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', fontFamily: 'var(--font-family)', marginTop: '-2px' }}>
+            <span style={{ fontWeight: 'bold', fontSize: 'clamp(0.55rem, 2vw, 0.7rem)', letterSpacing: '1px', textTransform: 'uppercase', lineHeight: '1.2' }}>University of Ibadan</span>
+            <span style={{ fontSize: 'clamp(0.4rem, 1.5vw, 0.55rem)', color: 'var(--text-main)', letterSpacing: '1.5px', fontWeight: 'bold', opacity: 0.8 }}>ICT CYBER SECURITY</span>
           </div>
         </div>
         <div style={{ textAlign: 'center', marginBottom: 'clamp(30px, 8vw, 60px)', animation: 'fadeIn 1s ease', width: '100%', marginTop: 'clamp(100px, 15vh, 120px)' }}>
