@@ -640,85 +640,6 @@ const ScoreRing = ({ score, size = 120, strokeWidth = 10 }) => {
 const Footer = () => (
   <footer style={{ textAlign: 'center', padding: '24px 0', width: '100%', marginTop: 'auto' }}>
     <style>{`
-      .ui-header-responsive {
-        position: absolute;
-        top: clamp(16px, 4vw, 24px);
-        left: clamp(16px, 4vw, 24px);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        animation: fadeIn 1s ease;
-      }
-      .ui-header-responsive .logo-wrapper {
-        width: 55px;
-        height: 55px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .ui-header-responsive img {
-        width: 55px;
-        height: 55px;
-        object-fit: contain;
-        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
-        transform: none;
-      }
-      .ui-header-text {
-        display: flex;
-        flex-direction: column;
-        text-align: left;
-        font-family: var(--font-family);
-      }
-      .ui-header-title {
-        font-weight: bold;
-        font-size: 1.1rem;
-        letter-spacing: 0.5px;
-        line-height: normal;
-        text-transform: none;
-      }
-      .ui-header-subtitle {
-        font-size: 0.8rem;
-        color: var(--text-muted);
-        letter-spacing: 1px;
-        font-weight: bold;
-        opacity: 1;
-      }
-
-      @media (max-width: 768px) {
-        .ui-header-responsive {
-          top: clamp(8px, 2vw, 16px);
-          left: clamp(8px, 2vw, 16px);
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 0px;
-        }
-        .ui-header-responsive .logo-wrapper {
-          width: clamp(35px, 8vw, 45px);
-          height: clamp(35px, 8vw, 45px);
-          overflow: hidden;
-          border-radius: 50%;
-        }
-        .ui-header-responsive img {
-          width: 100%;
-          height: 100%;
-          transform: scale(1.5);
-        }
-        .ui-header-text {
-          margin-top: -2px;
-        }
-        .ui-header-title {
-          font-size: clamp(0.55rem, 2vw, 0.7rem);
-          text-transform: uppercase;
-          line-height: 1.2;
-        }
-        .ui-header-subtitle {
-          font-size: clamp(0.4rem, 1.5vw, 0.55rem);
-          color: var(--text-main);
-          letter-spacing: 1.5px;
-          opacity: 0.8;
-        }
-      }
-
       @keyframes blockWrite {
         0% { width: 0; }
         100% { width: 32ch; }
@@ -3258,8 +3179,16 @@ const StudentLoginScreen = () => {
   // ─── Landing Screen ───────────────────────────────────────────────────────
   
   
+  
   const LoginScreen = () => {
     const [animKey, setAnimKey] = React.useState(0);
+    const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 768);
+    
+    React.useEffect(() => {
+      const handleResize = () => setIsMobile(window.innerWidth <= 768);
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
     
     React.useEffect(() => {
       const interval = setInterval(() => {
@@ -3270,13 +3199,13 @@ const StudentLoginScreen = () => {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', position: 'relative' }}>
-        <div className="ui-header-responsive">
-          <div className="logo-wrapper">
-            <img src={uiLogo} alt="UI Logo" />
+        <div style={{ position: 'absolute', top: isMobile ? 'clamp(8px, 2vw, 16px)' : '24px', left: isMobile ? 'clamp(8px, 2vw, 16px)' : '24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '0px' : '12px', animation: 'fadeIn 1s ease' }}>
+          <div style={{ width: isMobile ? 'clamp(35px, 8vw, 45px)' : '55px', height: isMobile ? 'clamp(35px, 8vw, 45px)' : '55px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: isMobile ? 'hidden' : 'visible', borderRadius: isMobile ? '50%' : '0' }}>
+            <img src={uiLogo} alt="UI Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', transform: isMobile ? 'scale(1.5)' : 'none', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
           </div>
-          <div className="ui-header-text">
-            <span className="ui-header-title">University of Ibadan</span>
-            <span className="ui-header-subtitle">ICT CYBER SECURITY</span>
+          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', fontFamily: isMobile ? 'var(--font-family)' : 'inherit', marginTop: isMobile ? '-2px' : '0' }}>
+            <span style={{ fontWeight: 'bold', fontSize: isMobile ? 'clamp(0.55rem, 2vw, 0.7rem)' : '1.1rem', letterSpacing: isMobile ? '1px' : '0.5px', textTransform: isMobile ? 'uppercase' : 'none', lineHeight: isMobile ? '1.2' : 'normal' }}>University of Ibadan</span>
+            <span style={{ fontSize: isMobile ? 'clamp(0.4rem, 1.5vw, 0.55rem)' : '0.8rem', color: isMobile ? 'var(--text-main)' : 'var(--text-muted)', letterSpacing: isMobile ? '1.5px' : '1px', fontWeight: 'bold', opacity: isMobile ? 0.8 : 1 }}>ICT CYBER SECURITY</span>
           </div>
         </div>
         <div style={{ textAlign: 'center', marginBottom: 'clamp(30px, 8vw, 60px)', animation: 'fadeIn 1s ease', width: '100%', marginTop: 'clamp(100px, 15vh, 120px)' }}>
