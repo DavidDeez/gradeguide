@@ -3211,7 +3211,7 @@ const StudentLoginScreen = () => {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', fontFamily: isMobile ? 'var(--font-family)' : 'inherit', marginTop: isMobile ? '-2px' : '0' }}>
             <span style={{ fontWeight: 'bold', fontSize: isMobile ? 'clamp(0.55rem, 2vw, 0.7rem)' : '1.1rem', letterSpacing: isMobile ? '1px' : '0.5px', lineHeight: isMobile ? '1.2' : 'normal' }}>ᴜɴɪᴠᴇʀꜱɪᴛʏ ᴏꜰ ɪʙᴀᴅᴀɴ</span>
-            <span style={{ fontSize: isMobile ? 'clamp(0.4rem, 1.5vw, 0.55rem)' : '0.8rem', color: isMobile ? 'var(--text-main)' : 'var(--text-muted)', letterSpacing: isMobile ? '1.5px' : '1px', fontWeight: 'bold', opacity: isMobile ? 0.8 : 1 }}>ɪᴄᴛ ᴄʏʙᴇʀ ꜱᴇᴄᴜʀɪᴛʏ</span>
+            <span style={{ fontSize: isMobile ? 'clamp(0.4rem, 1.5vw, 0.55rem)' : '0.8rem', color: isMobile ? 'var(--text-main)' : 'var(--text-muted)', letterSpacing: isMobile ? '1.5px' : '1px', fontWeight: 'bold', opacity: isMobile ? 0.8 : 1 }}>ɪᴄᴛ ᴄʏʙᴇʀ ꜱᴇᴄᴜʀɪᴛʏ ᴅᴇᴘᴀʀᴛᴍᴇɴᴛ</span>
           </div>
         </div>
         <div style={{ textAlign: 'center', marginBottom: 'clamp(30px, 8vw, 60px)', animation: 'fadeIn 1s ease', width: '100%', marginTop: isMobile ? 'clamp(100px, 15vh, 120px)' : '24px' }}>
