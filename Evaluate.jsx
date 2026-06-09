@@ -1954,7 +1954,6 @@ export default function EvaluateApp() {
                   <Save size={18} /> {editingAssessmentId ? 'Update Assessment' : 'Save & Publish'}
                 </button>
               </div>
-              </div>
 
               <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--panel-border)' }}>
                 <label style={{ display: 'block', marginBottom: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Specific Assessment Context Material (Optional)</label>
