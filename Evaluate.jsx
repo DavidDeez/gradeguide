@@ -696,6 +696,12 @@ const Footer = () => (
 );
 
 export default function EvaluateApp() {
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 768);
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const lastInfractionTime = React.useRef(0);
   const [role, setRole] = useState(() => {
     return localStorage.getItem('gg_main_role') || null;
@@ -3198,7 +3204,7 @@ const StudentLoginScreen = () => {
     }, []);
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', position: 'relative' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', minHeight: '100vh', padding: '16px', position: 'relative' }}>
         <div style={{ position: 'absolute', top: isMobile ? 'clamp(8px, 2vw, 16px)' : '24px', left: isMobile ? 'clamp(8px, 2vw, 16px)' : '24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '0px' : '12px', animation: 'fadeIn 1s ease' }}>
           <div style={{ width: isMobile ? 'clamp(35px, 8vw, 45px)' : '55px', height: isMobile ? 'clamp(35px, 8vw, 45px)' : '55px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: isMobile ? 'hidden' : 'visible', borderRadius: isMobile ? '50%' : '0' }}>
             <img src={uiLogo} alt="UI Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', transform: isMobile ? 'scale(1.5)' : 'none', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
@@ -3208,7 +3214,7 @@ const StudentLoginScreen = () => {
             <span style={{ fontSize: isMobile ? 'clamp(0.4rem, 1.5vw, 0.55rem)' : '0.8rem', color: isMobile ? 'var(--text-main)' : 'var(--text-muted)', letterSpacing: isMobile ? '1.5px' : '1px', fontWeight: 'bold', opacity: isMobile ? 0.8 : 1 }}>ɪᴄᴛ ᴄʏʙᴇʀ ꜱᴇᴄᴜʀɪᴛʏ</span>
           </div>
         </div>
-        <div style={{ textAlign: 'center', marginBottom: 'clamp(30px, 8vw, 60px)', animation: 'fadeIn 1s ease', width: '100%', marginTop: 'clamp(100px, 15vh, 120px)' }}>
+        <div style={{ textAlign: 'center', marginBottom: 'clamp(30px, 8vw, 60px)', animation: 'fadeIn 1s ease', width: '100%', marginTop: isMobile ? 'clamp(100px, 15vh, 120px)' : '24px' }}>
           <div style={{ display: 'inline-flex', padding: 'clamp(12px, 4vw, 20px)', background: 'var(--panel-bg)', borderRadius: '8px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
             <Brain key={`brain-${animKey}`} size={60} color="var(--text-main)" className="draw-icon" style={{ width: 'clamp(40px, 10vw, 60px)', height: 'clamp(40px, 10vw, 60px)' }} />
           </div>
@@ -3255,7 +3261,7 @@ const StudentLoginScreen = () => {
     <>
       <GlobalStyles /><ParticleBackground /><div className="blueprint-grid" /><TerminalBackground />
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <header className="glass-panel header-content" style={{ margin: '20px', padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '6px' }}>
+        <header className="glass-panel header-content" style={{ margin: isMobile ? '20px' : '0', padding: isMobile ? '16px 40px' : '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: isMobile ? '6px' : '0' }}>
           <div className="header-brand-row" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <Menu className="mobile-menu-btn" size={28} style={{ cursor: 'pointer', color: 'var(--text-main)', marginRight: '8px' }} onClick={() => setIsMobileMenuOpen(true)} />
             <Brain color="var(--text-main)" size={32} />
