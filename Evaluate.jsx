@@ -1028,7 +1028,7 @@ export default function EvaluateApp() {
       await window.emailjs.send(
         aiSettings.emailjsServiceId,
         aiSettings.emailjsOtpTemplateId,
-        { to_email: toEmail, to_name: toName, otp_code: otpCode, app_name: 'grader.ai' },
+        { to_email: toEmail, to_name: toName, otp_code: otpCode, app_name: 'GRADER.ai' },
         aiSettings.emailjsPublicKey
       );
       return true;
@@ -1056,7 +1056,7 @@ export default function EvaluateApp() {
           total_max: totalMax,
           percentage: percentage + '%',
           breakdown: breakdown,
-          app_name: 'grader.ai'
+          app_name: 'GRADER.ai'
         },
         aiSettings.emailjsPublicKey
       );
@@ -1104,7 +1104,7 @@ export default function EvaluateApp() {
           "Authorization": `Bearer ${aiSettings.openrouterKey}`,
           "Content-Type": "application/json",
           "HTTP-Referer": window.location.origin,
-          "X-Title": "grader.ai"
+          "X-Title": "GRADER.ai"
         },
         body: JSON.stringify({
           model: aiSettings.openrouterModel || "openrouter/free",
@@ -2972,7 +2972,7 @@ const text = document.getElementById('bulkStudCSV').value;
               <Brain size={40} color="var(--text-main)" />
             </div>
             <h1 className="auth-title">Create Account</h1>
-            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Join grader.ai — Register as a Student</p>
+            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Join GRADER.ai — Register as a Student</p>
           </div>
           <div className="glass-panel" style={{ padding: '32px' }}>
             <form onSubmit={handleSignup}>
@@ -3212,7 +3212,7 @@ const StudentLoginScreen = () => {
           <div style={{ display: 'inline-flex', padding: 'clamp(12px, 4vw, 20px)', background: 'var(--panel-bg)', borderRadius: '8px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
             <Brain key={`brain-${animKey}`} size={60} color="var(--text-main)" className="draw-icon" style={{ width: 'clamp(40px, 10vw, 60px)', height: 'clamp(40px, 10vw, 60px)' }} />
           </div>
-          <h1 className="brand-title" style={{ fontFamily: 'var(--font-family)', fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', letterSpacing: '2px', textShadow: '2px 2px 0px var(--panel-bg)', fontWeight: 'bold', animation: 'glitch 4s infinite' }}>grader.ai</h1>
+          <h1 className="brand-title" style={{ fontFamily: 'var(--font-family)', fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', letterSpacing: '2px', textShadow: '2px 2px 0px var(--panel-bg)', fontWeight: 'bold', animation: 'glitch 4s infinite' }}>GRADER.ai</h1>
           <TypewriterText key={`type-${animKey}`} text="Academic Grading Infrastructure" delay={40} className="brand-subtitle holographic-text" style={{ fontSize: 'clamp(0.75rem, 3vw, 1rem)', fontWeight: 'bold', fontFamily: "'Courier New', Courier, monospace", textTransform: 'uppercase', letterSpacing: '1px', wordWrap: 'break-word', whiteSpace: 'normal' }} />
         </div>
       <div className="role-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
@@ -3259,7 +3259,7 @@ const StudentLoginScreen = () => {
           <div className="header-brand-row" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <Menu className="mobile-menu-btn" size={28} style={{ cursor: 'pointer', color: 'var(--text-main)', marginRight: '8px' }} onClick={() => setIsMobileMenuOpen(true)} />
             <Brain color="var(--text-main)" size={32} />
-            <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 'bold' }}>grader.ai</h2>
+            <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 'bold' }}>GRADER.ai</h2>
             <div style={{ width: '1px', height: '24px', background: 'var(--panel-border)', margin: '0 8px' }}></div>
             <span className="badge badge-primary">{role === 'Lecturer' ? 'Faculty' : role}</span>
             {role === 'Student' && studentProfile && (

@@ -1,6 +1,6 @@
 {
-  "name": "grader.ai",
-  "short_name": "grader.ai",
+  "name": "GRADER.ai",
+  "short_name": "GRADER.ai",
   "description": "AI-Powered Grading & Anti-Cheat Examination Platform",
   "start_url": "./index.html",
   "display": "standalone",
