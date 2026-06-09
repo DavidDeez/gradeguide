@@ -3191,7 +3191,7 @@ const StudentLoginScreen = () => {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', position: 'relative' }}>
         <div style={{ position: 'absolute', top: '24px', left: '24px', display: 'flex', alignItems: 'center', gap: '12px', animation: 'fadeIn 1s ease' }}>
-          <img src="/ui_logo.png" alt="UI Logo" style={{ width: '55px', height: '55px', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
+          <img src="/ui_logo.png?v=2" alt="UI Logo" style={{ width: '55px', height: '55px', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
           <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
             <span style={{ fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: '0.5px' }}>University of Ibadan</span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', letterSpacing: '1px', fontWeight: 'bold' }}>ICT CYBER SECURITY</span>
