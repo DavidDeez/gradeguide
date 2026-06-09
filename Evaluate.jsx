@@ -640,6 +640,85 @@ const ScoreRing = ({ score, size = 120, strokeWidth = 10 }) => {
 const Footer = () => (
   <footer style={{ textAlign: 'center', padding: '24px 0', width: '100%', marginTop: 'auto' }}>
     <style>{`
+      .ui-header-responsive {
+        position: absolute;
+        top: clamp(16px, 4vw, 24px);
+        left: clamp(16px, 4vw, 24px);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: fadeIn 1s ease;
+      }
+      .ui-header-responsive .logo-wrapper {
+        width: 55px;
+        height: 55px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .ui-header-responsive img {
+        width: 55px;
+        height: 55px;
+        object-fit: contain;
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        transform: none;
+      }
+      .ui-header-text {
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+        font-family: var(--font-family);
+      }
+      .ui-header-title {
+        font-weight: bold;
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
+        line-height: normal;
+        text-transform: none;
+      }
+      .ui-header-subtitle {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        letter-spacing: 1px;
+        font-weight: bold;
+        opacity: 1;
+      }
+
+      @media (max-width: 768px) {
+        .ui-header-responsive {
+          top: clamp(8px, 2vw, 16px);
+          left: clamp(8px, 2vw, 16px);
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0px;
+        }
+        .ui-header-responsive .logo-wrapper {
+          width: clamp(35px, 8vw, 45px);
+          height: clamp(35px, 8vw, 45px);
+          overflow: hidden;
+          border-radius: 50%;
+        }
+        .ui-header-responsive img {
+          width: 100%;
+          height: 100%;
+          transform: scale(1.5);
+        }
+        .ui-header-text {
+          margin-top: -2px;
+        }
+        .ui-header-title {
+          font-size: clamp(0.55rem, 2vw, 0.7rem);
+          text-transform: uppercase;
+          line-height: 1.2;
+        }
+        .ui-header-subtitle {
+          font-size: clamp(0.4rem, 1.5vw, 0.55rem);
+          color: var(--text-main);
+          letter-spacing: 1.5px;
+          opacity: 0.8;
+        }
+      }
+
       @keyframes blockWrite {
         0% { width: 0; }
         100% { width: 32ch; }
@@ -3191,13 +3270,13 @@ const StudentLoginScreen = () => {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', position: 'relative' }}>
-        <div style={{ position: 'absolute', top: 'clamp(8px, 2vw, 16px)', left: 'clamp(8px, 2vw, 16px)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0px', animation: 'fadeIn 1s ease' }}>
-          <div style={{ width: 'clamp(35px, 8vw, 45px)', height: 'clamp(35px, 8vw, 45px)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            <img src={uiLogo} alt="UI Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.5)', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
+        <div className="ui-header-responsive">
+          <div className="logo-wrapper">
+            <img src={uiLogo} alt="UI Logo" />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', fontFamily: 'var(--font-family)', marginTop: '-2px' }}>
-            <span style={{ fontWeight: 'bold', fontSize: 'clamp(0.55rem, 2vw, 0.7rem)', letterSpacing: '1px', textTransform: 'uppercase', lineHeight: '1.2' }}>University of Ibadan</span>
-            <span style={{ fontSize: 'clamp(0.4rem, 1.5vw, 0.55rem)', color: 'var(--text-main)', letterSpacing: '1.5px', fontWeight: 'bold', opacity: 0.8 }}>ICT CYBER SECURITY</span>
+          <div className="ui-header-text">
+            <span className="ui-header-title">University of Ibadan</span>
+            <span className="ui-header-subtitle">ICT CYBER SECURITY</span>
           </div>
         </div>
         <div style={{ textAlign: 'center', marginBottom: 'clamp(30px, 8vw, 60px)', animation: 'fadeIn 1s ease', width: '100%', marginTop: 'clamp(100px, 15vh, 120px)' }}>
