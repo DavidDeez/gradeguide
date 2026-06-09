@@ -1646,7 +1646,7 @@ export default function EvaluateApp() {
           </div>
           
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px', lineHeight: '1.4' }}>
-            You are attempting to access the high-privilege **Faculty Dashboard**. Please sign in with your official faculty credentials.
+            Please sign in with your official faculty credentials.
           </p>
 
           <form onSubmit={handleLogin} style={{ display: 'grid', gap: '16px' }}>
@@ -1808,38 +1808,6 @@ export default function EvaluateApp() {
                 {editingAssessmentId ? 'Edit Assessment' : 'Build New Assessment'}
               </h2>
               
-              <div style={{ marginBottom: '32px', paddingBottom: '24px', borderBottom: '1px solid var(--panel-border)' }}>
-                <label style={{ display: 'block', marginBottom: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Specific Assessment Context Material (Optional)</label>
-                <div className="two-col-grid" style={{ marginBottom: '16px' }}>
-                  <div className="role-card" style={{ padding: '24px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)' }} onClick={() => setShowCam(true)}>
-                    <Camera size={32} color="var(--text-main)" />
-                    <h4 style={{ margin: '8px 0 0 0' }}>Scan Printed Copy</h4>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>AI-powered OCR via Vision</p>
-                  </div>
-                  <label className="role-card" style={{ padding: '24px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)' }}>
-                    <Upload size={32} color="var(--success)" />
-                    <h4 style={{ margin: '8px 0 0 0' }}>{assessmentContext.pdfName || 'Upload Digital Copy'}</h4>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF, TXT, MD, JPG, PNG</p>
-                    <input type="file" hidden onChange={handleAssessmentFileUpload} accept=".pdf,.txt,.md,.jpg,.jpeg,.png" />
-                  </label>
-                </div>
-                <div style={{ position: 'relative' }}>
-                  <textarea 
-                    className="input-field scrollbar" 
-                    rows={4} 
-                    placeholder="Alternatively, paste specific context here. AI will use this strictly for grading this exam..."
-                    value={assessmentContext.text}
-                    onChange={e => setAssessmentContext({...assessmentContext, text: e.target.value})}
-                  />
-                  {assessmentContext.pdfBase64 && (
-                    <div style={{ position: 'absolute', top: '10px', right: '10px' }} className="badge badge-success">
-                      <FileText size={14} style={{ marginRight: '6px' }} /> Linked Context File
-                    </div>
-                  )}
-                </div>
-                {showCam && <CameraModal onClose={() => setShowCam(false)} onExtract={t => setAssessmentContext(p => ({...p, text: p.text + '\n' + t}))} />}
-              </div>
-
               <div style={{ marginBottom: '24px', display: 'flex', gap: '16px' }}>
                 <div style={{ flex: 3 }}>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Assessment Title</label>
@@ -1985,6 +1953,39 @@ export default function EvaluateApp() {
                 >
                   <Save size={18} /> {editingAssessmentId ? 'Update Assessment' : 'Save & Publish'}
                 </button>
+              </div>
+              </div>
+
+              <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--panel-border)' }}>
+                <label style={{ display: 'block', marginBottom: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Specific Assessment Context Material (Optional)</label>
+                <div className="two-col-grid" style={{ marginBottom: '16px' }}>
+                  <div className="role-card" style={{ padding: '24px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)' }} onClick={() => setShowCam(true)}>
+                    <Camera size={32} color="var(--text-main)" />
+                    <h4 style={{ margin: '8px 0 0 0' }}>Scan Printed Copy</h4>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>AI-powered OCR via Vision</p>
+                  </div>
+                  <label className="role-card" style={{ padding: '24px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)' }}>
+                    <Upload size={32} color="var(--success)" />
+                    <h4 style={{ margin: '8px 0 0 0' }}>{assessmentContext.pdfName || 'Upload Digital Copy'}</h4>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF, TXT, MD, JPG, PNG</p>
+                    <input type="file" hidden onChange={handleAssessmentFileUpload} accept=".pdf,.txt,.md,.jpg,.jpeg,.png" />
+                  </label>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <textarea 
+                    className="input-field scrollbar" 
+                    rows={4} 
+                    placeholder="Alternatively, paste specific context here. AI will use this strictly for grading this exam..."
+                    value={assessmentContext.text}
+                    onChange={e => setAssessmentContext({...assessmentContext, text: e.target.value})}
+                  />
+                  {assessmentContext.pdfBase64 && (
+                    <div style={{ position: 'absolute', top: '10px', right: '10px' }} className="badge badge-success">
+                      <FileText size={14} style={{ marginRight: '6px' }} /> Linked Context File
+                    </div>
+                  )}
+                </div>
+                {showCam && <CameraModal onClose={() => setShowCam(false)} onExtract={t => setAssessmentContext(p => ({...p, text: p.text + '\n' + t}))} />}
               </div>
             </div>
 
@@ -3189,8 +3190,15 @@ const StudentLoginScreen = () => {
     }, []);
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px' }}>
-        <div style={{ textAlign: 'center', marginBottom: 'clamp(30px, 8vw, 60px)', animation: 'fadeIn 1s ease', width: '100%' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', position: 'relative' }}>
+        <div style={{ position: 'absolute', top: '24px', left: '24px', display: 'flex', alignItems: 'center', gap: '12px', animation: 'fadeIn 1s ease' }}>
+          <img src="/ui_logo_3d.png" alt="UI Logo" style={{ width: '50px', height: '50px', objectFit: 'contain' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+            <span style={{ fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: '0.5px' }}>University of Ibadan</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', letterSpacing: '1px', fontWeight: 'bold' }}>ICT CYBER SECURITY</span>
+          </div>
+        </div>
+        <div style={{ textAlign: 'center', marginBottom: 'clamp(30px, 8vw, 60px)', animation: 'fadeIn 1s ease', width: '100%', marginTop: '60px' }}>
           <div style={{ display: 'inline-flex', padding: 'clamp(12px, 4vw, 20px)', background: 'var(--panel-bg)', borderRadius: '8px', border: '1px solid var(--panel-border)', marginBottom: '24px' }}>
             <Brain key={`brain-${animKey}`} size={60} color="var(--text-main)" className="draw-icon" style={{ width: 'clamp(40px, 10vw, 60px)', height: 'clamp(40px, 10vw, 60px)' }} />
           </div>
