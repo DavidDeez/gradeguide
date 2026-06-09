@@ -3191,11 +3191,11 @@ const StudentLoginScreen = () => {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', position: 'relative' }}>
-        <div style={{ position: 'absolute', top: '24px', left: '24px', display: 'flex', alignItems: 'center', gap: '12px', animation: 'fadeIn 1s ease' }}>
-          <img src={uiLogo} alt="UI Logo" style={{ width: '55px', height: '55px', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
+        <div style={{ position: 'absolute', top: 'clamp(16px, 4vw, 24px)', left: 'clamp(16px, 4vw, 24px)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', animation: 'fadeIn 1s ease' }}>
+          <img src={uiLogo} alt="UI Logo" style={{ width: 'clamp(45px, 10vw, 60px)', height: 'clamp(45px, 10vw, 60px)', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
           <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-            <span style={{ fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: '0.5px' }}>University of Ibadan</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', letterSpacing: '1px', fontWeight: 'bold' }}>ICT CYBER SECURITY</span>
+            <span style={{ fontWeight: 'bold', fontSize: 'clamp(0.8rem, 3.5vw, 1rem)', letterSpacing: '0.5px', lineHeight: '1.2' }}>University of Ibadan</span>
+            <span style={{ fontSize: 'clamp(0.6rem, 2.5vw, 0.75rem)', color: 'var(--text-muted)', letterSpacing: '1px', fontWeight: 'bold' }}>ICT CYBER SECURITY</span>
           </div>
         </div>
         <div style={{ textAlign: 'center', marginBottom: 'clamp(30px, 8vw, 60px)', animation: 'fadeIn 1s ease', width: '100%', marginTop: '60px' }}>
