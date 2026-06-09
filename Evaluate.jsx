@@ -3202,7 +3202,7 @@ const StudentLoginScreen = () => {
             <Brain key={`brain-${animKey}`} size={60} color="var(--text-main)" className="draw-icon" style={{ width: 'clamp(40px, 10vw, 60px)', height: 'clamp(40px, 10vw, 60px)' }} />
           </div>
           <h1 className="brand-title" style={{ fontFamily: 'var(--font-family)', fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', letterSpacing: '2px', textShadow: '2px 2px 0px var(--panel-bg)', fontWeight: 'bold', animation: 'glitch 4s infinite' }}>ＥＶＡＬＵＡＴＥ.ａｉ</h1>
-          <TypewriterText key={`type-${animKey}`} text="Academic Grading Infrastructure for the AI Age" delay={40} className="brand-subtitle holographic-text" style={{ fontSize: 'clamp(0.75rem, 3vw, 1rem)', fontWeight: 'bold', fontFamily: "'Courier New', Courier, monospace", textTransform: 'uppercase', letterSpacing: '1px', wordWrap: 'break-word', whiteSpace: 'normal' }} />
+          <TypewriterText key={`type-${animKey}`} text="Academic Grading Infrastructure" delay={40} className="brand-subtitle holographic-text" style={{ fontSize: 'clamp(0.75rem, 3vw, 1rem)', fontWeight: 'bold', fontFamily: "'Courier New', Courier, monospace", textTransform: 'uppercase', letterSpacing: '1px', wordWrap: 'break-word', whiteSpace: 'normal' }} />
         </div>
       <div className="role-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
         {[
