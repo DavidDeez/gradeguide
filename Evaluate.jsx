@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-const uiLogo = "https://upload.wikimedia.org/wikipedia/en/thumb/6/6a/University_of_Ibadan_logo.svg/512px-University_of_Ibadan_logo.svg.png";
+const uiLogo = new URL('src/assets/ui_logo.png', window.location.href).href;
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = 'https://rnayaaqjbkbuiderdngu.supabase.co';
