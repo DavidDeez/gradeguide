@@ -3191,7 +3191,54 @@ const StudentLoginScreen = () => {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', position: 'relative' }}>
         <div style={{ position: 'absolute', top: '24px', left: '24px', display: 'flex', alignItems: 'center', gap: '12px', animation: 'fadeIn 1s ease' }}>
-          <img src="/ui_logo.png?v=2" alt="UI Logo" style={{ width: '55px', height: '55px', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
+          <svg viewBox="0 0 100 120" style={{ width: '65px', height: '65px', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }}>
+            {/* Ribbon Background */}
+            <path d="M 5,95 Q 25,80 50,105 Q 75,80 95,95 Q 90,115 50,118 Q 10,115 5,95 Z" fill="#d4af37" stroke="#333" strokeWidth="1" />
+            <path d="M 0,90 Q 25,70 50,100 Q 75,70 100,90 Q 95,110 50,115 Q 5,110 0,90 Z" fill="#e5c158" />
+
+            {/* Main Shield */}
+            <path d="M 15,5 L 85,5 L 85,55 C 85,85 50,110 50,110 C 50,110 15,85 15,55 Z" fill="#222" stroke="#fff" strokeWidth="2" />
+            <path d="M 17,7 L 83,7 L 83,54 C 83,82 50,106 50,106 C 50,106 17,82 17,54 Z" fill="#111" />
+
+            {/* Sunburst (Golden Flames) */}
+            <g stroke="#e5c158" strokeWidth="3" strokeLinecap="round">
+              <line x1="50" y1="50" x2="50" y2="15" />
+              <line x1="50" y1="50" x2="75" y2="25" />
+              <line x1="50" y1="50" x2="85" y2="50" />
+              <line x1="50" y1="50" x2="75" y2="75" />
+              <line x1="50" y1="50" x2="25" y2="75" />
+              <line x1="50" y1="50" x2="15" y2="50" />
+              <line x1="50" y1="50" x2="25" y2="25" />
+              <line x1="50" y1="50" x2="65" y2="18" />
+              <line x1="50" y1="50" x2="35" y2="18" />
+              <line x1="50" y1="50" x2="80" y2="35" />
+              <line x1="50" y1="50" x2="20" y2="35" />
+              <line x1="50" y1="50" x2="80" y2="65" />
+              <line x1="50" y1="50" x2="20" y2="65" />
+            </g>
+
+            {/* Blue Y-Shape (Pall) */}
+            <path d="M 17,7 L 42,45 L 50,45 L 58,45 L 83,7 L 70,7 L 55,35 L 55,103 L 45,103 L 45,35 L 30,7 Z" fill="#323e99" />
+            <path d="M 17,25 L 42,55 L 50,55 L 58,55 L 83,25 L 83,7 L 50,45 L 17,7 Z" fill="#252d75" opacity="0.3" />
+
+            {/* The Open Book */}
+            <rect x="33" y="38" width="34" height="22" fill="#d92525" rx="1" />
+            <path d="M 35,41 Q 42,39 50,43 Q 58,39 65,41 L 65,57 Q 58,55 50,59 Q 42,55 35,57 Z" fill="#fff" />
+            <path d="M 36,42 Q 42,40 49,44 L 49,57 Q 42,54 36,56 Z" fill="#f4f4f4" />
+            
+            {/* Book Pages Lines */}
+            <line x1="50" y1="43" x2="50" y2="59" stroke="#ccc" strokeWidth="1" />
+            <line x1="38" y1="45" x2="47" y2="47" stroke="#bbb" strokeWidth="0.8" />
+            <line x1="38" y1="49" x2="47" y2="51" stroke="#bbb" strokeWidth="0.8" />
+            <line x1="38" y1="53" x2="47" y2="55" stroke="#bbb" strokeWidth="0.8" />
+            <line x1="62" y1="45" x2="53" y2="47" stroke="#bbb" strokeWidth="0.8" />
+            <line x1="62" y1="49" x2="53" y2="51" stroke="#bbb" strokeWidth="0.8" />
+            <line x1="62" y1="53" x2="53" y2="55" stroke="#bbb" strokeWidth="0.8" />
+
+            {/* Ribbon Text */}
+            <text x="50" y="103" fontSize="8" fontFamily="Arial, sans-serif" fontWeight="900" fill="#5c4a17" textAnchor="middle" letterSpacing="0.5">RECTE SAPERE</text>
+            <text x="50" y="112" fontSize="7" fontFamily="Arial, sans-serif" fontWeight="900" fill="#5c4a17" textAnchor="middle" letterSpacing="1">FONS</text>
+          </svg>
           <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
             <span style={{ fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: '0.5px' }}>University of Ibadan</span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', letterSpacing: '1px', fontWeight: 'bold' }}>ICT CYBER SECURITY</span>
