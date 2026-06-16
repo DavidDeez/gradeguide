@@ -2031,7 +2031,7 @@ export default function EvaluateApp() {
                     <Upload size={32} color="var(--success)" />
                     <h4 style={{ margin: '8px 0 0 0' }}>{assessmentContext.pdfName || 'Upload Digital Copy'}</h4>
                     <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF, TXT, MD, JPG, PNG</p>
-                    <input type="file" hidden onChange={handleAssessmentFileUpload} accept=".pdf,.txt,.md,.jpg,.jpeg,.png" />
+                    <input type="file" hidden onChange={handleAssessmentFileUpload} accept="application/pdf,text/plain,image/jpeg,image/png,.pdf,.txt,.md,.jpg,.jpeg,.png" />
                   </label>
                 </div>
                 <div style={{ position: 'relative' }}>
@@ -2105,7 +2105,7 @@ export default function EvaluateApp() {
               <h3 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}><Book size={20}/> 1. Provide Marking Guide</h3>
               <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
                 <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setBulkScannerCam({ active: true, target: 'guide', idx: null })}><Camera size={18}/> Snap Rubric</button>
-                <input type="file" id="bulkGuideUpload" hidden accept=".txt,.pdf,.jpg,.png" onChange={e => handleBulkUpload(e, 'guide')} />
+                <input type="file" id="bulkGuideUpload" hidden accept="application/pdf,text/plain,image/jpeg,image/png,.txt,.pdf,.jpg,.png" onChange={e => handleBulkUpload(e, 'guide')} />
                 <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => document.getElementById('bulkGuideUpload').click()}><Upload size={18}/> Upload Rubric</button>
               </div>
               <textarea className="input-field scrollbar" rows={3} placeholder="Extracted marking guide text will appear here..." value={bulkState.guideText} onChange={e => setBulkState({...bulkState, guideText: e.target.value})}></textarea>
@@ -2127,7 +2127,7 @@ export default function EvaluateApp() {
                       }} style={{ flex: 1, minWidth: '200px' }} />
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button className="btn btn-outline" style={{ padding: '10px' }} onClick={() => setBulkScannerCam({ active: true, target: 'script', idx })}><Camera size={18}/> Snap Script</button>
-                        <input type="file" id={`scriptUpload-${script.id}`} hidden accept=".txt,.pdf,.jpg,.png" onChange={e => handleBulkUpload(e, 'script', idx)} />
+                        <input type="file" id={`scriptUpload-${script.id}`} hidden accept="application/pdf,text/plain,image/jpeg,image/png,.txt,.pdf,.jpg,.png" onChange={e => handleBulkUpload(e, 'script', idx)} />
                         <button className="btn btn-outline" style={{ padding: '10px' }} onClick={() => document.getElementById(`scriptUpload-${script.id}`).click()}><Upload size={18}/></button>
                         <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)', padding: '10px' }} onClick={() => {
                           setBulkState({...bulkState, scripts: bulkState.scripts.filter((_, i) => i !== idx)});
@@ -2740,7 +2740,7 @@ const text = document.getElementById('bulkStudCSV').value;
         <div style={{ marginBottom: '24px', padding: '24px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed var(--primary)' }}>
           <h4 style={{ margin: '0 0 12px 0' }}>Alternatively: Upload your Answer Script</h4>
           <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Written your answers on paper or a PDF? Upload it and the AI will read it directly!</p>
-          <input type="file" id="studentUpload" hidden accept=".pdf,.jpg,.jpeg,.png" onChange={e => {
+          <input type="file" id="studentUpload" hidden accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" onChange={e => {
              const f = e.target.files[0];
              if(!f) return;
              const r = new FileReader();
