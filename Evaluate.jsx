@@ -729,7 +729,7 @@ export default function EvaluateApp() {
     emailjsServiceId: 'service_669uej4',
     emailjsOtpTemplateId: 'template_sh27d68',
     emailjsResultsTemplateId: '',
-    gradingStrategy: 'background'
+    gradingStrategy: 'instant'
   });
 
   // Auth state with LocalStorage Persistence
