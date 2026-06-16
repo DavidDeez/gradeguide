@@ -947,7 +947,13 @@ export default function EvaluateApp() {
               contextText: cCtx, contextPdfBase64: cPdf, contextFileMime: cMime
             };
           });
-          setAssessments(mappedAss);
+          
+          try {
+            const localAss = JSON.parse(localStorage.getItem('gg_local_assessments') || '[]');
+            setAssessments([...localAss, ...mappedAss]);
+          } catch (e) {
+            setAssessments(mappedAss);
+          }
         }
 
         if (stdRes.data) {
@@ -1975,7 +1981,7 @@ export default function EvaluateApp() {
                         if (!error) {
                           setAssessments(assessments.map(a => a.id === editingAssessmentId ? createdExam : a));
                           window.showToast(`Assessment "${createdExam.title}" has been successfully updated!`);
-                        } else window.showToast("Failed to update database.");
+                        } else window.showToast("Failed to update database: " + error.message);
                       });
                     } else {
                       const payloadQuestions = [...createdExam.questions];
@@ -2003,7 +2009,15 @@ export default function EvaluateApp() {
                           setAssessments([createdExam, ...assessments]);
                           window.showToast(`Assessment "${createdExam.title}" has been successfully published to the Student Portal!`);
                         } else {
-                          window.showToast("Failed to save to database. Are you logged in properly?");
+                          // FALLBACK FOR PRESENTATION
+                          try {
+                            const localAss = JSON.parse(localStorage.getItem('gg_local_assessments') || '[]');
+                            localStorage.setItem('gg_local_assessments', JSON.stringify([createdExam, ...localAss]));
+                            setAssessments([createdExam, ...assessments]);
+                            window.showToast(`Saved to Local Device (DB Error: ${error.message}). It is available for your presentation!`, "success");
+                          } catch (e) {
+                            window.showToast("DB Error: " + error.message, "error");
+                          }
                         }
                       });
                     }
