@@ -1551,8 +1551,7 @@ export default function EvaluateApp() {
           </div>
 
 
-          {role !== 'Student' && (
-            <>
+          {/* Removed role restriction so students can see corrections */}
               {/* Question-by-Question Corrections breakdown */}
               <h3 style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>Detailed Evaluation Breakdown</h3>
               <div style={{ display: 'grid', gap: '32px' }}>
@@ -1624,8 +1623,6 @@ export default function EvaluateApp() {
               );
             })}
           </div>
-          </>
-          )}
 
           <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--panel-border)', paddingTop: '24px' }}>
 
