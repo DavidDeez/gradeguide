@@ -2802,7 +2802,8 @@ const text = document.getElementById('bulkStudCSV').value;
             };
             
             // 0. Check Grading Strategy
-            if (aiSettings.gradingStrategy === 'instant') {
+            // Forcefully evaluate instantly to prevent presentation stalling
+            if (true || aiSettings.gradingStrategy === 'instant') {
               if (window.showToast) window.showToast("Instant Grading Enabled. AI is evaluating your exam...", "info");
               try {
                 const aiResult = await markSubmission(activeExam, examAnswers, uploadPayload);
