@@ -1683,7 +1683,20 @@ export default function EvaluateApp() {
 
           <form onSubmit={handleLogin} style={{ display: 'grid', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Faculty Password</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold' }}>Faculty Email</label>
+              <input 
+                type="email" 
+                className="input-field" 
+                placeholder="e.g. david@grader.ai" 
+                required 
+                autoFocus
+                value={usernameInput}
+                onChange={e => setUsernameInput(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold', marginTop: '16px' }}>Faculty Password</label>
               <input 
                 type="password" 
                 className="input-field" 
