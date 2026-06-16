@@ -929,11 +929,24 @@ export default function EvaluateApp() {
         }
 
         if (assRes.data) {
-          const mappedAss = assRes.data.map(row => ({
-            id: row.id, title: row.title, duration: row.duration,
-            questions: row.questions || [], published: row.published,
-            contextText: row.context_text, contextPdfBase64: row.context_pdf_base64, contextFileMime: row.context_file_mime
-          }));
+          const mappedAss = assRes.data.map(row => {
+            let qList = row.questions || [];
+            let cCtx = row.context_text, cPdf = row.context_pdf_base64, cMime = row.context_file_mime;
+            
+            const sysCtx = qList.find(q => q.id === '__SYS_CONTEXT_MATERIAL__');
+            if (sysCtx) {
+                cCtx = sysCtx.contextText || cCtx;
+                cPdf = sysCtx.contextPdfBase64 || cPdf;
+                cMime = sysCtx.contextFileMime || cMime;
+                qList = qList.filter(q => q.id !== '__SYS_CONTEXT_MATERIAL__');
+            }
+            
+            return {
+              id: row.id, title: row.title, duration: row.duration,
+              questions: qList, published: row.published,
+              contextText: cCtx, contextPdfBase64: cPdf, contextFileMime: cMime
+            };
+          });
           setAssessments(mappedAss);
         }
 
@@ -1939,21 +1952,59 @@ export default function EvaluateApp() {
                     };
                     
                     if (editingAssessmentId) {
+                      const payloadQuestions = [...createdExam.questions];
+                      if (createdExam.contextText || createdExam.contextPdfBase64) {
+                        payloadQuestions.push({
+                          id: '__SYS_CONTEXT_MATERIAL__',
+                          text: '__INTERNAL_DO_NOT_RENDER__',
+                          maxMarks: 0,
+                          contextText: createdExam.contextText,
+                          contextPdfBase64: createdExam.contextPdfBase64,
+                          contextFileMime: createdExam.contextFileMime
+                        });
+                      }
+                      
+                      if (JSON.stringify(payloadQuestions).length > 2500000) {
+                         window.showToast("The attached PDF is too large to save to the database. Please upload a smaller file.", "error");
+                         return;
+                      }
+
                       supabase.from('assessments').update({
-                        title: createdExam.title, duration: createdExam.duration, questions: createdExam.questions,
-                        context_text: createdExam.contextText, context_pdf_base64: createdExam.contextPdfBase64, context_file_mime: createdExam.contextFileMime
+                        title: createdExam.title, duration: createdExam.duration, questions: payloadQuestions
                       }).eq('id', editingAssessmentId).then(({error}) => {
-                        if (!error) setAssessments(assessments.map(a => a.id === editingAssessmentId ? createdExam : a));
-                        else window.showToast("Failed to update database.");
+                        if (!error) {
+                          setAssessments(assessments.map(a => a.id === editingAssessmentId ? createdExam : a));
+                          window.showToast(`Assessment "${createdExam.title}" has been successfully updated!`);
+                        } else window.showToast("Failed to update database.");
                       });
                     } else {
+                      const payloadQuestions = [...createdExam.questions];
+                      if (createdExam.contextText || createdExam.contextPdfBase64) {
+                        payloadQuestions.push({
+                          id: '__SYS_CONTEXT_MATERIAL__',
+                          text: '__INTERNAL_DO_NOT_RENDER__',
+                          maxMarks: 0,
+                          contextText: createdExam.contextText,
+                          contextPdfBase64: createdExam.contextPdfBase64,
+                          contextFileMime: createdExam.contextFileMime
+                        });
+                      }
+                      
+                      if (JSON.stringify(payloadQuestions).length > 2500000) {
+                         window.showToast("The attached PDF is too large to save to the database. Please upload a smaller file.", "error");
+                         return;
+                      }
+
                       supabase.from('assessments').insert({
-                        id: createdExam.id, title: createdExam.title, duration: createdExam.duration, questions: createdExam.questions,
-                        context_text: createdExam.contextText, context_pdf_base64: createdExam.contextPdfBase64, context_file_mime: createdExam.contextFileMime,
+                        id: createdExam.id, title: createdExam.title, duration: createdExam.duration, questions: payloadQuestions,
                         published: true
                       }).then(({error}) => {
-                        if (!error) setAssessments([createdExam, ...assessments]);
-                        else window.showToast("Failed to save to database. Are you logged in properly?");
+                        if (!error) {
+                          setAssessments([createdExam, ...assessments]);
+                          window.showToast(`Assessment "${createdExam.title}" has been successfully published to the Student Portal!`);
+                        } else {
+                          window.showToast("Failed to save to database. Are you logged in properly?");
+                        }
                       });
                     }
                     
@@ -1962,7 +2013,6 @@ export default function EvaluateApp() {
                     setAssessmentContext({ text: '', pdfBase64: null, pdfName: '', fileMime: '' });
                     setNewQuestions([{ id: Date.now(), text: '', maxMarks: 10 }]);
                     setEditingAssessmentId(null);
-                    window.showToast(`Assessment "${createdExam.title}" has been successfully ${editingAssessmentId ? 'updated' : 'published'} to the Student Portal!`);
                   }}
                 >
                   <Save size={18} /> {editingAssessmentId ? 'Update Assessment' : 'Save & Publish'}
