@@ -1645,9 +1645,8 @@ export default function EvaluateApp() {
       setLoginError('');
       setAuthLoading(true);
 
-      if (passwordInput === 'admin') {
-        setRole('FacultyHub');
-        setLoginModalRole(null);
+      if (!usernameInput || !passwordInput) {
+        setLoginError('Please fill in all fields');
         setAuthLoading(false);
         return;
       }
