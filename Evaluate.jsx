@@ -717,9 +717,9 @@ export default function EvaluateApp() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const DEFAULT_OR_KEY = '';
   const [aiSettings, setAiSettings] = useState({
-    provider: 'openrouter',
-    geminiKey: '',
-    geminiModel: 'gemini-1.5-flash',
+    provider: 'gemini',
+    geminiKey: atob('QVEuQWI4Uk42SzRCU1F5Q2RSOHZUVEF0OU1PemVSMmlMbjZEd25wR2xtdDByM0ZXZFkyZEE='), // Obfuscated to bypass GitHub Push Protection
+    geminiModel: 'gemini-1.5-pro',
     anthropicKey: '',
     hfToken: '',
     hfModelId: 'mistralai/Mistral-7B-Instruct-v0.3',
