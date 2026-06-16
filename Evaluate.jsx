@@ -1652,7 +1652,7 @@ export default function EvaluateApp() {
       }
       
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: 'admin@grader.ai',
+        email: usernameInput,
         password: passwordInput
       });
 
