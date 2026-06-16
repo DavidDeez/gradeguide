@@ -8,19 +8,16 @@
     <meta name="theme-color" content="#a371f7" />
     <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/GitHub_Invertocat_Logo.svg/1024px-GitHub_Invertocat_Logo.svg.png" />
     
-    <!-- Babel for on-the-fly JSX transpilation -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- EmailJS for OTP verification and results delivery -->
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.3/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-
-    <!-- Import Map for ESM support in browser -->
+    
     <script type="importmap">
     {
       "imports": {
-        "react": "https://esm.sh/react@18.2.0",
-        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-        "lucide-react": "https://esm.sh/lucide-react@0.344.0?deps=react@18.2.0",
-        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.8"
+        "react": "https://cdn.jsdelivr.net/npm/react@18.2.0/+esm",
+        "react-dom/client": "https://cdn.jsdelivr.net/npm/react-dom@18.2.0/client/+esm",
+        "lucide-react": "https://cdn.jsdelivr.net/npm/lucide-react@0.344.0/+esm",
+        "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/+esm"
       }
     }
     </script>
