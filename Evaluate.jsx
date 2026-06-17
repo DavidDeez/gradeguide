@@ -1106,8 +1106,11 @@ export default function EvaluateApp() {
   };
 
   const callAI = async (prompt, system, files = []) => {
+    const activeOpenRouterKey = OBFUSCATED_OPENROUTER_KEY || aiSettings.openrouterKey;
+    const activeGeminiKey = OBFUSCATED_GEMINI_KEY || aiSettings.geminiKey;
+
     if (aiSettings.provider === 'openrouter') {
-      if (!aiSettings.openrouterKey) {
+      if (!activeOpenRouterKey) {
         if (role === 'Student') {
           throw new Error("AI Grading Engine is offline. Please ask your Lecturer or Administrator to configure the AI API Key in their console.");
         }
@@ -1139,7 +1142,7 @@ export default function EvaluateApp() {
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${aiSettings.openrouterKey}`,
+          "Authorization": `Bearer ${activeOpenRouterKey}`,
           "Content-Type": "application/json",
           "HTTP-Referer": window.location.origin,
           "X-Title": "GRADER.ai"
@@ -1190,7 +1193,7 @@ export default function EvaluateApp() {
       throw new Error("HuggingFace returned an unrecognized response format.");
     }
 
-    if (!aiSettings.geminiKey) {
+    if (!activeGeminiKey) {
       setShowSettings(true);
       throw new Error("Gemini API Key Required.");
     }
@@ -1218,7 +1221,7 @@ export default function EvaluateApp() {
       };
     }
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiSettings.geminiModel}:generateContent?key=${aiSettings.geminiKey}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiSettings.geminiModel}:generateContent?key=${activeGeminiKey}`;
     
     const res = await fetch(endpoint, {
       method: 'POST',
