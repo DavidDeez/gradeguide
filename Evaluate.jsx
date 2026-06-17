@@ -971,6 +971,9 @@ export default function EvaluateApp() {
           if (loadedSettings.openrouterModel === 'google/gemini-flash-1.5-free') {
             loadedSettings.openrouterModel = 'openrouter/free';
           }
+          if (loadedSettings.geminiModel === 'gemini-1.5-flash' || loadedSettings.geminiModel === 'gemini-1.5-pro') {
+            loadedSettings.geminiModel = 'gemini-flash-latest';
+          }
           setAiSettings(prev => ({ ...prev, ...loadedSettings }));
         } else {
           // No row found, safe to load defaults
