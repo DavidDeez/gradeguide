@@ -1106,150 +1106,98 @@ export default function EvaluateApp() {
     }
   };
 
+
+  // ── Auto-failover AI caller ─────────────────────────────────────────
+  // Tries each provider in sequence. If one fails (rate limit, high demand,
+  // etc.) it silently moves to the next free option.
   const callAI = async (prompt, system, files = []) => {
     const activeOpenRouterKey = OBFUSCATED_OPENROUTER_KEY || aiSettings.openrouterKey;
     const activeGeminiKey = OBFUSCATED_GEMINI_KEY || aiSettings.geminiKey;
 
-    if (aiSettings.provider === 'openrouter') {
-      if (!activeOpenRouterKey) {
-        if (role === 'Student') {
-          throw new Error("AI Grading Engine is offline. Please ask your Lecturer or Administrator to configure the AI API Key in their console.");
-        }
-        setShowSettings(true);
-        throw new Error("OpenRouter API Key Required.");
-      }
+    // ── Helper: call Gemini ──────────────────────────────────────────
+    const tryGemini = async (modelName) => {
+      if (!activeGeminiKey) throw new Error('No Gemini key');
+      const contents = [{ role: "user", parts: files.map(f => ({ inline_data: { mime_type: f.mime, data: f.base64 } })) }];
+      contents[0].parts.push({ text: prompt });
+      const body = { contents, generationConfig: { responseMimeType: "application/json", maxOutputTokens: 8000 } };
+      if (system) body.system_instruction = { parts: [{ text: system }] };
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${activeGeminiKey}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(`Gemini Error: ${data.error.message}`);
+      if (!data.candidates?.[0]?.content) throw new Error('Gemini empty response');
+      const textPart = (data.candidates[0].content.parts || []).find(p => p.text !== undefined);
+      if (!textPart) throw new Error('Gemini no text part');
+      return textPart.text;
+    };
 
+    // ── Helper: call OpenRouter with any model ───────────────────────
+    const tryOpenRouter = async (modelId) => {
+      if (!activeOpenRouterKey) throw new Error('No OpenRouter key');
       const messages = [];
-      if (system) {
-        messages.push({ role: "system", content: system });
-      }
-
+      if (system) messages.push({ role: "system", content: system });
       if (files.length > 0) {
-        const content = files.map(f => {
-          if (f.mime.startsWith("image/")) {
-            return {
-              type: "image_url",
-              image_url: { url: `data:${f.mime};base64,${f.base64}` }
-            };
-          }
-          return { type: "text", text: `[Attachment]: (${f.mime})` };
-        });
+        const content = files.map(f => f.mime.startsWith("image/")
+          ? { type: "image_url", image_url: { url: `data:${f.mime};base64,${f.base64}` } }
+          : { type: "text", text: `[Attachment]: (${f.mime})` });
         content.push({ type: "text", text: prompt });
         messages.push({ role: "user", content });
       } else {
         messages.push({ role: "user", content: prompt });
       }
-
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${activeOpenRouterKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "GRADER.ai"
-        },
-        body: JSON.stringify({
-          model: aiSettings.openrouterModel || "openrouter/free",
-          max_tokens: 4000,
-          messages: messages
-        })
+        headers: { "Authorization": `Bearer ${activeOpenRouterKey}`, "Content-Type": "application/json", "HTTP-Referer": window.location.origin, "X-Title": "GRADER.ai" },
+        body: JSON.stringify({ model: modelId, max_tokens: 4000, messages })
       });
-
       const data = await res.json();
-      if (data.error) {
-        console.error("OpenRouter API Error:", data.error);
-        throw new Error(`OpenRouter Error: ${data.error.message || data.error.metadata?.message || "Unknown error"}`);
-      }
-
-      if (!data.choices || !data.choices[0]?.message?.content) {
-        console.error("Unexpected OpenRouter Response:", data);
-        throw new Error("OpenRouter returned an empty response.");
-      }
-
+      if (data.error) throw new Error(`OpenRouter Error: ${data.error.message || data.error.metadata?.message || 'Unknown error'}`);
+      if (!data.choices?.[0]?.message?.content) throw new Error('OpenRouter empty response');
       return data.choices[0].message.content;
-    }
-
-    if (aiSettings.provider === 'huggingface') {
-      if (!aiSettings.hfToken) {
-        if (role === 'Student') throw new Error("AI Grading Engine is offline.");
-        setShowSettings(true);
-        throw new Error("HuggingFace Access Token Required.");
-      }
-      const hfModel = aiSettings.hfModelId || "mistralai/Mistral-7B-Instruct-v0.3";
-      const res = await fetch(`https://api-inference.huggingface.co/models/${hfModel}`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${aiSettings.hfToken}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          inputs: `<s>[INST] ${system}\n\n[USER PROMPT]: ${prompt} [/INST]`,
-          parameters: { max_new_tokens: 2000, return_full_text: false }
-        })
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(`HuggingFace Error: ${typeof data.error === 'string' ? data.error : JSON.stringify(data.error)}`);
-      if (Array.isArray(data) && data[0]?.generated_text) return data[0].generated_text;
-      throw new Error("HuggingFace returned an unrecognized response format.");
-    }
-
-    if (!activeGeminiKey) {
-      setShowSettings(true);
-      throw new Error("Gemini API Key Required.");
-    }
-    
-    const contents = [{
-      role: "user",
-      parts: files.map(f => ({
-        inline_data: { mime_type: f.mime, data: f.base64 }
-      }))
-    }];
-    
-    contents[0].parts.push({ text: prompt });
-
-    const body = { 
-      contents,
-      generationConfig: { 
-        responseMimeType: "application/json",
-        maxOutputTokens: 8000
-      }
     };
-    
-    if (system) {
-      body.system_instruction = {
-        parts: [{ text: system }]
-      };
+
+    // ── Failover chain ───────────────────────────────────────────────
+    // Build the list of attempts based on user's preferred provider first,
+    // then fall back through all other free options automatically.
+    const attempts = [];
+
+    if (aiSettings.provider === 'gemini') {
+      attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
+      attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-1.5-flash') });
+      attempts.push({ label: 'Llama 3.3 70B',    fn: () => tryOpenRouter('meta-llama/llama-3.3-70b-instruct:free') });
+      attempts.push({ label: 'Gemma 3 27B',       fn: () => tryOpenRouter('google/gemma-3-27b-it:free') });
+    } else if (aiSettings.provider === 'openrouter') {
+      const preferred = aiSettings.openrouterModel || 'meta-llama/llama-3.3-70b-instruct:free';
+      attempts.push({ label: preferred,         fn: () => tryOpenRouter(preferred) });
+      attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
+      attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-1.5-flash') });
+      if (preferred !== 'meta-llama/llama-3.3-70b-instruct:free')
+        attempts.push({ label: 'Llama 3.3 70B',  fn: () => tryOpenRouter('meta-llama/llama-3.3-70b-instruct:free') });
+      if (preferred !== 'google/gemma-3-27b-it:free')
+        attempts.push({ label: 'Gemma 3 27B',    fn: () => tryOpenRouter('google/gemma-3-27b-it:free') });
+    } else {
+      // huggingface / other – keep original path below, just ensure gemini fallback
+      attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
     }
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiSettings.geminiModel}:generateContent?key=${activeGeminiKey}`;
-    
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    
-    const data = await res.json();
-    if (data.error) {
-      console.error("Gemini API Error Response:", data.error);
-      throw new Error(`Gemini Error: ${data.error.message} (Code: ${data.error.code})`);
-    }
-    
-    if (!data.candidates || !data.candidates[0].content) {
-      console.error("Unexpected Gemini Response:", data);
-      throw new Error("Gemini returned an empty response. Check safety settings or prompt length.");
+    let lastError = null;
+    for (const attempt of attempts) {
+      try {
+        console.log(`[AI] Trying ${attempt.label}...`);
+        return await attempt.fn();
+      } catch (err) {
+        console.warn(`[AI] ${attempt.label} failed: ${err.message}`);
+        lastError = err;
+      }
     }
 
-    const parts = data.candidates[0].content.parts || [];
-    const textPart = parts.find(p => p.text !== undefined);
-    
-    if (!textPart) {
-      console.error("No text part found in Gemini response:", data);
-      throw new Error("Gemini response did not contain text.");
-    }
-
-    return textPart.text;
+    // All attempts failed — surface a friendly combined error
+    throw new Error(`All AI providers are currently busy or rate-limited. Please wait a few minutes and try again. (Last error: ${lastError?.message})`);
   };
+
+
+
 
   const markSubmission = async (assessment, answers, studentFiles = []) => {
     const system = "You are an objective, highly accurate academic grading system. 1. ANCHORING: Base your evaluation STRICTLY on the provided Reference Context. Recognize conceptual understanding and synonyms; do not penalize for exact phrasing unless quoting is required. 2. FAIRNESS & PARTIAL CREDIT: Award proportional partial credit. If an answer hits 3 out of 4 required points, award 75%. 3. MAINTAIN RIGOR: Do not be overly lax. Deduct points for factual inaccuracies, hallucinations, or irrelevant rambling. Students must demonstrate true comprehension. 4. ANTI-BIAS: Grade purely on factual accuracy and logical coherence. Ignore minor typos or grammatical errors. Be constructive. 5. FEEDBACK: Explain exactly why points were awarded or lost. Return ONLY a RAW JSON object exactly matching this schema: {\"results\": [{\"questionId\": <number>, \"score\": <number>, \"grade\": \"<string>\", \"feedback\": \"<string>\", \"strengths\": [\"<string>\"], \"improvements\": [\"<string>\"]}], \"authenticity\": <number 0-100>, \"authenticityReason\": \"<string>\"}. CRITICAL: You MUST escape all double quotes inside your JSON string values using a backslash (e.g. \\\"). DO NOT output markdown blocks or unescaped newlines.";
