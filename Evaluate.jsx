@@ -1834,6 +1834,7 @@ export default function EvaluateApp() {
               </div>
             </>
           )}
+              <div className={`side-nav-tab ${lecturerTab === 'research' ? 'active' : ''}`} onClick={() => { setLecturerTab('research'); setIsMobileMenuOpen(false); }}>🔬 Model Comparison</div>
           <div className={`side-nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}>⚙️ System Audit & Engine</div>
         </div>
 
@@ -1863,6 +1864,7 @@ export default function EvaluateApp() {
                 </div>
               </>
             )}
+                <div className={`nav-tab ${lecturerTab === 'research' ? 'active' : ''}`} onClick={() => setLecturerTab('research')}>🔬 Model Comparison</div>
             <div className={`nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}>System Audit & Engine</div>
           </div>
 
@@ -2488,6 +2490,200 @@ const text = document.getElementById('bulkStudCSV').value;
             </div>
           </div>
         )}
+
+
+        {lecturerTab === 'research' && (() => {
+          // ── Research Comparison State (hoisted via ref trick) ──────────
+          const [rQuestion,   setRQuestion]   = React.useState('');
+          const [rMarkScheme, setRMarkScheme] = React.useState('');
+          const [rAnswer,     setRAnswer]     = React.useState('');
+          const [rMaxScore,   setRMaxScore]   = React.useState(10);
+          const [rLecScore,   setRLecScore]   = React.useState('');
+          const [rDelay,      setRDelay]      = React.useState(1500);
+          const [rResults,    setRResults]    = React.useState([]);
+          const [rRunning,    setRRunning]    = React.useState(false);
+          const [rProgress,   setRProgress]   = React.useState('');
+
+          const COMPARISON_MODELS = [
+            { label: 'Gemini 2.0 Flash',       type: 'gemini',     id: 'gemini-2.0-flash' },
+            { label: 'Gemini 1.5 Flash',       type: 'gemini',     id: 'gemini-1.5-flash' },
+            { label: 'Gemma 4 31B (OR)',        type: 'openrouter', id: 'google/gemma-4-31b-it:free' },
+            { label: 'GPT-OSS 120B (OR)',       type: 'openrouter', id: 'openai/gpt-oss-120b:free' },
+            { label: 'Qwen3 Coder (OR)',        type: 'openrouter', id: 'qwen/qwen3-coder:free' },
+            { label: 'Nvidia Nemotron (OR)',    type: 'openrouter', id: 'nvidia/nemotron-3-super-120b-a12b:free' },
+          ];
+
+          const activeGeminiKey  = OBFUSCATED_GEMINI_KEY     || aiSettings.geminiKey;
+          const activeORKey      = OBFUSCATED_OPENROUTER_KEY || aiSettings.openrouterKey;
+
+          const gradeWithModel = async (model) => {
+            const systemPrompt = `You are an academic grader. Grade the student answer strictly against the marking scheme. Max score is ${rMaxScore}. Return ONLY raw JSON: {"score":<number>, "grade":"<A/B/C/D/F>", "feedback":"<string>", "authenticity":<0-100>}. No markdown.`;
+            const userPrompt   = `Question: ${rQuestion}\nMarking Scheme: ${rMarkScheme}\nStudent Answer: ${rAnswer}`;
+
+            if (model.type === 'gemini') {
+              if (!activeGeminiKey) throw new Error('No Gemini key');
+              const body = {
+                contents: [{ role:'user', parts:[{ text: userPrompt }] }],
+                generationConfig: { responseMimeType:'application/json', maxOutputTokens:2000 },
+                system_instruction: { parts:[{ text: systemPrompt }] }
+              };
+              const res  = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent?key=${activeGeminiKey}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+              const data = await res.json();
+              if (data.error) throw new Error(data.error.message);
+              const txt = data.candidates?.[0]?.content?.parts?.find(p=>p.text)?.text || '';
+              return JSON.parse(txt.replace(/```json|```/gi,'').trim());
+            } else {
+              if (!activeORKey) throw new Error('No OpenRouter key');
+              const res  = await fetch('https://openrouter.ai/api/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${activeORKey}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'GRADER.ai Research'}, body:JSON.stringify({ model:model.id, max_tokens:1000, messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}] }) });
+              const data = await res.json();
+              if (data.error) throw new Error(data.error.message || data.error.metadata?.message);
+              const txt  = data.choices?.[0]?.message?.content || '';
+              return JSON.parse(txt.replace(/```json|```/gi,'').trim());
+            }
+          };
+
+          const runComparison = async () => {
+            if (!rQuestion || !rAnswer) return;
+            setRResults([]); setRRunning(true);
+            const out = [];
+            for (let i = 0; i < COMPARISON_MODELS.length; i++) {
+              const m = COMPARISON_MODELS[i];
+              setRProgress(`[${i+1}/${COMPARISON_MODELS.length}] Querying ${m.label}...`);
+              try {
+                const r = await gradeWithModel(m);
+                out.push({ model: m.label, score: r.score, grade: r.grade, feedback: r.feedback, authenticity: r.authenticity, error: null });
+              } catch(e) {
+                out.push({ model: m.label, score: null, grade:'—', feedback: e.message, authenticity: null, error: true });
+              }
+              setRResults([...out]);
+              if (i < COMPARISON_MODELS.length - 1) await new Promise(r => setTimeout(r, rDelay));
+            }
+            setRRunning(false); setRProgress('✅ Comparison complete!');
+          };
+
+          const exportCSV = () => {
+            const rows = [['Model','Score','Grade','Authenticity %','Feedback']];
+            if (rLecScore) rows.push(['👨‍🏫 Lecturer (Human)', rLecScore, '—', '—', 'Human grade']);
+            rResults.forEach(r => rows.push([r.model, r.score ?? 'ERR', r.grade, r.authenticity ?? 'ERR', (r.feedback||'').replace(/,/g,';')]));
+            const csv = rows.map(r=>r.join(',')).join('\n');
+            const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = 'model_comparison.csv'; a.click();
+          };
+
+          const successResults = rResults.filter(r => !r.error && r.score !== null);
+          const avgScore = successResults.length ? (successResults.reduce((s,r)=>s+r.score,0)/successResults.length).toFixed(2) : null;
+          const lecNum = parseFloat(rLecScore);
+
+          return (
+            <div style={{ animation:'fadeIn 0.5s ease' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'24px' }}>
+                <span style={{ fontSize:'2rem' }}>🔬</span>
+                <div>
+                  <h2 style={{ margin:0, fontSize:'1.4rem' }}>AI Model Comparison Lab</h2>
+                  <p style={{ margin:0, color:'var(--text-muted)', fontSize:'0.9rem' }}>Grade the same answer across all free AI models & compare results for research</p>
+                </div>
+              </div>
+
+              {/* Input Panel */}
+              <div className="glass-panel" style={{ padding:'24px', marginBottom:'24px' }}>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px', marginBottom:'16px' }}>
+                  <div>
+                    <label style={{ display:'block', marginBottom:'6px', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:'bold' }}>QUESTION</label>
+                    <textarea className="input-field" rows={3} placeholder="Type the exam question here..." value={rQuestion} onChange={e=>setRQuestion(e.target.value)} style={{ resize:'vertical' }} />
+                  </div>
+                  <div>
+                    <label style={{ display:'block', marginBottom:'6px', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:'bold' }}>MARKING SCHEME / MODEL ANSWER</label>
+                    <textarea className="input-field" rows={3} placeholder="Paste the marking scheme or expected answer..." value={rMarkScheme} onChange={e=>setRMarkScheme(e.target.value)} style={{ resize:'vertical' }} />
+                  </div>
+                </div>
+                <div style={{ marginBottom:'16px' }}>
+                  <label style={{ display:'block', marginBottom:'6px', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:'bold' }}>STUDENT ANSWER</label>
+                  <textarea className="input-field" rows={4} placeholder="Paste the student's answer here..." value={rAnswer} onChange={e=>setRAnswer(e.target.value)} style={{ resize:'vertical' }} />
+                </div>
+                <div style={{ display:'flex', gap:'16px', flexWrap:'wrap', alignItems:'flex-end' }}>
+                  <div style={{ flex:'0 0 120px' }}>
+                    <label style={{ display:'block', marginBottom:'6px', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:'bold' }}>MAX SCORE</label>
+                    <input className="input-field" type="number" min={1} max={100} value={rMaxScore} onChange={e=>setRMaxScore(Number(e.target.value))} />
+                  </div>
+                  <div style={{ flex:'0 0 160px' }}>
+                    <label style={{ display:'block', marginBottom:'6px', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:'bold' }}>LECTURER GRADE (optional)</label>
+                    <input className="input-field" type="number" min={0} max={rMaxScore} placeholder={`0–${rMaxScore}`} value={rLecScore} onChange={e=>setRLecScore(e.target.value)} />
+                  </div>
+                  <div style={{ flex:'0 0 180px' }}>
+                    <label style={{ display:'block', marginBottom:'6px', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:'bold' }}>DELAY BETWEEN MODELS (ms)</label>
+                    <input className="input-field" type="number" min={500} max={5000} step={250} value={rDelay} onChange={e=>setRDelay(Number(e.target.value))} />
+                  </div>
+                  <button className="btn btn-primary" onClick={runComparison} disabled={rRunning || !rQuestion || !rAnswer} style={{ flex:'0 0 auto', padding:'8px 24px' }}>
+                    {rRunning ? '⏳ Running...' : '🚀 Compare All Models'}
+                  </button>
+                  {rResults.length > 0 && (
+                    <button className="btn" onClick={exportCSV} style={{ flex:'0 0 auto' }}>📥 Export CSV</button>
+                  )}
+                </div>
+                {rProgress && <p style={{ margin:'12px 0 0', fontSize:'0.85rem', color: rProgress.startsWith('✅') ? 'var(--success)' : 'var(--warning)' }}>{rProgress}</p>}
+              </div>
+
+              {/* Results */}
+              {rResults.length > 0 && (
+                <div>
+                  {/* Summary Bar */}
+                  {avgScore && (
+                    <div className="glass-panel" style={{ padding:'16px 24px', marginBottom:'16px', display:'flex', gap:'32px', flexWrap:'wrap' }}>
+                      <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>AI AVERAGE SCORE</span><br/><strong style={{ fontSize:'1.4rem' }}>{avgScore} / {rMaxScore}</strong></div>
+                      {rLecScore && !isNaN(lecNum) && (
+                        <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>LECTURER SCORE</span><br/><strong style={{ fontSize:'1.4rem', color:'var(--warning)' }}>{lecNum} / {rMaxScore}</strong></div>
+                      )}
+                      {rLecScore && !isNaN(lecNum) && avgScore && (
+                        <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>AVG AGREEMENT</span><br/><strong style={{ fontSize:'1.4rem', color: Math.abs(avgScore-lecNum)<=1 ? 'var(--success)' : 'var(--danger)' }}>{(100 - Math.abs((avgScore-lecNum)/rMaxScore)*100).toFixed(1)}%</strong></div>
+                      )}
+                      <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>MODELS SUCCEEDED</span><br/><strong style={{ fontSize:'1.4rem' }}>{successResults.length}/{COMPARISON_MODELS.length}</strong></div>
+                    </div>
+                  )}
+
+                  {/* Per-model cards */}
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:'16px' }}>
+                    {rLecScore && !isNaN(lecNum) && (
+                      <div className="glass-panel" style={{ padding:'20px', borderColor:'var(--warning)', borderWidth:'2px' }}>
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px' }}>
+                          <strong style={{ fontSize:'0.95rem' }}>👨‍🏫 Lecturer (Human)</strong>
+                          <span style={{ fontSize:'1.5rem', fontWeight:700, color:'var(--warning)' }}>{lecNum}/{rMaxScore}</span>
+                        </div>
+                        <div style={{ background:'#30363d', borderRadius:'4px', height:'8px', marginBottom:'8px' }}>
+                          <div style={{ background:'var(--warning)', height:'100%', borderRadius:'4px', width:`${(lecNum/rMaxScore)*100}%`, transition:'width 1s ease' }} />
+                        </div>
+                        <p style={{ margin:0, fontSize:'0.8rem', color:'var(--text-muted)' }}>Reference human grade for comparison</p>
+                      </div>
+                    )}
+                    {rResults.map((r, i) => {
+                      const pct = r.score !== null ? (r.score / rMaxScore) * 100 : 0;
+                      const agreement = (rLecScore && !isNaN(lecNum) && r.score !== null) ? (100 - Math.abs((r.score-lecNum)/rMaxScore)*100).toFixed(1) : null;
+                      const color = r.error ? 'var(--danger)' : pct>=80 ? 'var(--success)' : pct>=50 ? 'var(--warning)' : 'var(--danger)';
+                      return (
+                        <div key={i} className="glass-panel" style={{ padding:'20px', borderColor: r.error ? 'var(--danger)' : 'var(--panel-border)', opacity: rRunning && i >= rResults.length-1 ? 0.6 : 1, transition:'opacity 0.3s' }}>
+                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
+                            <strong style={{ fontSize:'0.85rem', color:'var(--text-muted)' }}>{r.model}</strong>
+                            {!r.error && <span style={{ fontSize:'1.3rem', fontWeight:700, color }}>{r.score}/{rMaxScore}</span>}
+                            {r.error && <span style={{ fontSize:'0.8rem', color:'var(--danger)' }}>FAILED</span>}
+                          </div>
+                          {!r.error && (
+                            <div style={{ background:'#30363d', borderRadius:'4px', height:'8px', marginBottom:'10px' }}>
+                              <div style={{ background:color, height:'100%', borderRadius:'4px', width:`${pct}%`, transition:'width 1s ease' }} />
+                            </div>
+                          )}
+                          <div style={{ display:'flex', gap:'8px', marginBottom:'10px', flexWrap:'wrap' }}>
+                            {!r.error && <span style={{ background:'#21262d', padding:'2px 8px', borderRadius:'4px', fontSize:'0.75rem' }}>Grade: <strong>{r.grade}</strong></span>}
+                            {r.authenticity !== null && !r.error && <span style={{ background:'#21262d', padding:'2px 8px', borderRadius:'4px', fontSize:'0.75rem' }}>Authenticity: <strong>{r.authenticity}%</strong></span>}
+                            {agreement && !r.error && <span style={{ background: parseFloat(agreement)>=90?'rgba(46,160,67,0.2)':'rgba(248,81,73,0.2)', padding:'2px 8px', borderRadius:'4px', fontSize:'0.75rem', color: parseFloat(agreement)>=90?'var(--success)':'var(--danger)' }}>Agreement: <strong>{agreement}%</strong></span>}
+                          </div>
+                          <p style={{ margin:0, fontSize:'0.78rem', color:'var(--text-muted)', lineHeight:1.5 }}>{r.error ? r.feedback : (r.feedback||'').substring(0,160)}{(!r.error && (r.feedback||'').length>160)?'…':''}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {lecturerTab === 'audit' && (
           <div className="audit-grid" style={{ animation: 'fadeIn 0.5s ease' }}>
