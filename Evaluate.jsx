@@ -1163,27 +1163,33 @@ export default function EvaluateApp() {
     };
 
     // ── Failover chain ───────────────────────────────────────────────
-    // Build the list of attempts based on user's preferred provider first,
-    // then fall back through all other free options automatically.
+    // Free OpenRouter models as of June 2026:
+    // google/gemma-4-31b-it:free, openai/gpt-oss-120b:free,
+    // qwen/qwen3-coder:free, nvidia/nemotron-3-super-120b-a12b:free
+    const FREE_OR_MODELS = [
+      'google/gemma-4-31b-it:free',
+      'openai/gpt-oss-120b:free',
+      'qwen/qwen3-coder:free',
+      'nvidia/nemotron-3-super-120b-a12b:free',
+      'openrouter/auto',  // catches whatever is free at runtime
+    ];
+
     const attempts = [];
 
     if (aiSettings.provider === 'gemini') {
       attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
       attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-1.5-flash') });
-      attempts.push({ label: 'Llama 3.3 70B',    fn: () => tryOpenRouter('meta-llama/llama-3.3-70b-instruct:free') });
-      attempts.push({ label: 'Gemma 3 27B',       fn: () => tryOpenRouter('google/gemma-3-27b-it:free') });
+      FREE_OR_MODELS.forEach(m => attempts.push({ label: m, fn: () => tryOpenRouter(m) }));
     } else if (aiSettings.provider === 'openrouter') {
-      const preferred = aiSettings.openrouterModel || 'meta-llama/llama-3.3-70b-instruct:free';
-      attempts.push({ label: preferred,         fn: () => tryOpenRouter(preferred) });
+      const preferred = aiSettings.openrouterModel || 'google/gemma-4-31b-it:free';
+      attempts.push({ label: preferred,          fn: () => tryOpenRouter(preferred) });
       attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
       attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-1.5-flash') });
-      if (preferred !== 'meta-llama/llama-3.3-70b-instruct:free')
-        attempts.push({ label: 'Llama 3.3 70B',  fn: () => tryOpenRouter('meta-llama/llama-3.3-70b-instruct:free') });
-      if (preferred !== 'google/gemma-3-27b-it:free')
-        attempts.push({ label: 'Gemma 3 27B',    fn: () => tryOpenRouter('google/gemma-3-27b-it:free') });
+      FREE_OR_MODELS.filter(m => m !== preferred).forEach(m =>
+        attempts.push({ label: m, fn: () => tryOpenRouter(m) }));
     } else {
-      // huggingface / other – keep original path below, just ensure gemini fallback
       attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
+      FREE_OR_MODELS.forEach(m => attempts.push({ label: m, fn: () => tryOpenRouter(m) }));
     }
 
     let lastError = null;
