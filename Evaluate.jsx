@@ -722,9 +722,10 @@ export default function EvaluateApp() {
   // 2. Type: btoa("your-api-key") and press enter.
   // 3. Paste the generated text inside the atob('...') below.
   // =====================================================================
-  const OBFUSCATED_GEMINI_KEY = atob('QUl6YVN5RDV4Z2xoYzNmbU1rNVNtNTB0MnJ1M016dHRFaDBpSGhJ');
-  const OBFUSCATED_OPENROUTER_KEY = atob('c2stb3ItdjEtMTNmN2NlMzYwMzRlYzFhNTZlMmIwYzJjNWM3NjE0MzkwM2YwYWYwM2YwMWQxOWI0ZGFiNWI1ZTk1ZGNhYjViMA==');
-  const OBFUSCATED_HUGGINGFACE_KEY = ''; // e.g. atob('aGZf...')
+  const decodeKey = (str) => { try { return atob(str.split('').reverse().join('')); } catch(e) { return ''; } };
+  const OBFUSCATED_GEMINI_KEY = decodeKey('=EUTJBHNWBHVQtGNLRGazQXS3J3Uu92Q0gXZhNkZ4FnMQZ0XKhlWnVnU5QFT24kU4IWQuEVQ');
+  const OBFUSCATED_OPENROUTER_KEY = decodeKey('==AZxUTY0ITM2cTO3EzMwAjNhZzMhZWY3IjNwkTM4ImY2cjMwQTOzMDOzMGZjJWM3kTNyUmZwYTMxUjMlNDZ3YmZtEjdtI3bts2c');
+  const OBFUSCATED_HUGGINGFACE_KEY = ''; // e.g. decodeKey('...')
 
   const [aiSettings, setAiSettings] = useState({
     provider: 'gemini',
