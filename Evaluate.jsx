@@ -1164,6 +1164,30 @@ export default function EvaluateApp() {
       return data.choices[0].message.content;
     }
 
+    if (aiSettings.provider === 'huggingface') {
+      if (!aiSettings.hfToken) {
+        if (role === 'Student') throw new Error("AI Grading Engine is offline.");
+        setShowSettings(true);
+        throw new Error("HuggingFace Access Token Required.");
+      }
+      const hfModel = aiSettings.hfModelId || "mistralai/Mistral-7B-Instruct-v0.3";
+      const res = await fetch(`https://api-inference.huggingface.co/models/${hfModel}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${aiSettings.hfToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          inputs: `<s>[INST] ${system}\n\n[USER PROMPT]: ${prompt} [/INST]`,
+          parameters: { max_new_tokens: 2000, return_full_text: false }
+        })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(`HuggingFace Error: ${typeof data.error === 'string' ? data.error : JSON.stringify(data.error)}`);
+      if (Array.isArray(data) && data[0]?.generated_text) return data[0].generated_text;
+      throw new Error("HuggingFace returned an unrecognized response format.");
+    }
+
     if (!aiSettings.geminiKey) {
       setShowSettings(true);
       throw new Error("Gemini API Key Required.");
