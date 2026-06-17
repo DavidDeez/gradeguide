@@ -724,7 +724,7 @@ export default function EvaluateApp() {
     hfToken: '',
     hfModelId: 'mistralai/Mistral-7B-Instruct-v0.3',
     openrouterKey: DEFAULT_OR_KEY,
-    openrouterModel: 'openrouter/free',
+    openrouterModel: 'meta-llama/llama-3.3-70b-instruct:free',
     emailjsPublicKey: 'OFoJSMtD5Dy663OcN',
     emailjsServiceId: 'service_669uej4',
     emailjsOtpTemplateId: 'template_sh27d68',
@@ -1463,7 +1463,8 @@ export default function EvaluateApp() {
         {aiSettings.provider === 'openrouter' && (
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>OpenRouter Free Model</label>
-            <select className="input-field" value={aiSettings.openrouterModel || 'openrouter/free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
+            <select className="input-field" value={aiSettings.openrouterModel || 'meta-llama/llama-3.3-70b-instruct:free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
+              <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Free, 131k Context)</option>
               <option value="openrouter/free">Auto-Select Free Model (Recommended)</option>
               <option value="google/gemma-2-9b-it:free">Gemma 2 9B (100% Free)</option>
               <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B Instruct (100% Free)</option>
@@ -2501,11 +2502,12 @@ const text = document.getElementById('bulkStudCSV').value;
               {aiSettings.provider === 'openrouter' && (
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>Model Version</label>
-                  <select className="input-field" value={aiSettings.openrouterModel || 'openrouter/free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
-                    <option value="openrouter/free">Auto-Select Free Model (Recommended)</option>
-                    <option value="google/gemma-2-9b-it:free">Gemma 2 9B (Free)</option>
-                    <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B (Free)</option>
-                    <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (Free)</option>
+                  <select className="input-field" value={aiSettings.openrouterModel || 'meta-llama/llama-3.3-70b-instruct:free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
+                    <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Free, 131k Context)</option>
+                    <option value="openrouter/free">Auto-Select Free Model</option>
+                    <option value="google/gemma-2-9b-it:free">Gemma 2 9B</option>
+                    <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B Instruct</option>
+                    <option value="mistralai/mistral-7b-instruct:free">Mistral 7B Instruct</option>
                   </select>
                 </div>
               )}
