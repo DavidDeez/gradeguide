@@ -1149,7 +1149,6 @@ export default function EvaluateApp() {
         },
         body: JSON.stringify({
           model: aiSettings.openrouterModel || "openrouter/free",
-          response_format: { type: "json_object" },
           max_tokens: 4000,
           messages: messages
         })
