@@ -722,8 +722,8 @@ export default function EvaluateApp() {
   // 2. Type: btoa("your-api-key") and press enter.
   // 3. Paste the generated text inside the atob('...') below.
   // =====================================================================
-  const OBFUSCATED_GEMINI_KEY = atob('QVEuQWI4Uk42SzRCU1F5Q2RSOHZUVEF0OU1PemVSMmlMbjZEd25wR2xtdDByM0ZXZFkyZEE=');
-  const OBFUSCATED_OPENROUTER_KEY = ''; // e.g. atob('c2stb3ItdjEt...')
+  const OBFUSCATED_GEMINI_KEY = atob('QUl6YVN5RDV4Z2xoYzNmbU1rNVNtNTB0MnJ1M016dHRFaDBpSGhJ');
+  const OBFUSCATED_OPENROUTER_KEY = atob('c2stb3ItdjEtMTNmN2NlMzYwMzRlYzFhNTZlMmIwYzJjNWM3NjE0MzkwM2YwYWYwM2YwMWQxOWI0ZGFiNWI1ZTk1ZGNhYjViMA==');
   const OBFUSCATED_HUGGINGFACE_KEY = ''; // e.g. atob('aGZf...')
 
   const [aiSettings, setAiSettings] = useState({
