@@ -1504,13 +1504,11 @@ export default function EvaluateApp() {
         {aiSettings.provider === 'openrouter' && (
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>OpenRouter Free Model</label>
-            <select className="input-field" value={aiSettings.openrouterModel || 'meta-llama/llama-3.3-70b-instruct:free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
-              <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Free, May Queue)</option>
-              <option value="meta-llama/llama-3.2-3b-instruct:free">Llama 3.2 3B (Fastest, 100% Free)</option>
-              <option value="openrouter/free">Auto-Select Fastest Free Model</option>
-              <option value="google/gemma-4-26b-a4b-it:free">Gemma 4 26B (Free, 262k Context)</option>
-              <option value="qwen/qwen3-coder:free">Qwen 3 Coder (Free)</option>
-              <option value="nousresearch/hermes-3-llama-3.1-405b:free">Hermes 3 405B (Free)</option>
+            <select className="input-field" value={aiSettings.openrouterModel || 'google/gemma-4-26b-a4b-it:free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
+              <option value="google/gemma-4-26b-a4b-it:free">Gemma 4 26B (Most Stable & Fast)</option>
+              <option value="openrouter/free">Auto-Select Free Model (May Error if overloaded)</option>
+              <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Often Overloaded)</option>
+              <option value="meta-llama/llama-3.2-3b-instruct:free">Llama 3.2 3B (Often Overloaded)</option>
             </select>
           </div>
         )}
@@ -2544,13 +2542,11 @@ const text = document.getElementById('bulkStudCSV').value;
               {aiSettings.provider === 'openrouter' && (
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>Model Version</label>
-                  <select className="input-field" value={aiSettings.openrouterModel || 'meta-llama/llama-3.3-70b-instruct:free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
-                    <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Free, May Queue)</option>
-                    <option value="meta-llama/llama-3.2-3b-instruct:free">Llama 3.2 3B (Fastest, 100% Free)</option>
-                    <option value="openrouter/free">Auto-Select Fastest Free Model</option>
-                    <option value="google/gemma-4-26b-a4b-it:free">Gemma 4 26B (Free, 262k Context)</option>
-                    <option value="qwen/qwen3-coder:free">Qwen 3 Coder (Free)</option>
-                    <option value="nousresearch/hermes-3-llama-3.1-405b:free">Hermes 3 405B (Free)</option>
+                  <select className="input-field" value={aiSettings.openrouterModel || 'google/gemma-4-26b-a4b-it:free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
+                    <option value="google/gemma-4-26b-a4b-it:free">Gemma 4 26B (Most Stable & Fast)</option>
+                    <option value="openrouter/free">Auto-Select Free Model (May Error if overloaded)</option>
+                    <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Often Overloaded)</option>
+                    <option value="meta-llama/llama-3.2-3b-instruct:free">Llama 3.2 3B (Often Overloaded)</option>
                   </select>
                 </div>
               )}
