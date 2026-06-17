@@ -728,12 +728,12 @@ export default function EvaluateApp() {
 
   const [aiSettings, setAiSettings] = useState({
     provider: 'gemini',
-    geminiKey: import.meta.env.VITE_GEMINI_API_KEY || OBFUSCATED_GEMINI_KEY,
+    geminiKey: OBFUSCATED_GEMINI_KEY,
     geminiModel: 'gemini-flash-latest',
     anthropicKey: '',
-    hfToken: import.meta.env.VITE_HUGGINGFACE_API_KEY || OBFUSCATED_HUGGINGFACE_KEY,
+    hfToken: OBFUSCATED_HUGGINGFACE_KEY,
     hfModelId: 'mistralai/Mistral-7B-Instruct-v0.3',
-    openrouterKey: import.meta.env.VITE_OPENROUTER_API_KEY || OBFUSCATED_OPENROUTER_KEY,
+    openrouterKey: OBFUSCATED_OPENROUTER_KEY,
     openrouterModel: 'google/gemma-4-26b-a4b-it:free',
     emailjsPublicKey: 'OFoJSMtD5Dy663OcN',
     emailjsServiceId: 'service_669uej4',
