@@ -1192,7 +1192,15 @@ export default function EvaluateApp() {
       throw new Error("Gemini returned an empty response. Check safety settings or prompt length.");
     }
 
-    return data.candidates[0].content.parts[0].text;
+    const parts = data.candidates[0].content.parts || [];
+    const textPart = parts.find(p => p.text !== undefined);
+    
+    if (!textPart) {
+      console.error("No text part found in Gemini response:", data);
+      throw new Error("Gemini response did not contain text.");
+    }
+
+    return textPart.text;
   };
 
   const markSubmission = async (assessment, answers, studentFiles = []) => {
