@@ -715,8 +715,8 @@ const ModelComparisonLab = ({ aiSettings }) => {
     { label: 'Nvidia Nemotron (OR)',    type: 'openrouter', id: 'nvidia/nemotron-3-super-120b-a12b:free' },
   ];
 
-  const activeGeminiKey  = OBFUSCATED_GEMINI_KEY     || aiSettings.geminiKey;
-  const activeORKey      = OBFUSCATED_OPENROUTER_KEY || aiSettings.openrouterKey;
+  const activeGeminiKey  = aiSettings.geminiKey;
+  const activeORKey      = aiSettings.openrouterKey;
 
   const gradeWithModel = async (model) => {
     const systemPrompt = `You are an academic grader. Grade the student answer strictly against the marking scheme. Max score is ${rMaxScore}. Return ONLY raw JSON: {"score":<number>, "grade":"<A/B/C/D/F>", "feedback":"<string>", "authenticity":<0-100>}. No markdown.`;
