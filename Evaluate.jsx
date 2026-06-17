@@ -1505,12 +1505,12 @@ export default function EvaluateApp() {
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>OpenRouter Free Model</label>
             <select className="input-field" value={aiSettings.openrouterModel || 'meta-llama/llama-3.3-70b-instruct:free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
-              <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Free, 131k Context)</option>
+              <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Free, May Queue)</option>
+              <option value="meta-llama/llama-3.2-3b-instruct:free">Llama 3.2 3B (Fastest, 100% Free)</option>
+              <option value="openrouter/free">Auto-Select Fastest Free Model</option>
               <option value="google/gemma-4-26b-a4b-it:free">Gemma 4 26B (Free, 262k Context)</option>
-              <option value="openrouter/free">Auto-Select Free Model (Recommended)</option>
-              <option value="google/gemma-2-9b-it:free">Gemma 2 9B (100% Free)</option>
-              <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B Instruct (100% Free)</option>
-              <option value="mistralai/mistral-7b-instruct:free">Mistral 7B Instruct (100% Free)</option>
+              <option value="qwen/qwen3-coder:free">Qwen 3 Coder (Free)</option>
+              <option value="nousresearch/hermes-3-llama-3.1-405b:free">Hermes 3 405B (Free)</option>
             </select>
           </div>
         )}
@@ -2545,12 +2545,12 @@ const text = document.getElementById('bulkStudCSV').value;
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>Model Version</label>
                   <select className="input-field" value={aiSettings.openrouterModel || 'meta-llama/llama-3.3-70b-instruct:free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
-                    <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Free, 131k Context)</option>
+                    <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Free, May Queue)</option>
+                    <option value="meta-llama/llama-3.2-3b-instruct:free">Llama 3.2 3B (Fastest, 100% Free)</option>
+                    <option value="openrouter/free">Auto-Select Fastest Free Model</option>
                     <option value="google/gemma-4-26b-a4b-it:free">Gemma 4 26B (Free, 262k Context)</option>
-                    <option value="openrouter/free">Auto-Select Free Model</option>
-                    <option value="google/gemma-2-9b-it:free">Gemma 2 9B</option>
-                    <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B Instruct</option>
-                    <option value="mistralai/mistral-7b-instruct:free">Mistral 7B Instruct</option>
+                    <option value="qwen/qwen3-coder:free">Qwen 3 Coder (Free)</option>
+                    <option value="nousresearch/hermes-3-llama-3.1-405b:free">Hermes 3 405B (Free)</option>
                   </select>
                 </div>
               )}
