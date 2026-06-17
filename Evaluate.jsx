@@ -1146,6 +1146,8 @@ export default function EvaluateApp() {
         },
         body: JSON.stringify({
           model: aiSettings.openrouterModel || "openrouter/free",
+          response_format: { type: "json_object" },
+          max_tokens: 4000,
           messages: messages
         })
       });
@@ -1202,7 +1204,13 @@ export default function EvaluateApp() {
     
     contents[0].parts.push({ text: prompt });
 
-    const body = { contents };
+    const body = { 
+      contents,
+      generationConfig: { 
+        responseMimeType: "application/json",
+        maxOutputTokens: 8000
+      }
+    };
     
     if (system) {
       body.system_instruction = {
