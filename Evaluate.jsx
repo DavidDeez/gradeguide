@@ -2028,7 +2028,9 @@ export default function EvaluateApp() {
               </div>
             </>
           )}
-              <div className={`side-nav-tab ${lecturerTab === 'research' ? 'active' : ''}`} onClick={() => { setLecturerTab('research'); setIsMobileMenuOpen(false); }}>🔬 Model Comparison</div>
+          {role === 'Admin' && (
+            <div className={`side-nav-tab ${lecturerTab === 'research' ? 'active' : ''}`} onClick={() => { setLecturerTab('research'); setIsMobileMenuOpen(false); }}>🔬 Model Comparison</div>
+          )}
           <div className={`side-nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}>⚙️ System Audit & Engine</div>
         </div>
 
@@ -2058,7 +2060,9 @@ export default function EvaluateApp() {
                 </div>
               </>
             )}
-                <div className={`nav-tab ${lecturerTab === 'research' ? 'active' : ''}`} onClick={() => setLecturerTab('research')}>🔬 Model Comparison</div>
+            {role === 'Admin' && (
+              <div className={`nav-tab ${lecturerTab === 'research' ? 'active' : ''}`} onClick={() => setLecturerTab('research')}>🔬 Model Comparison</div>
+            )}
             <div className={`nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}>System Audit & Engine</div>
           </div>
 
