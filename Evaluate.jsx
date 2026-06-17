@@ -734,7 +734,7 @@ export default function EvaluateApp() {
     hfToken: OBFUSCATED_HUGGINGFACE_KEY,
     hfModelId: 'mistralai/Mistral-7B-Instruct-v0.3',
     openrouterKey: OBFUSCATED_OPENROUTER_KEY,
-    openrouterModel: 'google/gemma-4-26b-a4b-it:free',
+    openrouterModel: 'meta-llama/llama-3.3-70b-instruct:free',
     emailjsPublicKey: 'OFoJSMtD5Dy663OcN',
     emailjsServiceId: 'service_669uej4',
     emailjsOtpTemplateId: 'template_sh27d68',
@@ -978,8 +978,8 @@ export default function EvaluateApp() {
           setRetakeRequests(d.retakeRequests || []);
           setStudentMessages(d.studentMessages || []);
           const loadedSettings = d.settings || {};
-          if (loadedSettings.openrouterModel === 'google/gemini-flash-1.5-free') {
-            loadedSettings.openrouterModel = 'openrouter/free';
+          if (loadedSettings.openrouterModel === 'google/gemini-flash-1.5-free' || loadedSettings.openrouterModel === 'google/gemma-4-26b-a4b-it:free' || loadedSettings.openrouterModel === 'google/gemma-4-31b-it:free') {
+            loadedSettings.openrouterModel = 'meta-llama/llama-3.3-70b-instruct:free';
           }
           if (loadedSettings.geminiModel === 'gemini-1.5-flash' || loadedSettings.geminiModel === 'gemini-1.5-pro') {
             loadedSettings.geminiModel = 'gemini-flash-latest';
@@ -1514,9 +1514,9 @@ export default function EvaluateApp() {
         {aiSettings.provider === 'openrouter' && (
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>OpenRouter Free Model</label>
-            <select className="input-field" value={aiSettings.openrouterModel || 'google/gemma-4-26b-a4b-it:free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
+            <select className="input-field" value={aiSettings.openrouterModel || 'meta-llama/llama-3.3-70b-instruct:free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
+              <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (High Intelligence & Accuracy)</option>
               <option value="google/gemma-4-26b-a4b-it:free">Gemma 4 26B (Most Stable & Fast)</option>
-              <option value="google/gemma-4-31b-it:free">Gemma 4 31B (Stable Alternative)</option>
               <option value="openrouter/free">Auto-Select Free Model (May Error if overloaded)</option>
             </select>
           </div>
@@ -2551,9 +2551,9 @@ const text = document.getElementById('bulkStudCSV').value;
               {aiSettings.provider === 'openrouter' && (
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>Model Version</label>
-                  <select className="input-field" value={aiSettings.openrouterModel || 'google/gemma-4-26b-a4b-it:free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
+                  <select className="input-field" value={aiSettings.openrouterModel || 'meta-llama/llama-3.3-70b-instruct:free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
+                    <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (High Intelligence & Accuracy)</option>
                     <option value="google/gemma-4-26b-a4b-it:free">Gemma 4 26B (Most Stable & Fast)</option>
-                    <option value="google/gemma-4-31b-it:free">Gemma 4 31B (Stable Alternative)</option>
                     <option value="openrouter/free">Auto-Select Free Model (May Error if overloaded)</option>
                   </select>
                 </div>
