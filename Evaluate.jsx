@@ -1508,8 +1508,6 @@ export default function EvaluateApp() {
               <option value="google/gemma-4-26b-a4b-it:free">Gemma 4 26B (Most Stable & Fast)</option>
               <option value="google/gemma-4-31b-it:free">Gemma 4 31B (Stable Alternative)</option>
               <option value="openrouter/free">Auto-Select Free Model (May Error if overloaded)</option>
-              <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Often Overloaded)</option>
-              <option value="meta-llama/llama-3.2-3b-instruct:free">Llama 3.2 3B (Often Overloaded)</option>
             </select>
           </div>
         )}
@@ -2547,8 +2545,6 @@ const text = document.getElementById('bulkStudCSV').value;
                     <option value="google/gemma-4-26b-a4b-it:free">Gemma 4 26B (Most Stable & Fast)</option>
                     <option value="google/gemma-4-31b-it:free">Gemma 4 31B (Stable Alternative)</option>
                     <option value="openrouter/free">Auto-Select Free Model (May Error if overloaded)</option>
-                    <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Often Overloaded)</option>
-                    <option value="meta-llama/llama-3.2-3b-instruct:free">Llama 3.2 3B (Often Overloaded)</option>
                   </select>
                 </div>
               )}
