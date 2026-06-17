@@ -1226,12 +1226,10 @@ export default function EvaluateApp() {
     const result = await callAI(prompt, system, files);
     try {
       let cleaned = result.replace(/```json/gi, '').replace(/```/g, '').trim();
-      if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
-        const match = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-        if (match) cleaned = match[0];
-      }
+      const match = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+      if (match) cleaned = match[0];
       return JSON.parse(cleaned);
-    } catch(e) { throw new Error(`AI output parsing failed. Try again. Raw: ${result.substring(0, 50)}...`); }
+    } catch(e) { throw new Error(`AI output parsing failed. Raw: ${result.substring(0, 80)}...`); }
   };
 
   const handleBulkUpload = (e, target, idx = null) => {
@@ -1276,10 +1274,8 @@ export default function EvaluateApp() {
     try {
       const result = await callAI(prompt, system, files);
       let cleaned = result.replace(/```json/gi, '').replace(/```/g, '').trim();
-      if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
-        const match = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-        if (match) cleaned = match[0];
-      }
+      const match = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+      if (match) cleaned = match[0];
       const parsed = JSON.parse(cleaned);
       const finalScripts = [...bulkState.scripts];
       finalScripts[idx].result = parsed;
