@@ -708,8 +708,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const [rProgress,   setRProgress]   = React.useState('');
 
   const COMPARISON_MODELS = [
-    { label: 'Gemini 2.0 Flash',       type: 'gemini',     id: 'gemini-2.0-flash' },
-    { label: 'Gemini 1.5 Flash',       type: 'gemini',     id: 'gemini-1.5-flash-latest' },
+    { label: 'Gemini 1.5 Pro',         type: 'gemini',     id: 'gemini-1.5-pro' },
+    { label: 'Gemini 1.5 Flash',       type: 'gemini',     id: 'gemini-1.5-flash' },
     { label: 'Gemma 4 31B (OR)',        type: 'openrouter', id: 'google/gemma-4-31b-it:free' },
     { label: 'GPT-OSS 120B (OR)',       type: 'openrouter', id: 'openai/gpt-oss-120b:free' },
     { label: 'Qwen3 Coder (OR)',        type: 'openrouter', id: 'qwen/qwen3-coder:free' },
