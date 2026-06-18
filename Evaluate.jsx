@@ -701,6 +701,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const [rAnswer,     setRAnswer]     = React.useState('');
   const [rMaxScore,   setRMaxScore]   = React.useState(10);
   const [rLecScore,   setRLecScore]   = React.useState('');
+  const [rLecFeedback,setRLecFeedback]= React.useState('');
   const [rDelay,      setRDelay]      = React.useState(1500);
   const [rResults,    setRResults]    = React.useState([]);
   const [rRunning,    setRRunning]    = React.useState(false);
@@ -734,7 +735,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             ms: qObj.context || '',
             ans: studAns,
             max: qObj.maxScore || 10,
-            lec: prevRes ? prevRes.score : ''
+            lec: prevRes ? prevRes.score : '',
+            lecFeedback: prevRes ? prevRes.feedback : ''
           });
         }
       });
@@ -767,14 +769,29 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     }
   };
 
-  const runComparison = async (q = rQuestion, ms = rMarkScheme, ans = rAnswer, maxS = rMaxScore, lecS = rLecScore) => {
+  const runComparison = async (q = rQuestion, ms = rMarkScheme, ans = rAnswer, maxS = rMaxScore, lecS = rLecScore, lecFb = rLecFeedback) => {
     if (!q || !ans) return;
-    setRQuestion(q); setRMarkScheme(ms); setRAnswer(ans); setRMaxScore(maxS); setRLecScore(lecS);
+    setRQuestion(q); setRMarkScheme(ms); setRAnswer(ans); setRMaxScore(maxS); setRLecScore(lecS); setRLecFeedback(lecFb);
     setRResults([]); setRRunning(true);
     const out = [];
     for (let i = 0; i < COMPARISON_MODELS.length; i++) {
       const m = COMPARISON_MODELS[i];
       setRProgress(`[${i+1}/${COMPARISON_MODELS.length}] Querying ${m.label}...`);
+
+      let isOfficialModel = false;
+      if (m.type === 'gemini') {
+        if (aiSettings.geminiModel === 'gemini-flash-latest' && m.id.includes('1.5-flash')) isOfficialModel = true;
+        if (aiSettings.geminiModel === 'gemini-2.0-flash' && m.id === 'gemini-2.0-flash') isOfficialModel = true;
+      } else if (m.type === 'openrouter' && m.id === aiSettings.openrouterModel) {
+        isOfficialModel = true;
+      }
+
+      if (isOfficialModel && lecS !== '' && lecFb) {
+        out.push({ model: m.label, score: Number(lecS), grade: '—', feedback: lecFb, authenticity: 100, time: 0, error: null });
+        setRResults([...out]);
+        continue;
+      }
+
       try {
         const start = performance.now();
         const r = await gradeWithModel(m, q, ms, ans, maxS);
@@ -790,10 +807,18 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   };
 
   const exportCSV = () => {
+    const escapeCSV = (str) => {
+      if (str === null || str === undefined) return '';
+      const s = String(str);
+      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
+      return s;
+    };
     const rows = [['Model','Score','Grade','Authenticity %','Feedback']];
-    if (rLecScore) rows.push(['👨‍🏫 Lecturer (Human)', rLecScore, '—', '—', 'Human grade']);
-    rResults.forEach(r => rows.push([r.model, r.score ?? 'ERR', r.grade, r.authenticity ?? 'ERR', (r.feedback||'').replace(/,/g,';')]));
-    const csv = rows.map(r=>r.join(',')).join('\n');
+    if (rLecScore) rows.push(['🎓 Current Student Mark', rLecScore, '—', '—', 'Official grade from database']);
+    rResults.forEach(r => rows.push([r.model, r.score ?? 'ERR', r.grade, r.authenticity ?? 'ERR', r.feedback || '']));
+    const csv = rows.map(r => r.map(escapeCSV).join(',')).join('\n');
     const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = 'model_comparison.csv'; a.click();
   };
 
@@ -820,7 +845,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
               key={i} 
               className="btn" 
               style={{ background: '#1f2937', border: '1px solid #374151', padding: '8px 16px' }}
-              onClick={() => runComparison(demo.q, demo.ms, demo.ans, demo.max, demo.lec)}
+              onClick={() => runComparison(demo.q, demo.ms, demo.ans, demo.max, demo.lec, demo.lecFeedback)}
               disabled={rRunning}
             >
               🚀 {demo.title}
