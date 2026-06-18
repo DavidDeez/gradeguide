@@ -708,11 +708,11 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const [rProgress,   setRProgress]   = React.useState('');
 
   const COMPARISON_MODELS = [
-    { label: 'Gemini 1.5 Pro',         type: 'gemini',     id: 'gemini-1.5-pro' },
+    { label: 'Gemini Flash 8B',        type: 'gemini',     id: 'gemini-1.5-flash-8b' },
     { label: 'Gemini 1.5 Flash',       type: 'gemini',     id: 'gemini-1.5-flash-latest' },
     { label: 'Gemma 4 31B (OR)',        type: 'openrouter', id: 'google/gemma-4-31b-it:free' },
     { label: 'GPT-OSS 120B (OR)',       type: 'openrouter', id: 'openai/gpt-oss-120b:free' },
-    { label: 'Llama 3.3 70B (OR)',      type: 'openrouter', id: 'meta-llama/llama-3.3-70b-instruct:free' },
+    { label: 'Llama 3.1 8B (OR)',       type: 'openrouter', id: 'meta-llama/llama-3.1-8b-instruct:free' },
     { label: 'Nvidia Nemotron (OR)',    type: 'openrouter', id: 'nvidia/nemotron-3-super-120b-a12b:free' },
   ];
 
