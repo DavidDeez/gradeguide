@@ -841,7 +841,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             <div className="glass-panel" style={{ padding:'16px 24px', marginBottom:'16px', display:'flex', gap:'32px', flexWrap:'wrap' }}>
               <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>AI AVERAGE SCORE</span><br/><strong style={{ fontSize:'1.4rem' }}>{avgScore} / {rMaxScore}</strong></div>
               {rLecScore && !isNaN(lecNum) && (
-                <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>LECTURER SCORE</span><br/><strong style={{ fontSize:'1.4rem', color:'var(--warning)' }}>{lecNum} / {rMaxScore}</strong></div>
+                <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>CURRENT STUDENT MARK</span><br/><strong style={{ fontSize:'1.4rem', color:'var(--warning)' }}>{lecNum} / {rMaxScore}</strong></div>
               )}
               {rLecScore && !isNaN(lecNum) && avgScore && (
                 <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>AVG AGREEMENT</span><br/><strong style={{ fontSize:'1.4rem', color: Math.abs(avgScore-lecNum)<=1 ? 'var(--success)' : 'var(--danger)' }}>{(100 - Math.abs((avgScore-lecNum)/rMaxScore)*100).toFixed(1)}%</strong></div>
@@ -855,13 +855,13 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             {rLecScore && !isNaN(lecNum) && (
               <div className="glass-panel" style={{ padding:'20px', borderColor:'var(--warning)', borderWidth:'2px' }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px' }}>
-                  <strong style={{ fontSize:'0.95rem' }}>👨‍🏫 Lecturer (Human)</strong>
+                  <strong style={{ fontSize:'0.95rem' }}>🎓 Current Student Mark</strong>
                   <span style={{ fontSize:'1.5rem', fontWeight:700, color:'var(--warning)' }}>{lecNum}/{rMaxScore}</span>
                 </div>
                 <div style={{ background:'#30363d', borderRadius:'4px', height:'8px', marginBottom:'8px' }}>
                   <div style={{ background:'var(--warning)', height:'100%', borderRadius:'4px', width:`${(lecNum/rMaxScore)*100}%`, transition:'width 1s ease' }} />
                 </div>
-                <p style={{ margin:0, fontSize:'0.8rem', color:'var(--text-muted)' }}>Reference human grade for comparison</p>
+                <p style={{ margin:0, fontSize:'0.8rem', color:'var(--text-muted)' }}>The official grade currently assigned to this student</p>
               </div>
             )}
             {[...rResults].sort((a, b) => {
