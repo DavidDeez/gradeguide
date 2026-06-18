@@ -729,7 +729,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         if (studAns.trim() && DEMO_QUESTIONS.length < 8) {
           const prevRes = sub.results?.find(r => r.questionId === idx);
           DEMO_QUESTIONS.push({
-            title: `${ass.title.substring(0,12)} - Q${idx+1} (${sub.studentId.substring(0,8)})`,
+            title: `Exam: ${ass.title.length > 25 ? ass.title.substring(0,25) + '...' : ass.title}  •  Question ${idx+1}  •  Student: ${sub.studentId}`,
             q: qObj.text,
             ms: qObj.context || '',
             ans: studAns,
