@@ -726,9 +726,9 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       const ass = assessments.find(a => a.id == sub.assessmentId);
       if (!ass || !ass.questions) return;
       ass.questions.forEach((qObj, idx) => {
-        const studAns = sub.answers?.[idx] || '';
+        const studAns = sub.answers?.[qObj.id] || sub.answers?.[idx] || '';
         if (studAns.trim() && DEMO_QUESTIONS.length < 8) {
-          const prevRes = sub.results?.find(r => r.questionId === idx);
+          const prevRes = sub.results?.find(r => r.questionId === qObj.id || r.questionId === idx);
           DEMO_QUESTIONS.push({
             title: `Exam: ${ass.title.length > 25 ? ass.title.substring(0,25) + '...' : ass.title}  •  Question ${idx+1}  •  Student: ${sub.studentId}`,
             q: qObj.text,
