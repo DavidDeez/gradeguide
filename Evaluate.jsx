@@ -855,12 +855,21 @@ const ModelComparisonLab = ({ aiSettings }) => {
                 <p style={{ margin:0, fontSize:'0.8rem', color:'var(--text-muted)' }}>Reference human grade for comparison</p>
               </div>
             )}
-            {rResults.map((r, i) => {
+            {[...rResults].sort((a, b) => {
+              if (a.error) return 1;
+              if (b.error) return -1;
+              if (rLecScore && !isNaN(lecNum)) {
+                return Math.abs(a.score - lecNum) - Math.abs(b.score - lecNum);
+              }
+              return b.score - a.score;
+            }).map((r, i) => {
               const pct = r.score !== null ? (r.score / rMaxScore) * 100 : 0;
               const agreement = (rLecScore && !isNaN(lecNum) && r.score !== null) ? (100 - Math.abs((r.score-lecNum)/rMaxScore)*100).toFixed(1) : null;
               const color = r.error ? 'var(--danger)' : pct>=80 ? 'var(--success)' : pct>=50 ? 'var(--warning)' : 'var(--danger)';
+              const isRank1 = i === 0 && !r.error && !rRunning && rResults.length === COMPARISON_MODELS.length;
               return (
-                <div key={i} className="glass-panel" style={{ padding:'20px', borderColor: r.error ? 'var(--danger)' : 'var(--panel-border)', opacity: rRunning && i >= rResults.length-1 ? 0.6 : 1, transition:'opacity 0.3s' }}>
+                <div key={r.model} className="glass-panel" style={{ padding:'20px', borderColor: r.error ? 'var(--danger)' : isRank1 ? '#d4af37' : 'var(--panel-border)', opacity: rRunning && rResults.length < COMPARISON_MODELS.length ? 0.6 : 1, transition:'all 0.3s', position: 'relative' }}>
+                  {isRank1 && <div style={{ position:'absolute', top:'-12px', right:'-12px', background:'#d4af37', color:'#000', padding:'4px 12px', borderRadius:'12px', fontSize:'0.8rem', fontWeight:'bold', boxShadow:'0 4px 12px rgba(0,0,0,0.5)' }}>🏆 #1 {rLecScore ? 'Closest' : 'Highest'}</div>}
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
                     <strong style={{ fontSize:'0.85rem', color:'var(--text-muted)' }}>{r.model}</strong>
                     {!r.error && <span style={{ fontSize:'1.3rem', fontWeight:700, color }}>{r.score}/{rMaxScore}</span>}
