@@ -814,7 +814,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       {/* Demo Quick Load */}
       <div style={{ marginBottom:'24px' }}>
         <p style={{ margin:'0 0 12px 0', fontSize:'0.85rem', color:'var(--text-muted)', fontWeight:'bold', textTransform:'uppercase' }}>Quick Demo Assessments</p>
-        <div style={{ display:'flex', gap:'12px', flexWrap:'wrap' }}>
+        <div style={{ display:'flex', gap:'12px', flexWrap:'wrap', alignItems: 'center' }}>
           {DEMO_QUESTIONS.map((demo, i) => (
             <button 
               key={i} 
@@ -826,43 +826,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
               🚀 {demo.title}
             </button>
           ))}
-        </div>
-      </div>
-
-      {/* Input Panel */}
-      <div className="glass-panel" style={{ padding:'24px', marginBottom:'24px' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px', marginBottom:'16px' }}>
-          <div>
-            <label style={{ display:'block', marginBottom:'6px', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:'bold' }}>QUESTION</label>
-            <textarea className="input-field" rows={3} placeholder="Type the exam question here..." value={rQuestion} onChange={e=>setRQuestion(e.target.value)} style={{ resize:'vertical' }} />
-          </div>
-          <div>
-            <label style={{ display:'block', marginBottom:'6px', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:'bold' }}>MARKING SCHEME / MODEL ANSWER</label>
-            <textarea className="input-field" rows={3} placeholder="Paste the marking scheme or expected answer..." value={rMarkScheme} onChange={e=>setRMarkScheme(e.target.value)} style={{ resize:'vertical' }} />
-          </div>
-        </div>
-        <div style={{ marginBottom:'16px' }}>
-          <label style={{ display:'block', marginBottom:'6px', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:'bold' }}>STUDENT ANSWER</label>
-          <textarea className="input-field" rows={4} placeholder="Paste the student's answer here..." value={rAnswer} onChange={e=>setRAnswer(e.target.value)} style={{ resize:'vertical' }} />
-        </div>
-        <div style={{ display:'flex', gap:'16px', flexWrap:'wrap', alignItems:'flex-end' }}>
-          <div style={{ flex:'0 0 120px' }}>
-            <label style={{ display:'block', marginBottom:'6px', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:'bold' }}>MAX SCORE</label>
-            <input className="input-field" type="number" min={1} max={100} value={rMaxScore} onChange={e=>setRMaxScore(Number(e.target.value))} />
-          </div>
-          <div style={{ flex:'0 0 160px' }}>
-            <label style={{ display:'block', marginBottom:'6px', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:'bold' }}>LECTURER GRADE (optional)</label>
-            <input className="input-field" type="number" min={0} max={rMaxScore} placeholder={`0–${rMaxScore}`} value={rLecScore} onChange={e=>setRLecScore(e.target.value)} />
-          </div>
-          <div style={{ flex:'0 0 180px' }}>
-            <label style={{ display:'block', marginBottom:'6px', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:'bold' }}>DELAY BETWEEN MODELS (ms)</label>
-            <input className="input-field" type="number" min={500} max={5000} step={250} value={rDelay} onChange={e=>setRDelay(Number(e.target.value))} />
-          </div>
-          <button className="btn btn-primary" onClick={runComparison} disabled={rRunning || !rQuestion || !rAnswer} style={{ flex:'0 0 auto', padding:'8px 24px' }}>
-            {rRunning ? '⏳ Running...' : '🚀 Compare All Models'}
-          </button>
           {rResults.length > 0 && (
-            <button className="btn" onClick={exportCSV} style={{ flex:'0 0 auto' }}>📥 Export CSV</button>
+            <button className="btn" onClick={exportCSV} style={{ padding: '8px 16px' }}>📥 Export CSV</button>
           )}
         </div>
         {rProgress && <p style={{ margin:'12px 0 0', fontSize:'0.85rem', color: rProgress.startsWith('✅') ? 'var(--success)' : 'var(--warning)' }}>{rProgress}</p>}
