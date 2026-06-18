@@ -1590,8 +1590,8 @@ export default function EvaluateApp() {
     let active = true;
     let timer;
     const processQueue = async () => {
-      // It must be set to background strategy, and the user must be logged in as Faculty
-      if (role !== 'FacultyHub' || aiSettings.gradingStrategy !== 'background') {
+      // It must be set to background strategy, and the user must be logged in as Faculty or Admin
+      if ((role !== 'FacultyHub' && role !== 'Admin') || aiSettings.gradingStrategy !== 'background') {
         if (active) timer = setTimeout(processQueue, 2000);
         return;
       }
