@@ -752,10 +752,12 @@ const ModelComparisonLab = ({ aiSettings }) => {
       const m = COMPARISON_MODELS[i];
       setRProgress(`[${i+1}/${COMPARISON_MODELS.length}] Querying ${m.label}...`);
       try {
+        const start = performance.now();
         const r = await gradeWithModel(m);
-        out.push({ model: m.label, score: r.score, grade: r.grade, feedback: r.feedback, authenticity: r.authenticity, error: null });
+        const latency = performance.now() - start;
+        out.push({ model: m.label, score: r.score, grade: r.grade, feedback: r.feedback, authenticity: r.authenticity, time: latency, error: null });
       } catch(e) {
-        out.push({ model: m.label, score: null, grade:'—', feedback: e.message, authenticity: null, error: true });
+        out.push({ model: m.label, score: null, grade:'—', feedback: e.message, authenticity: null, time: null, error: true });
       }
       setRResults([...out]);
       if (i < COMPARISON_MODELS.length - 1) await new Promise(r => setTimeout(r, rDelay));
@@ -883,8 +885,10 @@ const ModelComparisonLab = ({ aiSettings }) => {
                   <div style={{ display:'flex', gap:'8px', marginBottom:'10px', flexWrap:'wrap' }}>
                     {!r.error && <span style={{ background:'#21262d', padding:'2px 8px', borderRadius:'4px', fontSize:'0.75rem' }}>Grade: <strong>{r.grade}</strong></span>}
                     {r.authenticity !== null && !r.error && <span style={{ background:'#21262d', padding:'2px 8px', borderRadius:'4px', fontSize:'0.75rem' }}>Authenticity: <strong>{r.authenticity}%</strong></span>}
+                    {!r.error && r.time && <span style={{ background:'#21262d', padding:'2px 8px', borderRadius:'4px', fontSize:'0.75rem' }}>Time: <strong>{(r.time/1000).toFixed(2)}s</strong></span>}
                     {agreement && !r.error && <span style={{ background: parseFloat(agreement)>=90?'rgba(46,160,67,0.2)':'rgba(248,81,73,0.2)', padding:'2px 8px', borderRadius:'4px', fontSize:'0.75rem', color: parseFloat(agreement)>=90?'var(--success)':'var(--danger)' }}>Agreement: <strong>{agreement}%</strong></span>}
                   </div>
+                  <strong style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>REASON FOR SCORE:</strong>
                   <p style={{ margin:0, fontSize:'0.78rem', color:'var(--text-muted)', lineHeight:1.5 }}>{r.error ? r.feedback : (r.feedback||'').substring(0,160)}{(!r.error && (r.feedback||'').length>160)?'…':''}</p>
                 </div>
               );
