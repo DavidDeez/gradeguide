@@ -718,9 +718,28 @@ const ModelComparisonLab = ({ aiSettings }) => {
   const activeGeminiKey  = aiSettings.geminiKey;
   const activeORKey      = aiSettings.openrouterKey;
 
-  const gradeWithModel = async (model) => {
-    const systemPrompt = `You are an academic grader. Grade the student answer strictly against the marking scheme. Max score is ${rMaxScore}. Return ONLY raw JSON: {"score":<number>, "grade":"<A/B/C/D/F>", "feedback":"<string>", "authenticity":<0-100>}. No markdown.`;
-    const userPrompt   = `Question: ${rQuestion}\nMarking Scheme: ${rMarkScheme}\nStudent Answer: ${rAnswer}`;
+  const DEMO_QUESTIONS = [
+    {
+      title: "Javascript Variables",
+      q: "Explain the difference between let and var in JavaScript. Provide at least two key differences.",
+      ms: "- Mentions that let is block-scoped (1 mark)\n- Mentions that var is function-scoped (1 mark)\n- Mentions that let cannot be re-declared in the same scope (1 mark)\n- Mentions that var can be re-declared (1 mark)\n- Mentions hoisting differences (e.g., var is initialized with undefined, let is not) (1 mark)\nMax Score: 5",
+      ans: "So basically let and var are both used to make variables in Javascript. The main difference is that let is block scoped, which means it only lives inside the curly braces where it was made. But var is function scoped so it can be seen everywhere in the function. Also, if you try to make the same variable twice using let, the code will crash because you can't re-declare it. With var you can just keep re-declaring it and it doesn't care. I think var also gets hoisted to the top with undefined but let doesn't do that.",
+      max: 5,
+      lec: 5
+    },
+    {
+      title: "Cloud Computing",
+      q: "Define Cloud Computing and list three main service models.",
+      ms: "- Defines cloud computing as on-demand availability of computer system resources (2 marks)\n- Lists IaaS (1 mark)\n- Lists PaaS (1 mark)\n- Lists SaaS (1 mark)\nMax Score: 5",
+      ans: "Cloud computing is when you use the internet to store and access data and programs instead of your computer's hard drive. It's basically someone else's computer. The three main models are Software as a Service (SaaS), Platform as a Service (PaaS), and Infrastructure as a Service (IaaS).",
+      max: 5,
+      lec: 5
+    }
+  ];
+
+  const gradeWithModel = async (model, q, ms, ans, maxS) => {
+    const systemPrompt = `You are an academic grader. Grade the student answer strictly against the marking scheme. Max score is ${maxS}. Return ONLY raw JSON: {"score":<number>, "grade":"<A/B/C/D/F>", "feedback":"<string>", "authenticity":<0-100>}. No markdown.`;
+    const userPrompt   = `Question: ${q}\nMarking Scheme: ${ms}\nStudent Answer: ${ans}`;
 
     if (model.type === 'gemini') {
       if (!activeGeminiKey) throw new Error('No Gemini key');
@@ -744,8 +763,9 @@ const ModelComparisonLab = ({ aiSettings }) => {
     }
   };
 
-  const runComparison = async () => {
-    if (!rQuestion || !rAnswer) return;
+  const runComparison = async (q = rQuestion, ms = rMarkScheme, ans = rAnswer, maxS = rMaxScore, lecS = rLecScore) => {
+    if (!q || !ans) return;
+    setRQuestion(q); setRMarkScheme(ms); setRAnswer(ans); setRMaxScore(maxS); setRLecScore(lecS);
     setRResults([]); setRRunning(true);
     const out = [];
     for (let i = 0; i < COMPARISON_MODELS.length; i++) {
@@ -753,7 +773,7 @@ const ModelComparisonLab = ({ aiSettings }) => {
       setRProgress(`[${i+1}/${COMPARISON_MODELS.length}] Querying ${m.label}...`);
       try {
         const start = performance.now();
-        const r = await gradeWithModel(m);
+        const r = await gradeWithModel(m, q, ms, ans, maxS);
         const latency = performance.now() - start;
         out.push({ model: m.label, score: r.score, grade: r.grade, feedback: r.feedback, authenticity: r.authenticity, time: latency, error: null });
       } catch(e) {
@@ -784,6 +804,24 @@ const ModelComparisonLab = ({ aiSettings }) => {
         <div>
           <h2 style={{ margin:0, fontSize:'1.4rem' }}>AI Model Comparison Lab</h2>
           <p style={{ margin:0, color:'var(--text-muted)', fontSize:'0.9rem' }}>Grade the same answer across all free AI models & compare results for research</p>
+        </div>
+      </div>
+
+      {/* Demo Quick Load */}
+      <div style={{ marginBottom:'24px' }}>
+        <p style={{ margin:'0 0 12px 0', fontSize:'0.85rem', color:'var(--text-muted)', fontWeight:'bold', textTransform:'uppercase' }}>Quick Demo Assessments</p>
+        <div style={{ display:'flex', gap:'12px', flexWrap:'wrap' }}>
+          {DEMO_QUESTIONS.map((demo, i) => (
+            <button 
+              key={i} 
+              className="btn" 
+              style={{ background: '#1f2937', border: '1px solid #374151', padding: '8px 16px' }}
+              onClick={() => runComparison(demo.q, demo.ms, demo.ans, demo.max, demo.lec)}
+              disabled={rRunning}
+            >
+              🚀 {demo.title}
+            </button>
+          ))}
         </div>
       </div>
 
