@@ -695,7 +695,7 @@ const Footer = () => (
   </footer>
 );
 
-const ModelComparisonLab = ({ aiSettings }) => {
+const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const [rQuestion,   setRQuestion]   = React.useState('');
   const [rMarkScheme, setRMarkScheme] = React.useState('');
   const [rAnswer,     setRAnswer]     = React.useState('');
@@ -718,24 +718,28 @@ const ModelComparisonLab = ({ aiSettings }) => {
   const activeGeminiKey  = aiSettings.geminiKey;
   const activeORKey      = aiSettings.openrouterKey;
 
-  const DEMO_QUESTIONS = [
-    {
-      title: "Javascript Variables",
-      q: "Explain the difference between let and var in JavaScript. Provide at least two key differences.",
-      ms: "- Mentions that let is block-scoped (1 mark)\n- Mentions that var is function-scoped (1 mark)\n- Mentions that let cannot be re-declared in the same scope (1 mark)\n- Mentions that var can be re-declared (1 mark)\n- Mentions hoisting differences (e.g., var is initialized with undefined, let is not) (1 mark)\nMax Score: 5",
-      ans: "So basically let and var are both used to make variables in Javascript. The main difference is that let is block scoped, which means it only lives inside the curly braces where it was made. But var is function scoped so it can be seen everywhere in the function. Also, if you try to make the same variable twice using let, the code will crash because you can't re-declare it. With var you can just keep re-declaring it and it doesn't care. I think var also gets hoisted to the top with undefined but let doesn't do that.",
-      max: 5,
-      lec: 5
-    },
-    {
-      title: "Cloud Computing",
-      q: "Define Cloud Computing and list three main service models.",
-      ms: "- Defines cloud computing as on-demand availability of computer system resources (2 marks)\n- Lists IaaS (1 mark)\n- Lists PaaS (1 mark)\n- Lists SaaS (1 mark)\nMax Score: 5",
-      ans: "Cloud computing is when you use the internet to store and access data and programs instead of your computer's hard drive. It's basically someone else's computer. The three main models are Software as a Service (SaaS), Platform as a Service (PaaS), and Infrastructure as a Service (IaaS).",
-      max: 5,
-      lec: 5
-    }
-  ];
+  // Generate Quick Load Demo questions from REAL student submissions
+  const DEMO_QUESTIONS = [];
+  if (assessments && submissions) {
+    submissions.forEach(sub => {
+      const ass = assessments.find(a => a.id == sub.assessmentId);
+      if (!ass || !ass.questions) return;
+      ass.questions.forEach((qObj, idx) => {
+        const studAns = sub.answers?.[idx] || '';
+        if (studAns.trim() && DEMO_QUESTIONS.length < 8) {
+          const prevRes = sub.results?.find(r => r.questionId === idx);
+          DEMO_QUESTIONS.push({
+            title: `${ass.title.substring(0,12)} - Q${idx+1} (${sub.studentId.substring(0,8)})`,
+            q: qObj.text,
+            ms: qObj.context || '',
+            ans: studAns,
+            max: qObj.maxScore || 10,
+            lec: prevRes ? prevRes.score : ''
+          });
+        }
+      });
+    });
+  }
 
   const gradeWithModel = async (model, q, ms, ans, maxS) => {
     const systemPrompt = `You are an academic grader. Grade the student answer strictly against the marking scheme. Max score is ${maxS}. Return ONLY raw JSON: {"score":<number>, "grade":"<A/B/C/D/F>", "feedback":"<string>", "authenticity":<0-100>}. No markdown.`;
@@ -2742,7 +2746,7 @@ const text = document.getElementById('bulkStudCSV').value;
 
 
         {lecturerTab === 'research' && (
-          <ModelComparisonLab aiSettings={aiSettings} />
+          <ModelComparisonLab aiSettings={aiSettings} assessments={assessments} submissions={submissions} />
         )}
 
         {lecturerTab === 'audit' && (
