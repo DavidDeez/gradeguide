@@ -816,20 +816,54 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   };
 
   const exportCSV = () => {
-    const escapeCSV = (str) => {
-      if (str === null || str === undefined) return '';
-      const s = String(str);
-      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-        return `"${s.replace(/"/g, '""')}"`;
-      }
-      return s;
-    };
-    const rows = [['Model','Score','Grade','Authenticity %','Feedback']];
+    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}`;
+    const lecN = parseFloat(rLecScore);
     const graderName = aiSettings.geminiModel === 'gemini-2.0-flash' ? 'Gemini 2.0 Flash' : 'Gemini 1.5 Flash';
-    if (rLecScore) rows.push(['🎓 Current Student Mark', rLecScore, '—', '—', `Official grade from database (Graded by ${graderName})`]);
-    rResults.forEach(r => rows.push([r.model, r.score ?? 'ERR', r.grade, r.authenticity ?? 'ERR', r.feedback || '']));
-    const csv = rows.map(r => r.map(escapeCSV).join(',')).join('\n');
-    const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = 'model_comparison.csv'; a.click();
+    const succR = rResults.filter(r => !r.error && r.score !== null);
+    const avg = succR.length ? (succR.reduce((s, r) => s + r.score, 0) / succR.length).toFixed(2) : 'N/A';
+    const avgAgr = (!isNaN(lecN) && avg !== 'N/A')
+      ? (100 - Math.abs((parseFloat(avg) - lecN) / rMaxScore) * 100).toFixed(1) + '%' : 'N/A';
+    const L = (cols) => cols.join(',') + '\n';
+    let csv = '\uFEFF';
+    // Title
+    csv += L([esc('GRADER.ai \u2014 AI Model Comparison Report')]);
+    csv += L([esc('Generated'), esc(new Date().toLocaleString())]);
+    csv += '\n';
+    // Submission
+    csv += L([esc('=== SUBMISSION DETAILS ===')]);
+    csv += L([esc('Question'), esc(rQuestion)]);
+    csv += L([esc('Student Answer'), esc(rAnswer)]);
+    csv += L([esc('Marking Scheme'), esc(rMarkScheme || 'N/A')]);
+    csv += L([esc('Max Possible Score'), esc(rMaxScore)]);
+    csv += L([esc('Official Student Mark'), esc(rLecScore !== '' ? `${rLecScore} / ${rMaxScore}` : 'N/A')]);
+    csv += L([esc('Official Grading AI'), esc(graderName)]);
+    csv += '\n';
+    // Summary
+    csv += L([esc('=== COMPARISON SUMMARY ===')]);
+    csv += L([esc('AI Average Score'), esc(`${avg} / ${rMaxScore}`)]);
+    csv += L([esc('Average Agreement with Official Mark'), esc(avgAgr)]);
+    csv += L([esc('Models Succeeded'), esc(`${succR.length} / ${COMPARISON_MODELS.length}`)]);
+    csv += L([esc('Models Failed'), esc(`${rResults.filter(r => r.error).length} / ${COMPARISON_MODELS.length}`)]);
+    csv += '\n';
+    // Per-model table
+    csv += L([esc('=== MODEL RESULTS ===')]);
+    csv += L([esc('Rank'), esc('Model'), esc('Status'), esc('Score'), esc('Max Score'), esc('Grade'), esc('Authenticity %'), esc('Response Time (s)'), esc('Agreement with Official Mark'), esc('AI Feedback / Error')]);
+    const sorted = [...rResults].sort((a, b) => {
+      if (a.error && !b.error) return 1;
+      if (!a.error && b.error) return -1;
+      return Math.abs((a.score ?? 0) - lecN) - Math.abs((b.score ?? 0) - lecN);
+    });
+    let rank = 1;
+    sorted.forEach(r => {
+      const agr = (!r.error && !isNaN(lecN)) ? (100 - Math.abs((r.score - lecN) / rMaxScore) * 100).toFixed(1) + '%' : 'N/A';
+      const timeStr = r.time === 0 ? 'Cached (0.00s)' : r.time != null ? `${(r.time / 1000).toFixed(2)}s` : 'N/A';
+      csv += L([esc(r.error ? '\u2014' : `#${rank++}`), esc(r.model), esc(r.error ? 'FAILED' : 'SUCCESS'), esc(r.error ? 'ERR' : r.score), esc(rMaxScore), esc(r.error ? '\u2014' : (r.grade || '\u2014')), esc(r.error ? '\u2014' : `${r.authenticity ?? '\u2014'}%`), esc(timeStr), esc(agr), esc(r.feedback || '')]);
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `GRADER_ai_Comparison_${Date.now()}.csv`; a.click();
+    URL.revokeObjectURL(url);
   };
 
   const successResults = rResults.filter(r => !r.error && r.score !== null);
