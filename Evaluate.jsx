@@ -1057,6 +1057,14 @@ export default function EvaluateApp() {
   const [toasts, setToasts] = React.useState([]);
 
   React.useEffect(() => {
+    if (role === 'Admin') {
+      if (lecturerTab !== 'research' && lecturerTab !== 'audit') {
+        setLecturerTab('research');
+      }
+    }
+  }, [role, lecturerTab]);
+
+  React.useEffect(() => {
     window.showToast = (msg, type = 'info') => {
       const id = Date.now() + Math.random();
       setToasts(t => [...t, { id, msg, type }]);
