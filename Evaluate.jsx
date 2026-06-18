@@ -816,7 +816,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       return s;
     };
     const rows = [['Model','Score','Grade','Authenticity %','Feedback']];
-    if (rLecScore) rows.push(['🎓 Current Student Mark', rLecScore, '—', '—', 'Official grade from database']);
+    const graderName = aiSettings.geminiModel === 'gemini-2.0-flash' ? 'Gemini 2.0 Flash' : 'Gemini 1.5 Flash';
+    if (rLecScore) rows.push(['🎓 Current Student Mark', rLecScore, '—', '—', `Official grade from database (Graded by ${graderName})`]);
     rResults.forEach(r => rows.push([r.model, r.score ?? 'ERR', r.grade, r.authenticity ?? 'ERR', r.feedback || '']));
     const csv = rows.map(r => r.map(escapeCSV).join(',')).join('\n');
     const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = 'model_comparison.csv'; a.click();
@@ -886,7 +887,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
                 <div style={{ background:'#30363d', borderRadius:'4px', height:'8px', marginBottom:'8px' }}>
                   <div style={{ background:'var(--warning)', height:'100%', borderRadius:'4px', width:`${(lecNum/rMaxScore)*100}%`, transition:'width 1s ease' }} />
                 </div>
-                <p style={{ margin:0, fontSize:'0.8rem', color:'var(--text-muted)' }}>The official grade currently assigned to this student</p>
+                <p style={{ margin:0, fontSize:'0.8rem', color:'var(--text-muted)' }}>The official grade currently assigned to this student <br/><span style={{ opacity: 0.7, fontStyle: 'italic', display: 'inline-block', marginTop: '4px' }}>(Graded by {aiSettings.geminiModel === 'gemini-2.0-flash' ? 'Gemini 2.0 Flash' : 'Gemini 1.5 Flash'})</span></p>
               </div>
             )}
             {[...rResults].sort((a, b) => {
