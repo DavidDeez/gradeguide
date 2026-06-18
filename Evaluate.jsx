@@ -1637,7 +1637,7 @@ export default function EvaluateApp() {
       if (active) timer = setTimeout(processQueue, 2000);
     };
 
-    if (role === 'FacultyHub' && aiSettings.gradingStrategy === 'background') {
+    if ((role === 'FacultyHub' || role === 'Admin') && aiSettings.gradingStrategy === 'background') {
       processQueue();
     }
     
