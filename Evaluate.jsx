@@ -708,7 +708,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const [rProgress,   setRProgress]   = React.useState('');
 
   const COMPARISON_MODELS = [
-    { label: 'Gemini 1.5 Pro',         type: 'gemini',     id: 'gemini-1.5-pro-latest' },
+    { label: 'Gemini 1.5 Pro',         type: 'gemini',     id: 'gemini-1.5-pro' },
     { label: 'Gemini 1.5 Flash',       type: 'gemini',     id: 'gemini-1.5-flash-latest' },
     { label: 'Gemma 4 31B (OR)',        type: 'openrouter', id: 'google/gemma-4-31b-it:free' },
     { label: 'GPT-OSS 120B (OR)',       type: 'openrouter', id: 'openai/gpt-oss-120b:free' },
@@ -761,11 +761,20 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       return JSON.parse(txt.replace(/```json|```/gi,'').trim());
     } else {
       if (!activeORKey) throw new Error('No OpenRouter key');
-      const res  = await fetch('https://openrouter.ai/api/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${activeORKey}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'GRADER.ai Research'}, body:JSON.stringify({ model:model.id, max_tokens:1000, messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}] }) });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error.message || data.error.metadata?.message);
-      const txt  = data.choices?.[0]?.message?.content || '';
-      return JSON.parse(txt.replace(/```json|```/gi,'').trim());
+      let lastErr = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const res  = await fetch('https://openrouter.ai/api/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${activeORKey}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'GRADER.ai Research'}, body:JSON.stringify({ model:model.id, max_tokens:1000, messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}] }) });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message || data.error.metadata?.message);
+          const txt  = data.choices?.[0]?.message?.content || '';
+          return JSON.parse(txt.replace(/```json|```/gi,'').trim());
+        } catch (err) {
+          lastErr = err;
+          if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+      throw lastErr;
     }
   };
 
