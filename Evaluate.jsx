@@ -875,8 +875,10 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     ? [{ model: 'Human Marker', score: parseFloat(rLecScore), grade: '—', feedback: rLecFeedback || 'Score assigned manually by human marker.', authenticity: null, time: 0, error: false, isHuman: true }, ...rResults]
     : [...rResults];
 
+  const maxScoreNum = parseFloat(rMaxScore) || 10;
   const successResults = displayResults.filter(r => !r.error && r.score !== null);
   const avgScore = successResults.length ? parseFloat((successResults.reduce((s,r)=>s+r.score,0)/successResults.length).toFixed(1)) : null;
+  const avgPct = avgScore !== null ? Math.round((avgScore / maxScoreNum) * 100) : null;
   const lecNum = parseFloat(rLecScore);
 
   return (
@@ -937,7 +939,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
           {/* Summary Bar */}
           {avgScore !== null && (
             <div className="glass-panel" style={{ padding:'16px 24px', marginBottom:'16px', display:'flex', gap:'32px', flexWrap:'wrap' }}>
-              <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>CONSENSUS AVERAGE SCORE</span><br/><strong style={{ fontSize:'1.4rem' }}>{avgScore} / {rMaxScore}</strong></div>
+              <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>CONSENSUS AVERAGE</span><br/><strong style={{ fontSize:'1.4rem' }}>{avgPct}%</strong></div>
               <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>MODELS SUCCEEDED</span><br/><strong style={{ fontSize:'1.4rem' }}>{successResults.length}/{displayResults.length}</strong></div>
             </div>
           )}
@@ -987,7 +989,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
               <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
                   <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <BarChart size={16} /> Deviation from Consensus ({avgScore}/{rMaxScore})
+                    <BarChart size={16} /> Deviation from Consensus ({avgPct}%)
                   </p>
                   <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '2px', borderRadius: '6px', border: '1px solid var(--panel-border)' }}>
                     {[
@@ -1169,13 +1171,12 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
               }
               return (b.score ?? 0) - (a.score ?? 0);
             }).map((r, i) => {
-              const maxScoreNum = parseFloat(rMaxScore) || 10;
-              const pct = r.score !== null ? (r.score / maxScoreNum) * 100 : 0;
+              const pct = r.score !== null ? Math.round((r.score / maxScoreNum) * 100) : 0;
               const color = r.error ? 'var(--danger)' : pct>=80 ? 'var(--success)' : pct>=50 ? 'var(--warning)' : 'var(--danger)';
               const isRank1 = i === 0 && !r.error && !rRunning && displayResults.length >= COMPARISON_MODELS.length;
               const borderCol = r.isHuman ? 'var(--primary)' : (r.error ? 'var(--danger)' : isRank1 ? '#d4af37' : 'var(--panel-border)');
               const bgCol = r.isHuman ? 'rgba(88, 166, 255, 0.05)' : 'transparent';
-              const agr = (!r.error && !r.isHuman && avgScore !== null && r.score !== null) ? (100 - Math.abs((r.score - avgScore) / maxScoreNum) * 100).toFixed(1) : null;
+              const agr = (!r.error && !r.isHuman && avgPct !== null && r.score !== null) ? (100 - Math.abs(pct - avgPct)).toFixed(0) : null;
 
               return (
                 <div key={r.model} className="glass-panel" style={{ padding:'20px', borderColor: borderCol, background: bgCol, opacity: rRunning && rResults.length < COMPARISON_MODELS.length ? 0.6 : 1, transition:'all 0.3s', position: 'relative' }}>
@@ -1183,7 +1184,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
                   {r.isHuman && <div style={{ position:'absolute', top:'-12px', left:'-12px', background:'var(--primary)', color:'#000', padding:'4px 12px', borderRadius:'12px', fontSize:'0.8rem', fontWeight:'bold', boxShadow:'0 4px 12px rgba(0,0,0,0.5)', display:'flex', alignItems:'center', gap:'4px' }}><Activity size={14} fill="#000" /> Human Marker</div>}
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
                     <strong style={{ fontSize:'0.85rem', color:'var(--text-muted)' }}>{r.model}</strong>
-                    {!r.error && <span style={{ fontSize:'1.3rem', fontWeight:700, color }}>{r.score}/{maxScoreNum}</span>}
+                    {!r.error && <span style={{ fontSize:'1.3rem', fontWeight:700, color }}>{pct}%</span>}
                     {r.error && <span style={{ fontSize:'0.8rem', color:'var(--danger)' }}>FAILED</span>}
                   </div>
                   {!r.error && (
