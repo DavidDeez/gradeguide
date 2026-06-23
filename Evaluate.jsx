@@ -1164,7 +1164,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             {[...displayResults].sort((a, b) => {
               if (a.error) return 1;
               if (b.error) return -1;
-              if (avgScore !== null) {
+              if (avgScore !== null && a.score !== null && b.score !== null) {
                 return Math.abs(a.score - avgScore) - Math.abs(b.score - avgScore);
               }
               return (b.score ?? 0) - (a.score ?? 0);
@@ -1175,6 +1175,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
               const isRank1 = i === 0 && !r.error && !rRunning && displayResults.length >= COMPARISON_MODELS.length;
               const borderCol = r.isHuman ? 'var(--primary)' : (r.error ? 'var(--danger)' : isRank1 ? '#d4af37' : 'var(--panel-border)');
               const bgCol = r.isHuman ? 'rgba(88, 166, 255, 0.05)' : 'transparent';
+              const agr = (!r.error && !r.isHuman && avgScore !== null && r.score !== null) ? (100 - Math.abs((r.score - avgScore) / maxScoreNum) * 100).toFixed(1) : null;
 
               return (
                 <div key={r.model} className="glass-panel" style={{ padding:'20px', borderColor: borderCol, background: bgCol, opacity: rRunning && rResults.length < COMPARISON_MODELS.length ? 0.6 : 1, transition:'all 0.3s', position: 'relative' }}>
@@ -1182,7 +1183,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
                   {r.isHuman && <div style={{ position:'absolute', top:'-12px', left:'-12px', background:'var(--primary)', color:'#000', padding:'4px 12px', borderRadius:'12px', fontSize:'0.8rem', fontWeight:'bold', boxShadow:'0 4px 12px rgba(0,0,0,0.5)', display:'flex', alignItems:'center', gap:'4px' }}><Activity size={14} fill="#000" /> Human Marker</div>}
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
                     <strong style={{ fontSize:'0.85rem', color:'var(--text-muted)' }}>{r.model}</strong>
-                    {!r.error && <span style={{ fontSize:'1.3rem', fontWeight:700, color }}>{r.score}/{rMaxScore}</span>}
+                    {!r.error && <span style={{ fontSize:'1.3rem', fontWeight:700, color }}>{r.score}/{maxScoreNum}</span>}
                     {r.error && <span style={{ fontSize:'0.8rem', color:'var(--danger)' }}>FAILED</span>}
                   </div>
                   {!r.error && (
@@ -1193,8 +1194,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
                   <div style={{ display:'flex', gap:'8px', marginBottom:'10px', flexWrap:'wrap' }}>
                     {!r.error && <span style={{ background:'#21262d', padding:'2px 8px', borderRadius:'4px', fontSize:'0.75rem' }}>Grade: <strong>{r.grade}</strong></span>}
                     {r.authenticity !== null && !r.error && <span style={{ background:'#21262d', padding:'2px 8px', borderRadius:'4px', fontSize:'0.75rem' }}>Authenticity: <strong>{r.authenticity}%</strong></span>}
-                    {!r.error && r.time && <span style={{ background:'#21262d', padding:'2px 8px', borderRadius:'4px', fontSize:'0.75rem' }}>Time: <strong>{(r.time/1000).toFixed(2)}s</strong></span>}
-                    {agreement && !r.error && <span style={{ background: parseFloat(agreement)>=90?'rgba(46,160,67,0.2)':'rgba(248,81,73,0.2)', padding:'2px 8px', borderRadius:'4px', fontSize:'0.75rem', color: parseFloat(agreement)>=90?'var(--success)':'var(--danger)' }}>Agreement: <strong>{agreement}%</strong></span>}
+                    {!r.error && r.time > 0 && <span style={{ background:'#21262d', padding:'2px 8px', borderRadius:'4px', fontSize:'0.75rem' }}>Time: <strong>{(r.time/1000).toFixed(2)}s</strong></span>}
+                    {agr !== null && <span style={{ background: parseFloat(agr)>=90?'rgba(46,160,67,0.2)':'rgba(248,81,73,0.2)', padding:'2px 8px', borderRadius:'4px', fontSize:'0.75rem', color: parseFloat(agr)>=90?'var(--success)':'var(--danger)' }}>vs Consensus: <strong>{agr}%</strong></span>}
                   </div>
                   <strong style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>REASON FOR SCORE:</strong>
                   <p style={{ margin:0, fontSize:'0.78rem', color:'var(--text-muted)', lineHeight:1.5 }}>{r.error ? r.feedback : (r.feedback||'').substring(0,160)}{(!r.error && (r.feedback||'').length>160)?'…':''}</p>
