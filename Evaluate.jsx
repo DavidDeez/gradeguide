@@ -2189,7 +2189,8 @@ export default function EvaluateApp() {
           ]}],
           generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 8000 }
         };
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`, {
+        const genModel = aiSettings.geminiModel || 'gemini-2.0-flash';
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${genModel}:generateContent?key=${geminiKey}`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
         });
         const data = await res.json();
