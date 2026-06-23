@@ -816,53 +816,60 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   };
 
   const exportCSV = () => {
-    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}`;
+    const q = (v) => { const s = String(v ?? ''); return '"' + s.replace(/"/g, '""') + '"'; };
     const lecN = parseFloat(rLecScore);
     const graderName = aiSettings.geminiModel === 'gemini-2.0-flash' ? 'Gemini 2.0 Flash' : 'Gemini 1.5 Flash';
     const succR = rResults.filter(r => !r.error && r.score !== null);
-    const avg = succR.length ? (succR.reduce((s, r) => s + r.score, 0) / succR.length).toFixed(2) : 'N/A';
-    const avgAgr = (!isNaN(lecN) && avg !== 'N/A')
-      ? (100 - Math.abs((parseFloat(avg) - lecN) / rMaxScore) * 100).toFixed(1) + '%' : 'N/A';
-    const L = (cols) => cols.join(',') + '\n';
-    let csv = '\uFEFF';
-    // Title
-    csv += L([esc('GRADER.ai \u2014 AI Model Comparison Report')]);
-    csv += L([esc('Generated'), esc(new Date().toLocaleString())]);
-    csv += '\n';
-    // Submission
-    csv += L([esc('=== SUBMISSION DETAILS ===')]);
-    csv += L([esc('Question'), esc(rQuestion)]);
-    csv += L([esc('Student Answer'), esc(rAnswer)]);
-    csv += L([esc('Marking Scheme'), esc(rMarkScheme || 'N/A')]);
-    csv += L([esc('Max Possible Score'), esc(rMaxScore)]);
-    csv += L([esc('Official Student Mark'), esc(rLecScore !== '' ? `${rLecScore} / ${rMaxScore}` : 'N/A')]);
-    csv += L([esc('Official Grading AI'), esc(graderName)]);
-    csv += '\n';
-    // Summary
-    csv += L([esc('=== COMPARISON SUMMARY ===')]);
-    csv += L([esc('AI Average Score'), esc(`${avg} / ${rMaxScore}`)]);
-    csv += L([esc('Average Agreement with Official Mark'), esc(avgAgr)]);
-    csv += L([esc('Models Succeeded'), esc(`${succR.length} / ${COMPARISON_MODELS.length}`)]);
-    csv += L([esc('Models Failed'), esc(`${rResults.filter(r => r.error).length} / ${COMPARISON_MODELS.length}`)]);
-    csv += '\n';
-    // Per-model table
-    csv += L([esc('=== MODEL RESULTS ===')]);
-    csv += L([esc('Rank'), esc('Model'), esc('Status'), esc('Score'), esc('Max Score'), esc('Grade'), esc('Authenticity %'), esc('Response Time (s)'), esc('Agreement with Official Mark'), esc('AI Feedback / Error')]);
-    const sorted = [...rResults].sort((a, b) => {
+    const avg = succR.length ? (succR.reduce((s,r) => s + r.score, 0) / succR.length).toFixed(2) : 'N/A';
+    const avgAgr = (!isNaN(lecN) && avg !== 'N/A') ? (100 - Math.abs((parseFloat(avg)-lecN)/rMaxScore)*100).toFixed(1)+'%' : 'N/A';
+    const row = (...cols) => cols.map(q).join(',') + '\r\n';
+
+    let csv = '\uFEFF'; // UTF-8 BOM for Excel
+    csv += row('GRADER.ai — AI Model Comparison Report');
+    csv += row('Generated', new Date().toLocaleString());
+    csv += '\r\n';
+    csv += row('=== SUBMISSION DETAILS ===');
+    csv += row('Question', rQuestion);
+    csv += row('Student Answer', rAnswer);
+    csv += row('Marking Scheme / Context', rMarkScheme || 'N/A');
+    csv += row('Max Possible Score', rMaxScore);
+    csv += row('Official Student Mark', rLecScore !== '' ? rLecScore + ' / ' + rMaxScore : 'N/A');
+    csv += row('Official Grading AI', graderName);
+    csv += '\r\n';
+    csv += row('=== COMPARISON SUMMARY ===');
+    csv += row('AI Average Score', avg + ' / ' + rMaxScore);
+    csv += row('Average Agreement with Official Mark', avgAgr);
+    csv += row('Models Succeeded', succR.length + ' / ' + COMPARISON_MODELS.length);
+    csv += row('Models Failed', rResults.filter(r => r.error).length + ' / ' + COMPARISON_MODELS.length);
+    csv += '\r\n';
+    csv += row('=== MODEL RESULTS ===');
+    csv += row('Rank','Model','Status','Score','Max Score','Grade','Authenticity %','Response Time (s)','Deviation from Official Mark','Agreement %','AI Feedback');
+    const sorted = [...rResults].sort((a,b) => {
       if (a.error && !b.error) return 1;
       if (!a.error && b.error) return -1;
-      return Math.abs((a.score ?? 0) - lecN) - Math.abs((b.score ?? 0) - lecN);
+      return Math.abs((a.score??0)-lecN) - Math.abs((b.score??0)-lecN);
     });
     let rank = 1;
     sorted.forEach(r => {
-      const agr = (!r.error && !isNaN(lecN)) ? (100 - Math.abs((r.score - lecN) / rMaxScore) * 100).toFixed(1) + '%' : 'N/A';
-      const timeStr = r.time === 0 ? 'Cached (0.00s)' : r.time != null ? `${(r.time / 1000).toFixed(2)}s` : 'N/A';
-      csv += L([esc(r.error ? '\u2014' : `#${rank++}`), esc(r.model), esc(r.error ? 'FAILED' : 'SUCCESS'), esc(r.error ? 'ERR' : r.score), esc(rMaxScore), esc(r.error ? '\u2014' : (r.grade || '\u2014')), esc(r.error ? '\u2014' : `${r.authenticity ?? '\u2014'}%`), esc(timeStr), esc(agr), esc(r.feedback || '')]);
+      const dev = (!r.error && !isNaN(lecN)) ? (r.score - lecN).toFixed(1) : 'N/A';
+      const agr = (!r.error && !isNaN(lecN)) ? (100-Math.abs((r.score-lecN)/rMaxScore)*100).toFixed(1)+'%' : 'N/A';
+      const timeStr = r.time === 0 ? 'Cached' : r.time != null ? (r.time/1000).toFixed(2)+'s' : 'N/A';
+      csv += row(
+        r.error ? '—' : '#'+rank++,
+        r.model,
+        r.error ? 'FAILED' : 'SUCCESS',
+        r.error ? 'ERR' : r.score,
+        rMaxScore,
+        r.error ? '—' : (r.grade||'—'),
+        r.error ? '—' : (r.authenticity??'—')+'%',
+        timeStr, dev, agr,
+        r.feedback || ''
+      );
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `GRADER_ai_Comparison_${Date.now()}.csv`; a.click();
+    a.href = url; a.download = 'GRADER_ai_Comparison_' + Date.now() + '.csv'; a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -919,7 +926,58 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             </div>
           )}
 
-          {/* Per-model cards */}
+          {/* Deviation Chart */}
+          {rLecScore && !isNaN(lecNum) && successResults.length > 0 && (() => {
+            const chartH = 180;
+            const barW = 48;
+            const gap = 20;
+            const padL = 52;
+            const padB = 48;
+            const padT = 24;
+            const maxDev = Math.max(rMaxScore, ...successResults.map(r => Math.abs(r.score - lecNum)));
+            const scale = (chartH - padT - padB) / (maxDev || 1) / 2;
+            const totalW = padL + successResults.length * (barW + gap) + gap;
+            const midY = padT + (chartH - padT - padB) / 2;
+            return (
+              <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
+                <p style={{ margin: '0 0 12px 0', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>📊 Score Deviation from Official Mark (Benchmark = {lecNum}/{rMaxScore})</p>
+                <div style={{ overflowX: 'auto' }}>
+                  <svg width={totalW} height={chartH} style={{ display: 'block' }}>
+                    {/* Grid lines */}
+                    {[-2,-1,0,1,2].map(v => {
+                      const y = midY - v * scale;
+                      return <g key={v}>
+                        <line x1={padL} x2={totalW} y1={y} y2={y} stroke={v===0?'var(--warning)':'#30363d'} strokeWidth={v===0?2:1} strokeDasharray={v===0?'none':'4,4'}/>
+                        <text x={padL-6} y={y+4} textAnchor="end" fill="var(--text-muted)" fontSize={10}>{v>0?'+':''}{v}</text>
+                      </g>;
+                    })}
+                    {/* Bars */}
+                    {successResults.map((r, i) => {
+                      const dev = r.score - lecNum;
+                      const barH = Math.abs(dev) * scale;
+                      const barY = dev >= 0 ? midY - barH : midY;
+                      const color = Math.abs(dev) <= 1 ? '#2ea043' : Math.abs(dev) <= 2 ? '#d29922' : '#f85149';
+                      const x = padL + i * (barW + gap) + gap;
+                      const label = r.model.length > 8 ? r.model.substring(0,8)+'..' : r.model;
+                      return (
+                        <g key={r.model}>
+                          <rect x={x} y={barY} width={barW} height={Math.max(barH,2)} fill={color} rx={3} opacity={0.85}/>
+                          <text x={x+barW/2} y={barY + (dev>=0?-6:barH+14)} textAnchor="middle" fill={color} fontSize={11} fontWeight="bold">{dev>0?'+':''}{dev.toFixed(1)}</text>
+                          <text x={x+barW/2} y={chartH-6} textAnchor="middle" fill="var(--text-muted)" fontSize={9}>{label}</text>
+                        </g>
+                      );
+                    })}
+                    {/* Labels */}
+                    <text x={padL/2} y={midY} textAnchor="middle" fill="var(--text-muted)" fontSize={9} transform={`rotate(-90,${padL/2-4},${midY})`}>Deviation</text>
+                  </svg>
+                </div>
+                <p style={{ margin: '8px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  🟢 Within ±1 &nbsp; 🟡 Within ±2 &nbsp; 🔴 More than ±2 points from official mark
+                </p>
+              </div>
+            );
+          })()}
+
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:'16px' }}>
             {rLecScore && !isNaN(lecNum) && (
               <div className="glass-panel" style={{ padding:'20px', borderColor:'var(--warning)', borderWidth:'2px' }}>
@@ -1159,6 +1217,19 @@ export default function EvaluateApp() {
     };
   }, []);
 
+  // DB Online Status Ping
+  useEffect(() => {
+    const pingDB = async () => {
+      try {
+        const { error } = await supabase.from('assessments').select('id').limit(1);
+        setDbStatus(error ? 'offline' : 'online');
+      } catch { setDbStatus('offline'); }
+    };
+    pingDB();
+    const iv = setInterval(pingDB, 30000);
+    return () => clearInterval(iv);
+  }, []);
+
   // Anti-Cheat Focus Loss Detection
   React.useEffect(() => {
     if (!activeExam) {
@@ -1216,6 +1287,9 @@ export default function EvaluateApp() {
   const studentId = studentProfile ? studentProfile.matricNo : 'Guest';
   const [isLoaded, setIsLoaded] = useState(false);
   const [dbSyncing, setDbSyncing] = useState(false);
+  const [dbStatus, setDbStatus] = useState('checking'); // 'online' | 'offline' | 'checking'
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [genCount, setGenCount] = useState(10);
 
   useEffect(() => {
     const loadData = async () => {
@@ -2094,6 +2168,45 @@ export default function EvaluateApp() {
       }
     };
 
+    const generateQuestionsFromContext = async () => {
+      if (!assessmentContext.pdfBase64 && !assessmentContext.text) {
+        window.showToast('Please upload a PDF or paste context material first.', 'warning');
+        return;
+      }
+      const geminiKey = aiSettings.geminiKey;
+      if (!geminiKey) {
+        window.showToast('No Gemini API key configured. Go to System Audit & Engine to add it.', 'warning');
+        return;
+      }
+      setAiGenerating(true);
+      window.showToast(`🤖 Generating ${genCount} theory questions from context...`, 'info');
+      try {
+        const prompt = `You are an expert academic exam setter. Based on the provided context material, generate exactly ${genCount} theory/essay-style exam questions that test deep understanding. Questions should be clear, specific, and suitable for university-level assessment. Return ONLY a JSON array of strings: ["Question 1 text", "Question 2 text", ...]. No numbering, no markdown, no extra text.`;
+        const body = {
+          contents: [{ role: 'user', parts: [
+            ...(assessmentContext.pdfBase64 ? [{ inline_data: { mime_type: assessmentContext.fileMime || 'application/pdf', data: assessmentContext.pdfBase64 } }] : []),
+            { text: assessmentContext.text ? `Context:\n${assessmentContext.text}\n\n${prompt}` : prompt }
+          ]}],
+          generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 8000 }
+        };
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+        const txt = data.candidates?.[0]?.content?.parts?.find(p => p.text)?.text || '[]';
+        const questions = JSON.parse(txt.replace(/```json|```/gi, '').trim());
+        if (!Array.isArray(questions) || questions.length === 0) throw new Error('AI returned no questions.');
+        const newQs = questions.map((q, i) => ({ id: Date.now() + i, text: String(q).trim(), maxMarks: 10 }));
+        setNewQuestions(newQs);
+        window.showToast(`✅ ${newQs.length} questions generated! Review and edit before saving.`, 'success');
+      } catch (e) {
+        window.showToast(`AI Error: ${e.message}`, 'error');
+      } finally {
+        setAiGenerating(false);
+      }
+    };
+
     return (
       <div className="main-layout" style={{ animation: 'fadeIn 0.5s ease' }}>
         {isMobileMenuOpen && <div className="drawer-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>}
@@ -2240,7 +2353,7 @@ export default function EvaluateApp() {
                 ))}
               </div>
 
-              <div style={{ display: 'flex', gap: '16px' }}>
+              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                 <button 
                   className="btn btn-outline" 
                   style={{ flex: 1 }}
@@ -2248,6 +2361,24 @@ export default function EvaluateApp() {
                 >
                   <Plus size={18} /> Add Question
                 </button>
+                <div style={{ display: 'flex', gap: '8px', flex: 2 }}>
+                  <button
+                    className="btn"
+                    style={{ flex: 1, background: 'linear-gradient(135deg, #1e3a5f, #1a4a7a)', border: '1px solid rgba(59,130,246,0.4)', color: '#60a5fa', fontWeight: 600, opacity: aiGenerating ? 0.7 : 1 }}
+                    onClick={generateQuestionsFromContext}
+                    disabled={aiGenerating}
+                  >
+                    {aiGenerating ? <><Activity size={16} className="animate-spin" /> Generating...</> : <><Brain size={16} /> 🤖 AI Generate Questions</>}
+                  </button>
+                  <select
+                    className="input-field"
+                    style={{ width: '90px', flex: 'none' }}
+                    value={genCount}
+                    onChange={e => setGenCount(Number(e.target.value))}
+                  >
+                    {[5,10,20,30,50,75,100].map(n => <option key={n} value={n}>{n} Qs</option>)}
+                  </select>
+                </div>
                 {editingAssessmentId && (
                   <button 
                     className="btn btn-outline" 
@@ -3702,6 +3833,10 @@ const StudentLoginScreen = () => {
                 <CheckCircle size={12} /> Saved to Cloud
               </span>
             )}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', padding: '4px 10px', borderRadius: '12px', background: dbStatus === 'online' ? 'rgba(46,160,67,0.12)' : dbStatus === 'offline' ? 'rgba(248,81,73,0.12)' : 'rgba(139,148,158,0.12)', color: dbStatus === 'online' ? 'var(--success)' : dbStatus === 'offline' ? 'var(--danger)' : 'var(--text-muted)' }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: dbStatus === 'online' ? 'var(--success)' : dbStatus === 'offline' ? 'var(--danger)' : 'var(--text-muted)', display: 'inline-block' }} />
+              DB {dbStatus === 'checking' ? 'Checking...' : dbStatus === 'online' ? 'Online' : 'Offline'}
+            </span>
           </div>
           <div className="header-actions" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} onClick={() => { 
