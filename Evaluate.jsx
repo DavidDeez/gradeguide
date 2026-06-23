@@ -720,8 +720,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const [chartType,   setChartType]   = React.useState('both'); // 'bars' | 'curve' | 'both'
 
   const COMPARISON_MODELS = [
-    { label: 'Gemini Flash 8B',        type: 'gemini',     id: 'gemini-1.5-flash-8b' },
-    { label: 'Gemini 1.5 Flash',       type: 'gemini',     id: 'gemini-1.5-flash-latest' },
+    { label: 'Gemini 1.5 Pro',         type: 'gemini',     id: 'gemini-1.5-pro-latest' },
+    { label: 'Gemini Flash Latest',    type: 'gemini',     id: 'gemini-flash-latest' },
     { label: 'Gemma 4 31B (OR)',        type: 'openrouter', id: 'google/gemma-4-31b-it:free' },
     { label: 'GPT-OSS 120B (OR)',       type: 'openrouter', id: 'openai/gpt-oss-120b:free' },
     { label: 'Llama 3.1 8B (OR)',       type: 'openrouter', id: 'meta-llama/llama-3.1-8b-instruct:free' },
@@ -871,11 +871,11 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     URL.revokeObjectURL(url);
   };
 
-  const displayResults = rLecScore !== '' && !isNaN(parseFloat(rLecScore)) 
-    ? [{ model: 'Human Marker', score: parseFloat(rLecScore), grade: '—', feedback: rLecFeedback || 'Score assigned manually by human marker.', authenticity: null, time: 0, error: false, isHuman: true }, ...rResults]
-    : [...rResults];
-
   const maxScoreNum = parseFloat(rMaxScore) || 10;
+
+  const displayResults = rLecScore !== '' && !isNaN(parseFloat(rLecScore)) 
+    ? [{ model: 'Human Marker', score: (parseFloat(rLecScore) / 100) * maxScoreNum, grade: '—', feedback: rLecFeedback || 'Score assigned manually by human marker.', authenticity: null, time: 0, error: false, isHuman: true }, ...rResults]
+    : [...rResults];
   const successResults = displayResults.filter(r => !r.error && r.score !== null);
   const avgScore = successResults.length ? parseFloat((successResults.reduce((s,r)=>s+r.score,0)/successResults.length).toFixed(1)) : null;
   const avgPct = avgScore !== null ? Math.round((avgScore / maxScoreNum) * 100) : null;
@@ -921,8 +921,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             <input type="number" className="input-field" value={rMaxScore} onChange={e => setRMaxScore(e.target.value)} style={{ width: '120px' }} />
           </div>
           <div>
-            <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>HUMAN BENCHMARK SCORE</span>
-            <input type="number" className="input-field" value={rLecScore} onChange={e => setRLecScore(e.target.value)} style={{ width: '180px', borderColor: 'var(--warning)', borderWidth: '2px' }} placeholder="Enter human score..." />
+            <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>HUMAN BENCHMARK SCORE (%)</span>
+            <input type="number" className="input-field" value={rLecScore} onChange={e => setRLecScore(e.target.value)} style={{ width: '180px', borderColor: 'var(--warning)', borderWidth: '2px' }} placeholder="Enter human score %..." />
           </div>
           <div style={{ flex: 1 }}>
             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -1188,8 +1188,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
                     {r.error && <span style={{ fontSize:'0.8rem', color:'var(--danger)' }}>FAILED</span>}
                   </div>
                   {!r.error && (
-                    <div style={{ background:'#30363d', borderRadius:'4px', height:'8px', marginBottom:'10px' }}>
-                      <div style={{ background:color, height:'100%', borderRadius:'4px', width:`${pct}%`, transition:'width 1s ease' }} />
+                    <div style={{ background:'#30363d', borderRadius:'4px', height:'8px', marginBottom:'10px', overflow:'hidden' }}>
+                      <div style={{ background:color, height:'100%', borderRadius:'4px', width:`${Math.min(pct, 100)}%`, transition:'width 1s ease' }} />
                     </div>
                   )}
                   <div style={{ display:'flex', gap:'8px', marginBottom:'10px', flexWrap:'wrap' }}>
