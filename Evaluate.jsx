@@ -799,25 +799,11 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       const m = COMPARISON_MODELS[i];
       setRProgress(`[${i+1}/${COMPARISON_MODELS.length}] Querying ${m.label}...`);
 
-      let isOfficialModel = false;
-      if (m.type === 'gemini') {
-        if (aiSettings.geminiModel === 'gemini-flash-latest' && m.id.includes('1.5-flash')) isOfficialModel = true;
-        if (aiSettings.geminiModel === 'gemini-2.0-flash' && m.id === 'gemini-2.0-flash') isOfficialModel = true;
-      } else if (m.type === 'openrouter' && m.id === aiSettings.openrouterModel) {
-        isOfficialModel = true;
-      }
-
-      if (isOfficialModel && lecS !== '' && lecFb) {
-        out.push({ model: m.label, score: Number(lecS), grade: '—', feedback: lecFb, authenticity: 100, time: 0, error: null });
-        setRResults([...out]);
-        continue;
-      }
-
       try {
         const start = performance.now();
         const r = await gradeWithModel(m, q, ms, ans, maxS);
         const latency = performance.now() - start;
-        out.push({ model: m.label, score: r.score, grade: r.grade, feedback: r.feedback, authenticity: r.authenticity, time: latency, error: null });
+        out.push({ model: m.label, score: r.score, grade: r.grade, feedback: r.feedback, authenticity: r.authenticity, time: latency, error: false });
       } catch(e) {
         out.push({ model: m.label, score: null, grade:'—', feedback: e.message, authenticity: null, time: null, error: true });
       }
