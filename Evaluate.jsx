@@ -2492,14 +2492,14 @@ export default function EvaluateApp() {
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
                 {newQuestions.map((q, idx) => (
-                  <div key={q.id} style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--panel-border)', padding: '8px 12px', borderRadius: '8px' }}>
-                    <div style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem', width: '24px', textAlign: 'center' }}>
+                  <div key={q.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--panel-border)', padding: '12px', borderRadius: '8px' }}>
+                    <div style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem', width: '24px', textAlign: 'center', paddingTop: '8px' }}>
                       {idx + 1}.
                     </div>
                     <div style={{ flex: 1 }}>
-                      <input 
+                      <textarea 
                         className="input-field" 
-                        style={{ border: 'none', background: 'transparent', padding: '4px', fontSize: '0.95rem' }}
+                        style={{ border: 'none', background: 'transparent', padding: '6px', fontSize: '0.95rem', width: '100%', minHeight: '60px', resize: 'vertical', fontFamily: 'inherit', lineHeight: '1.5' }}
                         placeholder="Type your exam question here..." 
                         value={q.text} 
                         onChange={e => {
@@ -2509,7 +2509,7 @@ export default function EvaluateApp() {
                         }} 
                       />
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '110px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '110px', paddingTop: '4px' }}>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>PTS:</span>
                       <input 
                         type="number" 
