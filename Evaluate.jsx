@@ -916,10 +916,10 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
           {avgScore && (
             <div className="glass-panel" style={{ padding:'16px 24px', marginBottom:'16px', display:'flex', gap:'32px', flexWrap:'wrap' }}>
               <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>AI AVERAGE SCORE</span><br/><strong style={{ fontSize:'1.4rem' }}>{avgScore} / {rMaxScore}</strong></div>
-              {rLecScore && !isNaN(lecNum) && (
+              {rLecScore !== '' && !isNaN(lecNum) && (
                 <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>CURRENT STUDENT MARK</span><br/><strong style={{ fontSize:'1.4rem', color:'var(--warning)' }}>{lecNum} / {rMaxScore}</strong></div>
               )}
-              {rLecScore && !isNaN(lecNum) && avgScore && (
+              {rLecScore !== '' && !isNaN(lecNum) && avgScore && (
                 <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>AVG AGREEMENT</span><br/><strong style={{ fontSize:'1.4rem', color: Math.abs(avgScore-lecNum)<=1 ? 'var(--success)' : 'var(--danger)' }}>{(100 - Math.abs((avgScore-lecNum)/rMaxScore)*100).toFixed(1)}%</strong></div>
               )}
               <div><span style={{ color:'var(--text-muted)', fontSize:'0.8rem' }}>MODELS SUCCEEDED</span><br/><strong style={{ fontSize:'1.4rem' }}>{successResults.length}/{COMPARISON_MODELS.length}</strong></div>
@@ -927,7 +927,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
           )}
 
           {/* Deviation Chart */}
-          {rLecScore && !isNaN(lecNum) && successResults.length > 0 && (() => {
+          {rLecScore !== '' && !isNaN(lecNum) && successResults.length > 0 && (() => {
             const chartH = 180;
             const barW = 48;
             const gap = 20;
@@ -979,7 +979,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
           })()}
 
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:'16px' }}>
-            {rLecScore && !isNaN(lecNum) && (
+            {rLecScore !== '' && !isNaN(lecNum) && (
               <div className="glass-panel" style={{ padding:'20px', borderColor:'var(--warning)', borderWidth:'2px' }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px' }}>
                   <strong style={{ fontSize:'0.95rem' }}>🎓 Current Student Mark</strong>
@@ -994,13 +994,13 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             {[...rResults].sort((a, b) => {
               if (a.error) return 1;
               if (b.error) return -1;
-              if (rLecScore && !isNaN(lecNum)) {
+              if (rLecScore !== '' && !isNaN(lecNum)) {
                 return Math.abs(a.score - lecNum) - Math.abs(b.score - lecNum);
               }
               return b.score - a.score;
             }).map((r, i) => {
               const pct = r.score !== null ? (r.score / rMaxScore) * 100 : 0;
-              const agreement = (rLecScore && !isNaN(lecNum) && r.score !== null) ? (100 - Math.abs((r.score-lecNum)/rMaxScore)*100).toFixed(1) : null;
+              const agreement = (rLecScore !== '' && !isNaN(lecNum) && r.score !== null) ? (100 - Math.abs((r.score-lecNum)/rMaxScore)*100).toFixed(1) : null;
               const color = r.error ? 'var(--danger)' : pct>=80 ? 'var(--success)' : pct>=50 ? 'var(--warning)' : 'var(--danger)';
               const isRank1 = i === 0 && !r.error && !rRunning && rResults.length === COMPARISON_MODELS.length;
               return (
