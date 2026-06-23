@@ -2764,7 +2764,7 @@ export default function EvaluateApp() {
             <div className="glass-panel" style={{ padding: '40px' }}>
               <h2 style={{ marginTop: 0, marginBottom: '24px' }}>Student Management</h2>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '32px' }}>
                 <div>
                   <h3 style={{ marginTop: 0, color: 'var(--text-main)' }}>Add Individual Student</h3>
                   <div style={{ marginBottom: '16px' }}>
@@ -2801,13 +2801,13 @@ const name = document.getElementById('newStudName').value.trim();
                   }}>+ Add Student</button>
                 </div>
 
-                <div style={{ borderTop: '2px solid rgba(59,130,246,0.3)', paddingTop: '20px', marginTop: '8px' }}>
+                <div style={{ borderLeft: '2px solid rgba(59,130,246,0.3)', paddingLeft: '28px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
                     <Upload size={18} color="#60a5fa" />
                     <h3 style={{ margin: 0, color: '#60a5fa', fontSize: '1rem', fontWeight: 700, letterSpacing: '0.3px' }}>Bulk Import via CSV</h3>
                   </div>
                   <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 12px 0', paddingLeft: '28px' }}>Import multiple students at once. Format: <code style={{ background: '#1f2937', padding: '2px 6px', borderRadius: '4px', fontSize: '0.8rem' }}>Name, MatricNo, Email</code> — one per line</p>
-                  <textarea id="bulkStudCSV" className="input-field scrollbar" rows={6} placeholder="John Doe, 2001, john@edu.com\nJane Smith, 2002, jane@edu.com"></textarea>
+                  <textarea id="bulkStudCSV" className="input-field scrollbar" rows={10} placeholder="John Doe, 2001, john@edu.com&#10;Jane Smith, 2002, jane@edu.com"></textarea>
                   <button className="btn btn-outline" style={{ marginTop: '16px' }} onClick={() => {
 const text = document.getElementById('bulkStudCSV').value;
                     const lines = text.split('\\n').filter(l => l.trim());
