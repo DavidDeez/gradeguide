@@ -813,13 +813,19 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     setRRunning(false); setRProgress('Comparison complete!');
   };
 
+  const maxScoreNum = parseFloat(rMaxScore) || 10;
+  const displayResults = rLecScore !== '' && !isNaN(parseFloat(rLecScore)) 
+    ? [{ model: 'Human Marker', score: (parseFloat(rLecScore) / 100) * maxScoreNum, grade: '—', feedback: rLecFeedback || 'Score assigned manually by human marker.', authenticity: null, time: 0, error: false, isHuman: true }, ...rResults]
+    : [...rResults];
+  const successResults = displayResults.filter(r => !r.error && r.score !== null);
+  const avgScore = successResults.length ? parseFloat((successResults.reduce((s,r)=>s+r.score,0)/successResults.length).toFixed(1)) : null;
+  const avgPct = avgScore !== null ? Math.round((avgScore / maxScoreNum) * 100) : null;
+  const lecNum = parseFloat(rLecScore);
+
   const exportCSV = () => {
     const q = (v) => { const s = String(v ?? ''); return '"' + s.replace(/"/g, '""') + '"'; };
-    const lecN = parseFloat(rLecScore);
-    const graderName = aiSettings.geminiModel === 'gemini-2.0-flash' ? 'Gemini 2.0 Flash' : 'Gemini 1.5 Flash';
-    const succR = rResults.filter(r => !r.error && r.score !== null);
-    const avg = succR.length ? (succR.reduce((s,r) => s + r.score, 0) / succR.length).toFixed(2) : 'N/A';
-    const avgAgr = (!isNaN(lecN) && avg !== 'N/A') ? (100 - Math.abs((parseFloat(avg)-lecN)/rMaxScore)*100).toFixed(1)+'%' : 'N/A';
+    const graderName = aiSettings.geminiModel === 'gemini-1.5-pro-latest' ? 'Gemini 1.5 Pro' : 'Gemini Flash Latest';
+    
     const row = (...cols) => cols.map(q).join(',') + '\r\n';
 
     let csv = '\uFEFF'; // UTF-8 BOM for Excel
@@ -830,34 +836,38 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     csv += row('Question', rQuestion);
     csv += row('Student Answer', rAnswer);
     csv += row('Marking Scheme / Context', rMarkScheme || 'N/A');
-    csv += row('Max Possible Score', rMaxScore);
-    csv += row('Official Student Mark', rLecScore !== '' ? rLecScore + ' / ' + rMaxScore : 'N/A');
+    csv += row('Max Possible Score', maxScoreNum);
     csv += row('Official Grading AI', graderName);
     csv += '\r\n';
     csv += row('=== COMPARISON SUMMARY ===');
-    csv += row('AI Average Score', avg + ' / ' + rMaxScore);
-    csv += row('Average Agreement with Official Mark', avgAgr);
-    csv += row('Models Succeeded', succR.length + ' / ' + COMPARISON_MODELS.length);
-    csv += row('Models Failed', rResults.filter(r => r.error).length + ' / ' + COMPARISON_MODELS.length);
+    csv += row('Consensus Average', avgPct !== null ? avgPct + '%' : 'N/A');
+    csv += row('Models Succeeded', successResults.length + ' / ' + displayResults.length);
+    csv += row('Models Failed', displayResults.filter(r => r.error).length + ' / ' + displayResults.length);
     csv += '\r\n';
     csv += row('=== MODEL RESULTS ===');
-    csv += row('Rank','Model','Status','Score','Max Score','Grade','Authenticity %','Response Time (s)','Deviation from Official Mark','Agreement %','AI Feedback');
-    const sorted = [...rResults].sort((a,b) => {
+    csv += row('Rank','Model','Status','Score %','Grade','Authenticity %','Response Time (s)','Deviation from Consensus','vs Consensus %','Feedback');
+    
+    const sorted = [...displayResults].sort((a,b) => {
       if (a.error && !b.error) return 1;
       if (!a.error && b.error) return -1;
-      return Math.abs((a.score??0)-lecN) - Math.abs((b.score??0)-lecN);
+      if (avgScore !== null && a.score !== null && b.score !== null) {
+        return Math.abs(a.score - avgScore) - Math.abs(b.score - avgScore);
+      }
+      return (b.score ?? 0) - (a.score ?? 0);
     });
+    
     let rank = 1;
     sorted.forEach(r => {
-      const dev = (!r.error && !isNaN(lecN)) ? (r.score - lecN).toFixed(1) : 'N/A';
-      const agr = (!r.error && !isNaN(lecN)) ? (100-Math.abs((r.score-lecN)/rMaxScore)*100).toFixed(1)+'%' : 'N/A';
+      const pct = r.score !== null ? Math.round((r.score / maxScoreNum) * 100) : null;
+      const dev = (pct !== null && avgPct !== null) ? (pct - avgPct).toFixed(0) + '%' : 'N/A';
+      const agr = (pct !== null && avgPct !== null && !r.isHuman) ? (100 - Math.abs(pct - avgPct)).toFixed(0) + '%' : 'N/A';
       const timeStr = r.time === 0 ? 'Cached' : r.time != null ? (r.time/1000).toFixed(2)+'s' : 'N/A';
+      
       csv += row(
         r.error ? '—' : '#'+rank++,
-        r.model,
+        r.model + (r.isHuman ? ' (Human)' : ''),
         r.error ? 'FAILED' : 'SUCCESS',
-        r.error ? 'ERR' : r.score,
-        rMaxScore,
+        r.error ? 'ERR' : pct + '%',
         r.error ? '—' : (r.grade||'—'),
         r.error ? '—' : (r.authenticity??'—')+'%',
         timeStr, dev, agr,
@@ -870,16 +880,6 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     a.href = url; a.download = 'GRADER_ai_Comparison_' + Date.now() + '.csv'; a.click();
     URL.revokeObjectURL(url);
   };
-
-  const maxScoreNum = parseFloat(rMaxScore) || 10;
-
-  const displayResults = rLecScore !== '' && !isNaN(parseFloat(rLecScore)) 
-    ? [{ model: 'Human Marker', score: (parseFloat(rLecScore) / 100) * maxScoreNum, grade: '—', feedback: rLecFeedback || 'Score assigned manually by human marker.', authenticity: null, time: 0, error: false, isHuman: true }, ...rResults]
-    : [...rResults];
-  const successResults = displayResults.filter(r => !r.error && r.score !== null);
-  const avgScore = successResults.length ? parseFloat((successResults.reduce((s,r)=>s+r.score,0)/successResults.length).toFixed(1)) : null;
-  const avgPct = avgScore !== null ? Math.round((avgScore / maxScoreNum) * 100) : null;
-  const lecNum = parseFloat(rLecScore);
 
   return (
     <div style={{ animation:'fadeIn 0.5s ease' }}>
@@ -2896,14 +2896,14 @@ export default function EvaluateApp() {
               <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>Graded Submissions</h3>
               <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px' }} onClick={() => {
                 if (submissions.length === 0) return window.showToast('No grades to export.');
-                let csv = 'Matric Number,Exam Title,Score,Max Marks,Percentage,Authenticity Score,Timestamp\n';
+                let csv = 'Matric Number,Exam Title,Score %,Authenticity Score,Timestamp\n';
                 submissions.forEach(sub => {
                   const ass = assessments.find(a => a.id == sub.assessmentId);
                   const title = ass ? ass.title : 'Unknown';
                   const totalMax = ass ? ass.questions.reduce((a,q) => a + (q.maxMarks||10), 0) : 0;
                   const score = sub.results ? sub.results.reduce((a,r) => a + r.score, 0) : 0;
                   const perc = totalMax > 0 ? Math.round((score/totalMax)*100) : 0;
-                  csv += `${sub.studentId},"${title}",${score},${totalMax},${perc}%,${sub.authenticity ? sub.authenticity+'%' : 'N/A'},"${sub.timestamp}"\n`;
+                  csv += `${sub.studentId},"${title}",${perc}%,${sub.authenticity ? sub.authenticity+'%' : 'N/A'},"${sub.timestamp}"\n`;
                 });
                 const blob = new Blob([csv], { type: 'text/csv' });
                 const url = window.URL.createObjectURL(blob);
