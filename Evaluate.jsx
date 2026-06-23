@@ -921,6 +921,26 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         {rProgress && <p style={{ margin:'12px 0 0', fontSize:'0.85rem', color: rProgress.includes('complete') ? 'var(--success)' : 'var(--warning)', display: 'flex', alignItems: 'center', gap: '6px' }}>{rProgress.includes('complete') && <CheckCircle size={16} />}{rProgress}</p>}
       </div>
 
+      {/* Manual Score Overrides */}
+      {rQuestion && (
+        <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '24px', display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div>
+            <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>MAX MARKS</span>
+            <input type="number" className="input-field" value={rMaxScore} onChange={e => setRMaxScore(e.target.value)} style={{ width: '120px' }} />
+          </div>
+          <div>
+            <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>HUMAN BENCHMARK SCORE</span>
+            <input type="number" className="input-field" value={rLecScore} onChange={e => setRLecScore(e.target.value)} style={{ width: '180px', borderColor: 'var(--warning)', borderWidth: '2px' }} placeholder="Enter human score..." />
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              <Info size={14} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} />
+              Type your official human score above. The deviation chart and agreement metrics will instantly update to compare the AI models against your benchmark.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Results */}
       {rResults.length > 0 && (
         <div>
