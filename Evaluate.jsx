@@ -824,7 +824,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       setRResults([...out]);
       if (i < COMPARISON_MODELS.length - 1) await new Promise(r => setTimeout(r, rDelay));
     }
-    setRRunning(false); setRProgress('✅ Comparison complete!');
+    setRRunning(false); setRProgress('Comparison complete!');
   };
 
   const exportCSV = () => {
@@ -892,7 +892,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   return (
     <div style={{ animation:'fadeIn 0.5s ease' }}>
       <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'24px' }}>
-        <span style={{ fontSize:'2rem' }}>🔬</span>
+        <span style={{ fontSize:'2rem' }}><Activity size={32} /></span>
         <div>
           <h2 style={{ margin:0, fontSize:'1.4rem' }}>AI Model Comparison Lab</h2>
           <p style={{ margin:0, color:'var(--text-muted)', fontSize:'0.9rem' }}>Grade the same answer across all free AI models & compare results for research</p>
@@ -911,14 +911,14 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
               onClick={() => runComparison(demo.q, demo.ms, demo.ans, demo.max, demo.lec, demo.lecFeedback)}
               disabled={rRunning}
             >
-              🚀 {demo.title}
+              <Play size={16} /> {demo.title}
             </button>
           ))}
           {rResults.length > 0 && (
-            <button className="btn" onClick={exportCSV} style={{ padding: '8px 16px' }}>📥 Export CSV</button>
+            <button className="btn" onClick={exportCSV} style={{ padding: '8px 16px' }}><Download size={16} /> Export CSV</button>
           )}
         </div>
-        {rProgress && <p style={{ margin:'12px 0 0', fontSize:'0.85rem', color: rProgress.startsWith('✅') ? 'var(--success)' : 'var(--warning)' }}>{rProgress}</p>}
+        {rProgress && <p style={{ margin:'12px 0 0', fontSize:'0.85rem', color: rProgress.includes('complete') ? 'var(--success)' : 'var(--warning)', display: 'flex', alignItems: 'center', gap: '6px' }}>{rProgress.includes('complete') && <CheckCircle size={16} />}{rProgress}</p>}
       </div>
 
       {/* Results */}
@@ -982,7 +982,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
               <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
                   <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>📊</span> Score Deviation (Benchmark = {lecNum}/{rMaxScore})
+                    <BarChart size={16} /> Score Deviation (Benchmark = {lecNum}/{rMaxScore})
                   </p>
                   <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '2px', borderRadius: '6px', border: '1px solid var(--panel-border)' }}>
                     {[
@@ -1147,7 +1147,9 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
                   </svg>
                 </div>
                 <p style={{ margin: '8px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  🟢 Within ±1 &nbsp; 🟡 Within ±2 &nbsp; 🔴 More than ±2 points from official mark
+                  <span style={{display:'inline-flex', alignItems:'center', gap:'4px'}}><div style={{width:'8px', height:'8px', borderRadius:'50%', background:'#2ea043'}}></div> Within ±1</span> &nbsp; 
+                  <span style={{display:'inline-flex', alignItems:'center', gap:'4px'}}><div style={{width:'8px', height:'8px', borderRadius:'50%', background:'#d29922'}}></div> Within ±2</span> &nbsp; 
+                  <span style={{display:'inline-flex', alignItems:'center', gap:'4px'}}><div style={{width:'8px', height:'8px', borderRadius:'50%', background:'#f85149'}}></div> More than ±2 points from official mark</span>
                 </p>
               </div>
             );
@@ -1157,7 +1159,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             {rLecScore !== '' && !isNaN(lecNum) && (
               <div className="glass-panel" style={{ padding:'20px', borderColor:'var(--warning)', borderWidth:'2px' }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px' }}>
-                  <strong style={{ fontSize:'0.95rem' }}>🎓 Current Student Mark</strong>
+                  <strong style={{ fontSize:'0.95rem', display:'flex', alignItems:'center', gap:'6px' }}><Book size={18} /> Current Student Mark</strong>
                   <span style={{ fontSize:'1.5rem', fontWeight:700, color:'var(--warning)' }}>{lecNum}/{rMaxScore}</span>
                 </div>
                 <div style={{ background:'#30363d', borderRadius:'4px', height:'8px', marginBottom:'8px' }}>
@@ -1180,7 +1182,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
               const isRank1 = i === 0 && !r.error && !rRunning && rResults.length === COMPARISON_MODELS.length;
               return (
                 <div key={r.model} className="glass-panel" style={{ padding:'20px', borderColor: r.error ? 'var(--danger)' : isRank1 ? '#d4af37' : 'var(--panel-border)', opacity: rRunning && rResults.length < COMPARISON_MODELS.length ? 0.6 : 1, transition:'all 0.3s', position: 'relative' }}>
-                  {isRank1 && <div style={{ position:'absolute', top:'-12px', right:'-12px', background:'#d4af37', color:'#000', padding:'4px 12px', borderRadius:'12px', fontSize:'0.8rem', fontWeight:'bold', boxShadow:'0 4px 12px rgba(0,0,0,0.5)' }}>🏆 #1 {rLecScore ? 'Closest' : 'Highest'}</div>}
+                  {isRank1 && <div style={{ position:'absolute', top:'-12px', right:'-12px', background:'#d4af37', color:'#000', padding:'4px 12px', borderRadius:'12px', fontSize:'0.8rem', fontWeight:'bold', boxShadow:'0 4px 12px rgba(0,0,0,0.5)', display:'flex', alignItems:'center', gap:'4px' }}><Star size={14} fill="#000" /> #1 {rLecScore ? 'Closest' : 'Highest'}</div>}
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
                     <strong style={{ fontSize:'0.85rem', color:'var(--text-muted)' }}>{r.model}</strong>
                     {!r.error && <span style={{ fontSize:'1.3rem', fontWeight:700, color }}>{r.score}/{rMaxScore}</span>}
@@ -2013,10 +2015,10 @@ export default function EvaluateApp() {
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>OpenRouter Free Model</label>
             <select className="input-field" value={aiSettings.openrouterModel || 'google/gemma-4-31b-it:free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
-              <option value="google/gemma-4-31b-it:free">Gemma 4 31B ✅ Free (Best Quality)</option>
-              <option value="openai/gpt-oss-120b:free">GPT-OSS 120B ✅ Free (OpenAI Open Source)</option>
-              <option value="qwen/qwen3-coder:free">Qwen3 Coder ✅ Free (Alibaba)</option>
-              <option value="nvidia/nemotron-3-super-120b-a12b:free">Nvidia Nemotron 120B ✅ Free</option>
+              <option value="google/gemma-4-31b-it:free">Gemma 4 31B [Free] (Best Quality)</option>
+              <option value="openai/gpt-oss-120b:free">GPT-OSS 120B [Free] (OpenAI Open Source)</option>
+              <option value="qwen/qwen3-coder:free">Qwen3 Coder [Free] (Alibaba)</option>
+              <option value="nvidia/nemotron-3-super-120b-a12b:free">Nvidia Nemotron 120B [Free]</option>
               <option value="openrouter/auto">Auto-Select Free Model (Always works)</option>
             </select>
           </div>
@@ -2354,7 +2356,7 @@ export default function EvaluateApp() {
         return;
       }
       setAiGenerating(true);
-      window.showToast(`🤖 Generating ${genCount} theory questions from context...`, 'info');
+      window.showToast(`Generating ${genCount} theory questions from context...`, 'info');
       try {
         const prompt = `You are an expert academic exam setter. Based on the provided context material, generate exactly ${genCount} theory/essay-style exam questions that test deep understanding. Questions should be clear, specific, and suitable for university-level assessment. Return ONLY a JSON array of strings: ["Question 1 text", "Question 2 text", ...]. No numbering, no markdown, no extra text.`;
         const body = {
@@ -2375,7 +2377,7 @@ export default function EvaluateApp() {
         if (!Array.isArray(questions) || questions.length === 0) throw new Error('AI returned no questions.');
         const newQs = questions.map((q, i) => ({ id: Date.now() + i, text: String(q).trim(), maxMarks: 10 }));
         setNewQuestions(newQs);
-        window.showToast(`✅ ${newQs.length} questions generated! Review and edit before saving.`, 'success');
+        window.showToast(`${newQs.length} questions generated! Review and edit before saving.`, 'success');
       } catch (e) {
         window.showToast(`AI Error: ${e.message}`, 'error');
       } finally {
@@ -2397,7 +2399,7 @@ export default function EvaluateApp() {
               <div className={`side-nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => { setLecturerTab('scanner'); setIsMobileMenuOpen(false); }}>📸 Offline Scanner</div>
               <div className={`side-nav-tab ${lecturerTab === 'students' ? 'active' : ''}`} onClick={() => { setLecturerTab('students'); setIsMobileMenuOpen(false); }}>👥 Student Management</div>
               <div className={`side-nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => { setLecturerTab('results'); setIsMobileMenuOpen(false); }}>
-                📝 Grading Desk
+                <FileText size={18} style={{ marginRight: '6px' }} /> Grading Desk
                 {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
                   <span className="badge badge-success" style={{ marginLeft: 'auto', background: 'var(--danger)', color: 'white' }}>
                     {retakeRequests.filter(r => r.status === 'pending').length}
@@ -2405,7 +2407,7 @@ export default function EvaluateApp() {
                 )}
               </div>
               <div className={`side-nav-tab ${lecturerTab === 'queue' ? 'active' : ''}`} onClick={() => { setLecturerTab('queue'); setIsMobileMenuOpen(false); }}>
-                🤖 Auto-Pilot Queue
+                <Brain size={18} style={{ marginRight: '6px' }} /> Auto-Pilot Queue
                 {submissions.filter(s => s.status === 'pending').length > 0 && (
                   <span className="badge" style={{ marginLeft: 'auto', background: 'var(--warning)', color: '#000' }}>
                     {submissions.filter(s => s.status === 'pending').length}
@@ -2415,9 +2417,9 @@ export default function EvaluateApp() {
             </>
           )}
           {role === 'Admin' && (
-            <div className={`side-nav-tab ${lecturerTab === 'research' ? 'active' : ''}`} onClick={() => { setLecturerTab('research'); setIsMobileMenuOpen(false); }}>🔬 Model Comparison</div>
+            <div className={`side-nav-tab ${lecturerTab === 'research' ? 'active' : ''}`} onClick={() => { setLecturerTab('research'); setIsMobileMenuOpen(false); }}><Activity size={18} style={{ marginRight: '6px' }} /> Model Comparison</div>
           )}
-          <div className={`side-nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}>⚙️ System Audit & Engine</div>
+          <div className={`side-nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}><Settings size={18} style={{ marginRight: '6px' }} /> System Audit & Engine</div>
         </div>
 
         {/* Main Content Area */}
@@ -2447,7 +2449,7 @@ export default function EvaluateApp() {
               </>
             )}
             {role === 'Admin' && (
-              <div className={`nav-tab ${lecturerTab === 'research' ? 'active' : ''}`} onClick={() => setLecturerTab('research')}>🔬 Model Comparison</div>
+              <div className={`nav-tab ${lecturerTab === 'research' ? 'active' : ''}`} onClick={() => setLecturerTab('research')}><Activity size={16} style={{ marginRight: '6px', verticalAlign: 'text-bottom' }} /> Model Comparison</div>
             )}
             <div className={`nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}>System Audit & Engine</div>
           </div>
@@ -3064,12 +3066,15 @@ const text = document.getElementById('bulkStudCSV').value;
           <div style={{ display: 'grid', gap: '16px', animation: 'fadeIn 0.4s ease' }}>
             <div className="glass-panel" style={{ padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
               <div>
-                <h3 style={{ margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-heading)', fontSize: '1.2rem' }}>🤖 Auto-Pilot Grading Node</h3>
+                <h3 style={{ margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-heading)', fontSize: '1.2rem' }}><Brain size={20} /> Auto-Pilot Grading Node</h3>
                 <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '600px' }}>Leave this tab open to automatically grade pending exams from 1,000+ students without hitting API Rate Limits.</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', padding: '12px 24px', borderRadius: '30px' }}>
                 <span style={{ fontWeight: 'bold', color: aiSettings.gradingStrategy === 'background' ? 'var(--success)' : 'var(--text-muted)' }}>
-                  {aiSettings.gradingStrategy === 'background' ? '🟢 RUNNING' : '🔴 OFFLINE'}
+                  <span style={{display:'flex', alignItems:'center', gap:'6px'}}>
+                    <div style={{width:'8px', height:'8px', borderRadius:'50%', background: aiSettings.gradingStrategy === 'background' ? 'var(--success)' : 'var(--danger)'}}></div>
+                    {aiSettings.gradingStrategy === 'background' ? 'RUNNING' : 'OFFLINE'}
+                  </span>
                 </span>
                 <label className="switch" style={{ margin: 0 }}>
                   <input type="checkbox" checked={aiSettings.gradingStrategy === 'background'} onChange={e => setAiSettings({...aiSettings, gradingStrategy: e.target.checked ? 'background' : 'instant'})} />
@@ -3136,10 +3141,10 @@ const text = document.getElementById('bulkStudCSV').value;
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>Model Version</label>
                   <select className="input-field" value={aiSettings.openrouterModel || 'google/gemma-4-31b-it:free'} onChange={e => setAiSettings({...aiSettings, openrouterModel: e.target.value})}>
-                    <option value="google/gemma-4-31b-it:free">Gemma 4 31B ✅ Free (Best Quality)</option>
-                    <option value="openai/gpt-oss-120b:free">GPT-OSS 120B ✅ Free (OpenAI Open Source)</option>
-                    <option value="qwen/qwen3-coder:free">Qwen3 Coder ✅ Free (Alibaba)</option>
-                    <option value="nvidia/nemotron-3-super-120b-a12b:free">Nvidia Nemotron 120B ✅ Free</option>
+                    <option value="google/gemma-4-31b-it:free">Gemma 4 31B [Free] (Best Quality)</option>
+                    <option value="openai/gpt-oss-120b:free">GPT-OSS 120B [Free] (OpenAI Open Source)</option>
+                    <option value="qwen/qwen3-coder:free">Qwen3 Coder [Free] (Alibaba)</option>
+                    <option value="nvidia/nemotron-3-super-120b-a12b:free">Nvidia Nemotron 120B [Free]</option>
                     <option value="openrouter/auto">Auto-Select Free Model (Always works)</option>
                   </select>
                 </div>
