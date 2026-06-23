@@ -2760,7 +2760,7 @@ export default function EvaluateApp() {
 
 
         {lecturerTab === 'students' && (
-          <div className="dashboard-grid">
+          <div>
             <div className="glass-panel" style={{ padding: '40px' }}>
               <h2 style={{ marginTop: 0, marginBottom: '24px' }}>Student Management</h2>
               
