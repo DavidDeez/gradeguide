@@ -276,6 +276,13 @@ const GlobalStyles = () => (
       background-size: 30px 30px; pointer-events: none;
     }
 
+    @keyframes drawCurve {
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes pulsePoint {
+      0% { transform: scale(0.85); opacity: 0.25; }
+      100% { transform: scale(1.2); opacity: 0.50; }
+    }
   `}} />
 );
 
@@ -710,6 +717,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const [rResults,    setRResults]    = React.useState([]);
   const [rRunning,    setRRunning]    = React.useState(false);
   const [rProgress,   setRProgress]   = React.useState('');
+  const [chartType,   setChartType]   = React.useState('both'); // 'bars' | 'curve' | 'both'
 
   const COMPARISON_MODELS = [
     { label: 'Gemini Flash 8B',        type: 'gemini',     id: 'gemini-1.5-flash-8b' },
@@ -942,11 +950,83 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             const scale = (chartH - padT - padB) / (maxDev || 1) / 2;
             const totalW = padL + successResults.length * (barW + gap) + gap;
             const midY = padT + (chartH - padT - padB) / 2;
+
+            const points = successResults.map((r, i) => {
+              const dev = r.score - lecNum;
+              const x = padL + i * (barW + gap) + gap + barW / 2;
+              const y = midY - dev * scale;
+              const color = Math.abs(dev) <= 1 ? '#2ea043' : Math.abs(dev) <= 2 ? '#d29922' : '#f85149';
+              return { x, y, dev, color, model: r.model };
+            });
+
+            // Generate spline curve path commands
+            let strokeD = '';
+            let curveCommands = '';
+            let fillD = '';
+            if (points.length > 0) {
+              strokeD = `M ${points[0].x} ${points[0].y}`;
+              for (let i = 1; i < points.length; i++) {
+                const p0 = points[i - 1];
+                const p1 = points[i];
+                const cpX1 = p0.x + (p1.x - p0.x) * 0.45;
+                const cpY1 = p0.y;
+                const cpX2 = p1.x - (p1.x - p0.x) * 0.45;
+                const cpY2 = p1.y;
+                curveCommands += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${p1.x} ${p1.y}`;
+              }
+              strokeD += curveCommands;
+              fillD = `M ${points[0].x} ${midY} L ${points[0].x} ${points[0].y}${curveCommands} L ${points[points.length - 1].x} ${midY} Z`;
+            }
+
             return (
               <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
-                <p style={{ margin: '0 0 12px 0', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>📊 Score Deviation from Official Mark (Benchmark = {lecNum}/{rMaxScore})</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>📊</span> Score Deviation (Benchmark = {lecNum}/{rMaxScore})
+                  </p>
+                  <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '2px', borderRadius: '6px', border: '1px solid var(--panel-border)' }}>
+                    {[
+                      { key: 'bars', label: 'Columns' },
+                      { key: 'curve', label: 'Spline Curve' },
+                      { key: 'both', label: 'Combined Overlay' }
+                    ].map(opt => {
+                      const active = chartType === opt.key;
+                      return (
+                        <button
+                          key={opt.key}
+                          onClick={() => setChartType(opt.key)}
+                          style={{
+                            background: active ? 'rgba(240, 246, 252, 0.1)' : 'transparent',
+                            border: 'none',
+                            color: active ? 'var(--primary)' : 'var(--text-muted)',
+                            padding: '4px 10px',
+                            borderRadius: '4px',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div style={{ overflowX: 'auto' }}>
                   <svg width={totalW} height={chartH} style={{ display: 'block' }}>
+                    <defs>
+                      <linearGradient id="curveLineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#58a6ff" />
+                        <stop offset="100%" stopColor="#ab7df8" />
+                      </linearGradient>
+                      <linearGradient id="curveAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="#ab7df8" stopOpacity={0.25} />
+                        <stop offset="100%" stopColor="#58a6ff" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+
                     {/* Grid lines */}
                     {[-2,-1,0,1,2].map(v => {
                       const y = midY - v * scale;
@@ -955,23 +1035,114 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
                         <text x={padL-6} y={y+4} textAnchor="end" fill="var(--text-muted)" fontSize={10}>{v>0?'+':''}{v}</text>
                       </g>;
                     })}
-                    {/* Bars */}
-                    {successResults.map((r, i) => {
+
+                    {/* Columns (Bars) */}
+                    {(chartType === 'bars' || chartType === 'both') && successResults.map((r, i) => {
                       const dev = r.score - lecNum;
                       const barH = Math.abs(dev) * scale;
                       const barY = dev >= 0 ? midY - barH : midY;
                       const color = Math.abs(dev) <= 1 ? '#2ea043' : Math.abs(dev) <= 2 ? '#d29922' : '#f85149';
                       const x = padL + i * (barW + gap) + gap;
-                      const label = r.model.length > 8 ? r.model.substring(0,8)+'..' : r.model;
                       return (
-                        <g key={r.model}>
-                          <rect x={x} y={barY} width={barW} height={Math.max(barH,2)} fill={color} rx={3} opacity={0.85}/>
-                          <text x={x+barW/2} y={barY + (dev>=0?-6:barH+14)} textAnchor="middle" fill={color} fontSize={11} fontWeight="bold">{dev>0?'+':''}{dev.toFixed(1)}</text>
-                          <text x={x+barW/2} y={chartH-6} textAnchor="middle" fill="var(--text-muted)" fontSize={9}>{label}</text>
+                        <g key={'bar-'+r.model}>
+                          <rect
+                            x={x}
+                            y={barY}
+                            width={barW}
+                            height={Math.max(barH,2)}
+                            fill={color}
+                            rx={3}
+                            opacity={chartType === 'both' ? 0.35 : 0.85}
+                            style={{ transition: 'opacity 0.3s ease' }}
+                          />
+                          <text x={x+barW/2} y={barY + (dev>=0?-6:barH+14)} textAnchor="middle" fill={color} fontSize={11} fontWeight="bold">
+                            {dev>0?'+':''}{dev.toFixed(1)}
+                          </text>
                         </g>
                       );
                     })}
-                    {/* Labels */}
+
+                    {/* Area fill under curve */}
+                    {(chartType === 'curve' || chartType === 'both') && points.length > 1 && (
+                      <path
+                        d={fillD}
+                        fill="url(#curveAreaGradient)"
+                        style={{ transition: 'all 0.3s ease' }}
+                      />
+                    )}
+
+                    {/* Spline curve line */}
+                    {(chartType === 'curve' || chartType === 'both') && points.length > 1 && (
+                      <path
+                        d={strokeD}
+                        fill="none"
+                        stroke="url(#curveLineGradient)"
+                        strokeWidth={3}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{
+                          strokeDasharray: 2000,
+                          strokeDashoffset: 2000,
+                          animation: 'drawCurve 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
+                        }}
+                      />
+                    )}
+
+                    {/* Pointillism dots */}
+                    {(chartType === 'curve' || chartType === 'both') && points.map((p, idx) => (
+                      <g key={'pt-'+idx} style={{ transition: 'all 0.3s' }}>
+                        {/* Pulsing outer ring */}
+                        <circle
+                          cx={p.x}
+                          cy={p.y}
+                          r={8}
+                          fill={p.color}
+                          opacity={0.3}
+                          style={{
+                            transformBox: 'fill-box',
+                            transformOrigin: 'center',
+                            animation: 'pulsePoint 2s infinite alternate'
+                          }}
+                        />
+                        {/* Inner dot with shadow */}
+                        <circle
+                          cx={p.x}
+                          cy={p.y}
+                          r={4.5}
+                          fill="#ffffff"
+                          stroke={p.color}
+                          strokeWidth={2.5}
+                          style={{ filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.5))' }}
+                        />
+                        {/* Point label (only when columns are hidden to avoid double label) */}
+                        {chartType === 'curve' && (
+                          <text
+                            x={p.x}
+                            y={p.y - 12}
+                            textAnchor="middle"
+                            fill={p.color}
+                            fontSize={10}
+                            fontWeight="bold"
+                            style={{ pointerEvents: 'none' }}
+                          >
+                            {p.dev > 0 ? '+' : ''}{p.dev.toFixed(1)}
+                          </text>
+                        )}
+                      </g>
+                    ))}
+
+                    {/* X-Axis labels (always render) */}
+                    {successResults.map((r, i) => {
+                      const x = padL + i * (barW + gap) + gap;
+                      const label = r.model.length > 8 ? r.model.substring(0,8)+'..' : r.model;
+                      return (
+                        <text key={'lbl-'+r.model} x={x+barW/2} y={chartH-6} textAnchor="middle" fill="var(--text-muted)" fontSize={9}>
+                          {label}
+                        </text>
+                      );
+                    })}
+
+                    {/* Y-Axis Label */}
                     <text x={padL/2} y={midY} textAnchor="middle" fill="var(--text-muted)" fontSize={9} transform={`rotate(-90,${padL/2-4},${midY})`}>Deviation</text>
                   </svg>
                 </div>
