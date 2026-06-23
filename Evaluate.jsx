@@ -16,6 +16,7 @@ import {
 
 const GlobalStyles = () => (
 <style dangerouslySetInnerHTML={{__html: `
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
     :root {
       --bg-dark: #0d1117;
       --panel-bg: #161b22;
@@ -27,7 +28,8 @@ const GlobalStyles = () => (
       --danger: #f85149;
       --success: #2ea043;
       --warning: #d29922;
-      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-heading: 'Space Grotesk', -apple-system, sans-serif;
     }
     * { box-sizing: border-box; }
     body {
@@ -36,6 +38,8 @@ const GlobalStyles = () => (
       display: block !important;
       line-height: 1.5;
     }
+    h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); font-weight: 600; letter-spacing: -0.02em; }
+    .brand-title { font-family: var(--font-heading); letter-spacing: -0.04em; }
     
     .draw-icon {
       animation: drawIcon 2.5s ease forwards;
@@ -2280,12 +2284,12 @@ export default function EvaluateApp() {
         {lecturerTab === 'build' && (
           <div className="dashboard-grid">
             {/* Builder Form */}
-            <div className="glass-panel" style={{ padding: '40px' }}>
-              <h2 style={{ marginTop: 0, marginBottom: '24px' }}>
+            <div className="glass-panel" style={{ padding: '28px' }}>
+              <h2 style={{ marginTop: 0, marginBottom: '20px', fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>
                 {editingAssessmentId ? 'Edit Assessment' : 'Build New Assessment'}
               </h2>
               
-              <div style={{ marginBottom: '24px', display: 'flex', gap: '16px' }}>
+              <div style={{ marginBottom: '20px', display: 'flex', gap: '16px' }}>
                 <div style={{ flex: 3 }}>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Assessment Title</label>
                   <input 
@@ -2307,16 +2311,21 @@ export default function EvaluateApp() {
                 </div>
               </div>
 
-              <label style={{ display: 'block', marginBottom: '16px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Questions & Marks</label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <label style={{ fontWeight: 'bold', color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>Questions & Marks</label>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{newQuestions.length} Questions</span>
+              </div>
               
-              <div style={{ display: 'grid', gap: '20px', marginBottom: '32px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
                 {newQuestions.map((q, idx) => (
-                  <div key={q.id} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--panel-border)', padding: '20px', borderRadius: '12px' }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-main)', fontWeight: 'bold' }}>QUESTION #{idx + 1}</label>
-                      <textarea 
+                  <div key={q.id} style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--panel-border)', padding: '8px 12px', borderRadius: '8px' }}>
+                    <div style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem', width: '24px', textAlign: 'center' }}>
+                      {idx + 1}.
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <input 
                         className="input-field" 
-                        rows={2} 
+                        style={{ border: 'none', background: 'transparent', padding: '4px', fontSize: '0.95rem' }}
                         placeholder="Type your exam question here..." 
                         value={q.text} 
                         onChange={e => {
@@ -2326,11 +2335,12 @@ export default function EvaluateApp() {
                         }} 
                       />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '120px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>MAX MARKS</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '110px' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>PTS:</span>
                       <input 
                         type="number" 
                         className="input-field" 
+                        style={{ padding: '4px 8px', textAlign: 'center' }}
                         min={1} 
                         max={100} 
                         value={q.maxMarks} 
@@ -2344,7 +2354,7 @@ export default function EvaluateApp() {
                     {newQuestions.length > 1 && (
                       <button 
                         className="btn btn-outline" 
-                        style={{ marginTop: '28px', padding: '12px', color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} 
+                        style={{ padding: '6px', color: 'var(--danger)', borderColor: 'transparent' }} 
                         onClick={() => setNewQuestions(newQuestions.filter((_, i) => i !== idx))}
                       >
                         <Trash2 size={16} />
@@ -2495,18 +2505,22 @@ export default function EvaluateApp() {
                 </button>
               </div>
 
-              <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--panel-border)' }}>
-                <label style={{ display: 'block', marginBottom: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Specific Assessment Context Material (Optional)</label>
-                <div className="two-col-grid" style={{ marginBottom: '16px' }}>
-                  <div className="role-card" style={{ padding: '24px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)' }} onClick={() => setShowCam(true)}>
-                    <Camera size={32} color="var(--text-main)" />
-                    <h4 style={{ margin: '8px 0 0 0' }}>Scan Printed Copy</h4>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>AI-powered OCR via Vision</p>
+              <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--panel-border)' }}>
+                <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold', color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>Specific Assessment Context Material (Optional)</label>
+                <div className="two-col-grid" style={{ marginBottom: '12px' }}>
+                  <div className="role-card" style={{ padding: '16px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', flexDirection: 'row', alignItems: 'center' }} onClick={() => setShowCam(true)}>
+                    <Camera size={24} color="var(--text-main)" />
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Scan Printed Copy</h4>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>AI OCR via Vision</p>
+                    </div>
                   </div>
-                  <label className="role-card" style={{ padding: '24px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)' }}>
-                    <Upload size={32} color="var(--success)" />
-                    <h4 style={{ margin: '8px 0 0 0' }}>{assessmentContext.pdfName || 'Upload Digital Copy'}</h4>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF, TXT, MD, JPG, PNG</p>
+                  <label className="role-card" style={{ padding: '16px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', flexDirection: 'row', alignItems: 'center' }}>
+                    <Upload size={24} color="var(--success)" />
+                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                      <h4 style={{ margin: 0, fontSize: '0.95rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{assessmentContext.pdfName || 'Upload Digital Copy'}</h4>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF, TXT, MD, JPG</p>
+                    </div>
                     <input type="file" hidden onChange={handleAssessmentFileUpload} accept="application/pdf,text/plain,image/jpeg,image/png,.pdf,.txt,.md,.jpg,.jpeg,.png" />
                   </label>
                 </div>
@@ -2649,16 +2663,16 @@ export default function EvaluateApp() {
           <div style={{ display: 'grid', gap: '20px' }}>
             {/* Pending Retake Requests Sub-Section */}
             {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
-              <div style={{ background: 'rgba(210,153,34,0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '28px', borderRadius: '6px', marginBottom: '16px' }}>
-                <h3 style={{ margin: '0 0 16px 0', color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <AlertCircle size={20} /> Retake Requests Pending Approval
+              <div style={{ background: 'rgba(210,153,34,0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '16px', borderRadius: '8px', marginBottom: '8px' }}>
+                <h3 style={{ margin: '0 0 12px 0', color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', fontFamily: 'var(--font-heading)' }}>
+                  <AlertCircle size={18} /> Retake Requests Pending Approval
                 </h3>
-                <div style={{ display: 'grid', gap: '12px' }}>
+                <div style={{ display: 'grid', gap: '8px' }}>
                   {retakeRequests.filter(r => r.status === 'pending').map(req => (
-                    <div key={req.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--panel-border)', flexWrap: 'wrap', gap: '12px' }}>
+                    <div key={req.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--panel-border)', flexWrap: 'wrap', gap: '12px' }}>
                       <div>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-main)', fontWeight: 'bold' }}>{req.studentId}</span>
-                        <h4 style={{ margin: '4px 0 0 0' }}>Requesting to retake: {req.title}</h4>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-main)', fontWeight: 'bold' }}>{req.studentId}</span>
+                        <h4 style={{ margin: '2px 0 0 0', fontSize: '0.9rem' }}>Requesting to retake: {req.title}</h4>
                       </div>
                       <div style={{ display: 'flex', gap: '12px' }}>
                         <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)', padding: '8px 16px', fontSize: '0.85rem' }} onClick={() => {
@@ -2679,16 +2693,16 @@ export default function EvaluateApp() {
             
             {/* Student Messages Sub-Section */}
             {studentMessages.length > 0 && (
-              <div style={{ background: 'rgba(59, 130, 246, 0.02)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '28px', borderRadius: '6px', marginBottom: '16px' }}>
-                <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <AlertCircle size={20} /> Urgent Student Messages
+              <div style={{ background: 'rgba(59, 130, 246, 0.02)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '16px', borderRadius: '8px', marginBottom: '8px' }}>
+                <h3 style={{ margin: '0 0 12px 0', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', fontFamily: 'var(--font-heading)' }}>
+                  <AlertCircle size={18} /> Urgent Student Messages
                 </h3>
-                <div style={{ display: 'grid', gap: '12px' }}>
+                <div style={{ display: 'grid', gap: '8px' }}>
                   {studentMessages.map(msg => (
-                    <div key={msg.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--panel-border)', flexWrap: 'wrap', gap: '12px' }}>
+                    <div key={msg.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--panel-border)', flexWrap: 'wrap', gap: '12px' }}>
                       <div style={{ flex: 1 }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-main)', fontWeight: 'bold' }}>{msg.studentId} • {msg.date}</span>
-                        <p style={{ margin: '8px 0 0 0', lineHeight: '1.4' }}>"{msg.msg}"</p>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-main)', fontWeight: 'bold' }}>{msg.studentId} • {msg.date}</span>
+                        <p style={{ margin: '4px 0 0 0', lineHeight: '1.4', fontSize: '0.85rem' }}>"{msg.msg}"</p>
                       </div>
                       <button className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '0.85rem', color: 'var(--text-muted)' }} onClick={() => {
                         setStudentMessages(studentMessages.filter(m => m.id !== msg.id));
@@ -2699,9 +2713,9 @@ export default function EvaluateApp() {
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h3 style={{ margin: 0 }}>Graded Submissions</h3>
-              <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => {
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', marginTop: '12px' }}>
+              <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>Graded Submissions</h3>
+              <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px' }} onClick={() => {
                 if (submissions.length === 0) return window.showToast('No grades to export.');
                 let csv = 'Matric Number,Exam Title,Score,Max Marks,Percentage,Authenticity Score,Timestamp\n';
                 submissions.forEach(sub => {
@@ -2728,27 +2742,29 @@ export default function EvaluateApp() {
               const percentage = totalMaxMarks > 0 ? Math.round((totalScore / totalMaxMarks) * 100) : 0;
               
               return (
-                <div key={i} className="glass-panel" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                <div key={i} className="glass-panel" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-main)', fontWeight: 'bold', textTransform: 'uppercase' }}>Student Matric Number: {sub.studentId}</span>
-                    <h3 style={{ margin: '4px 0 8px 0' }}>Assessment: {ass?.title || 'Unknown'}</h3>
-                    <p style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Timestamp: {sub.timestamp || 'Recent Submission'}</p>
-                    {sub.infractions > 0 && (
-                      <span className="badge" style={{ marginTop: '0', display: 'inline-flex', alignItems: 'center', background: 'var(--danger)', color: 'white', marginRight: '8px', padding: '4px 8px', gap: '4px' }}>
-                        <AlertCircle size={12} /> Focus Lost {sub.infractions}x
-                      </span>
-                    )}
-                    {sub.authenticity && (
-                      <span className="badge" style={{ marginTop: '8px', display: 'inline-block', background: sub.authenticity > 80 ? 'var(--success)' : (sub.authenticity > 50 ? 'var(--warning)' : 'var(--danger)'), color: 'white' }}>
-                        Authenticity: {sub.authenticity}%
-                      </span>
-                    )}
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-main)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Matric: {sub.studentId}</span>
+                    <h4 style={{ margin: '2px 0 4px 0', fontSize: '1rem', fontFamily: 'var(--font-heading)' }}>{ass?.title || 'Unknown'}</h4>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{sub.timestamp || 'Recent'}</span>
+                      {sub.infractions > 0 && (
+                        <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', background: 'var(--danger)', color: 'white', padding: '2px 6px', gap: '4px', fontSize: '0.65rem' }}>
+                          <AlertCircle size={10} /> Focus Lost {sub.infractions}x
+                        </span>
+                      )}
+                      {sub.authenticity && (
+                        <span className="badge" style={{ display: 'inline-block', background: sub.authenticity > 80 ? 'var(--success)' : (sub.authenticity > 50 ? 'var(--warning)' : 'var(--danger)'), color: 'white', padding: '2px 6px', fontSize: '0.65rem' }}>
+                          Auth: {sub.authenticity}%
+                        </span>
+                      )}
+                    </div>
                   </div>
                   
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                    <ScoreRing score={percentage} size={70} strokeWidth={7} />
-                    <button className="btn btn-outline" style={{ padding: '10px 18px', fontSize: '0.85rem' }} onClick={() => setSelectedSub(sub)}>
-                      <Eye size={16} /> Review Corrections
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <ScoreRing score={percentage} size={50} strokeWidth={5} />
+                    <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => setSelectedSub(sub)}>
+                      <Eye size={14} /> Review
                     </button>
                   </div>
                 </div>
@@ -2874,11 +2890,11 @@ const text = document.getElementById('bulkStudCSV').value;
         )}
 
         {lecturerTab === 'queue' && (
-          <div style={{ display: 'grid', gap: '24px', animation: 'fadeIn 0.4s ease' }}>
-            <div className="glass-panel" style={{ padding: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+          <div style={{ display: 'grid', gap: '16px', animation: 'fadeIn 0.4s ease' }}>
+            <div className="glass-panel" style={{ padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
               <div>
-                <h3 style={{ margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>🤖 Auto-Pilot Grading Node</h3>
-                <p style={{ margin: 0, color: 'var(--text-muted)', maxWidth: '600px' }}>Leave this tab open to automatically grade pending exams from 1,000+ students without hitting API Rate Limits.</p>
+                <h3 style={{ margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-heading)', fontSize: '1.2rem' }}>🤖 Auto-Pilot Grading Node</h3>
+                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '600px' }}>Leave this tab open to automatically grade pending exams from 1,000+ students without hitting API Rate Limits.</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', padding: '12px 24px', borderRadius: '30px' }}>
                 <span style={{ fontWeight: 'bold', color: aiSettings.gradingStrategy === 'background' ? 'var(--success)' : 'var(--text-muted)' }}>
@@ -2891,24 +2907,24 @@ const text = document.getElementById('bulkStudCSV').value;
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
-              <div className="glass-panel stat-card" style={{ padding: '24px', textAlign: 'center' }}>
-                <h4 style={{ margin: '0 0 12px 0', color: 'var(--text-muted)' }}>Pending Queue</h4>
-                <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--warning)' }}>{submissions.filter(s => s.status === 'pending').length}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div className="glass-panel stat-card" style={{ padding: '16px', textAlign: 'center' }}>
+                <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pending Queue</h4>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--warning)', fontFamily: 'var(--font-heading)' }}>{submissions.filter(s => s.status === 'pending').length}</div>
               </div>
-              <div className="glass-panel stat-card" style={{ padding: '24px', textAlign: 'center' }}>
-                <h4 style={{ margin: '0 0 12px 0', color: 'var(--text-muted)' }}>Currently Grading</h4>
-                <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>{submissions.filter(s => s.status === 'processing').length}</div>
+              <div className="glass-panel stat-card" style={{ padding: '16px', textAlign: 'center' }}>
+                <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Currently Grading</h4>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--primary)', fontFamily: 'var(--font-heading)' }}>{submissions.filter(s => s.status === 'processing').length}</div>
               </div>
-              <div className="glass-panel stat-card" style={{ padding: '24px', textAlign: 'center' }}>
-                <h4 style={{ margin: '0 0 12px 0', color: 'var(--text-muted)' }}>Successfully Graded</h4>
-                <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--success)' }}>{submissions.filter(s => s.status === 'graded').length}</div>
+              <div className="glass-panel stat-card" style={{ padding: '16px', textAlign: 'center' }}>
+                <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Successfully Graded</h4>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--success)', fontFamily: 'var(--font-heading)' }}>{submissions.filter(s => s.status === 'graded').length}</div>
               </div>
             </div>
 
-            <div className="glass-panel" style={{ padding: '32px' }}>
-              <h4 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}><Terminal size={18}/> Node Terminal</h4>
-              <div className="scrollbar" style={{ background: '#0d1117', borderRadius: '8px', padding: '16px', height: '300px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.85rem', color: '#00ff00', border: '1px solid #30363d' }}>
+            <div className="glass-panel" style={{ padding: '20px 24px' }}>
+              <h4 style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-heading)', fontSize: '1.05rem' }}><Terminal size={16}/> Node Terminal</h4>
+              <div className="scrollbar" style={{ background: '#0d1117', borderRadius: '6px', padding: '12px', height: '240px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.8rem', color: '#00ff00', border: '1px solid #30363d' }}>
                 {aiSettings.gradingStrategy !== 'background' && <div style={{ color: '#8b949e' }}>[System] Auto-Pilot is currently offline. Instant Grading on Submit is active.</div>}
                 {autoPilotLogs.map((log, i) => (
                   <div key={i} style={{ marginBottom: '8px', opacity: 1 - (i * 0.1) }}>{log}</div>
