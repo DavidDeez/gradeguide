@@ -957,14 +957,15 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
           )}
 
           {/* Deviation Chart */}
-          {successResults.length > 0 && (() => {
+          {successResults.length > 0 && avgScore !== null && (() => {
             const chartH = 180;
             const barW = 48;
             const gap = 20;
             const padL = 52;
             const padB = 48;
             const padT = 24;
-            const maxDev = Math.max(rMaxScore, ...successResults.map(r => Math.abs(r.score - avgScore)));
+            const maxScoreNum = parseFloat(rMaxScore) || 10;
+            const maxDev = Math.max(maxScoreNum, ...successResults.map(r => Math.abs(r.score - avgScore)));
             const scale = (chartH - padT - padB) / (maxDev || 1) / 2;
             const totalW = padL + successResults.length * (barW + gap) + gap;
             const midY = padT + (chartH - padT - padB) / 2;
@@ -1177,9 +1178,13 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             {[...displayResults].sort((a, b) => {
               if (a.error) return 1;
               if (b.error) return -1;
-              return Math.abs(a.score - avgScore) - Math.abs(b.score - avgScore);
+              if (avgScore !== null) {
+                return Math.abs(a.score - avgScore) - Math.abs(b.score - avgScore);
+              }
+              return (b.score ?? 0) - (a.score ?? 0);
             }).map((r, i) => {
-              const pct = r.score !== null ? (r.score / rMaxScore) * 100 : 0;
+              const maxScoreNum = parseFloat(rMaxScore) || 10;
+              const pct = r.score !== null ? (r.score / maxScoreNum) * 100 : 0;
               const color = r.error ? 'var(--danger)' : pct>=80 ? 'var(--success)' : pct>=50 ? 'var(--warning)' : 'var(--danger)';
               const isRank1 = i === 0 && !r.error && !rRunning && displayResults.length >= COMPARISON_MODELS.length;
               const borderCol = r.isHuman ? 'var(--primary)' : (r.error ? 'var(--danger)' : isRank1 ? '#d4af37' : 'var(--panel-border)');
