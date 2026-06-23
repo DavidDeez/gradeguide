@@ -2109,7 +2109,7 @@ export default function EvaluateApp() {
                 <Star size={20} color="var(--warning)" fill="var(--warning)" /> Performance Feedback
               </h3>
               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-main)', margin: '4px 0' }}>
-                Score: {totalScore} / {totalMaxMarks} ({percentage}%)
+                Score: {percentage}%
               </div>
               <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
                 Graded against the uploaded course material for high-context compliance.
@@ -2136,7 +2136,7 @@ export default function EvaluateApp() {
                   <div style={{ background: 'rgba(255,255,255,0.02)', padding: '18px 24px', borderBottom: '1px solid var(--panel-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>Question {index + 1}</span>
                     <span className="badge badge-primary" style={{ background: 'rgba(59,130,246,0.1)' }}>
-                      Score: {res.score} / {qObj.maxMarks || 10}
+                      Score: {Math.round(((res.score || 0) / (qObj.maxMarks || 10)) * 100)}%
                     </span>
                   </div>
                   
@@ -2814,7 +2814,7 @@ export default function EvaluateApp() {
                     
                     {script.result && (
                       <div style={{ marginTop: '20px', padding: '20px', background: 'rgba(46,160,67,0.1)', border: '1px solid var(--success)', borderRadius: '12px', animation: 'fadeIn 0.5s ease' }}>
-                        <h3 style={{ margin: '0 0 12px 0', color: 'var(--success)' }}>Score: {script.result.score}/100</h3>
+                        <h3 style={{ margin: '0 0 12px 0', color: 'var(--success)' }}>Score: {script.result.score}%</h3>
                         <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>{script.result.feedback}</p>
                       </div>
                     )}
