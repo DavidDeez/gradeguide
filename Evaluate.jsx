@@ -2084,7 +2084,9 @@ export default function EvaluateApp() {
     if (!selectedSub) return null;
     const ass = assessments.find(a => a.id == selectedSub.assessmentId);
     const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 0;
-    const totalScore = selectedSub.results ? selectedSub.results.reduce((acc, r) => acc + r.score, 0) : 0;
+    const results = selectedSub.results || [];
+    const answers = selectedSub.answers || {};
+    const totalScore = results.reduce((acc, r) => acc + (r.score || 0), 0);
     const percentage = totalMaxMarks > 0 ? Math.round((totalScore / totalMaxMarks) * 100) : 0;
 
     return (
@@ -2100,7 +2102,7 @@ export default function EvaluateApp() {
               {selectedSub.studentEmail && (
                 <button className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }} onClick={() => {
                   const profile = { email: selectedSub.studentEmail, name: selectedSub.studentName, matricNo: selectedSub.studentId };
-                  sendResultsEmail(profile, ass?.title, selectedSub.results, totalScore, totalMaxMarks);
+                  sendResultsEmail(profile, ass?.title, results, totalScore, totalMaxMarks);
                 }}>
                   <Send size={16} /> Resend Results Email
                 </button>
@@ -2127,15 +2129,18 @@ export default function EvaluateApp() {
             </div>
           </div>
 
-
-          {/* Removed role restriction so students can see corrections */}
-              {/* Question-by-Question Corrections breakdown */}
-              <h3 style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>Detailed Evaluation Breakdown</h3>
-              <div style={{ display: 'grid', gap: '32px' }}>
-                {selectedSub.results.map((res, index) => {
-
+              {results.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    <p style={{ fontSize: '1.1rem', marginBottom: '8px' }}>This submission has not been graded yet.</p>
+                    <p style={{ fontSize: '0.85rem' }}>Return to the assessments page and run grading to see the detailed breakdown.</p>
+                  </div>
+                ) : (
+                <>
+                <h3 style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>Detailed Evaluation Breakdown</h3>
+                <div style={{ display: 'grid', gap: '32px' }}>
+                {results.map((res, index) => {
               const qObj = ass?.questions.find(q => q.id === res.questionId) || { text: 'Academic Question', maxMarks: 10 };
-              const studentAns = selectedSub.answers[res.questionId] || 'No answer submitted.';
+              const studentAns = answers[res.questionId] || answers[index] || 'No answer submitted.';
               
               return (
                 <div key={index} style={{ border: '1px solid var(--panel-border)', borderRadius: '16px', background: 'rgba(0,0,0,0.2)', overflow: 'hidden' }}>
@@ -2199,10 +2204,11 @@ export default function EvaluateApp() {
                 </div>
               );
             })}
-          </div>
+                </div>
+                </>
+              )}
 
           <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--panel-border)', paddingTop: '24px' }}>
-
             <button className="btn btn-primary" onClick={() => setSelectedSub(null)}>Done Reviewing</button>
           </div>
         </div>
