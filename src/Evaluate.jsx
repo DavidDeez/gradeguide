@@ -2585,7 +2585,7 @@ export default function EvaluateApp() {
           generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 8000 }
         };
         // Strictly enforce a free-tier model for generating questions to prevent unexpected billing or usage limits
-        const genModel = 'gemini-1.5-flash';
+        const genModel = 'gemini-1.5-flash-latest';
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${genModel}:generateContent?key=${geminiKey}`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
         });
