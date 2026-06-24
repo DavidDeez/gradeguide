@@ -1355,6 +1355,7 @@ export default function EvaluateApp() {
   const [assessmentContext, setAssessmentContext] = useState({ text: '', pdfBase64: null, pdfName: '' });
   const [editingAssessmentId, setEditingAssessmentId] = useState(null);
   const [editingAssessmentOriginal, setEditingAssessmentOriginal] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   const [activeExam, setActiveExam] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
@@ -2463,7 +2464,6 @@ export default function EvaluateApp() {
   );
 
   const LecturerDashboard = () => {
-    const [uploadProgress, setUploadProgress] = useState(0);
 
     const handleFileUpload = (e) => {
       const file = e.target.files[0];
