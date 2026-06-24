@@ -4168,7 +4168,7 @@ const StudentLoginScreen = () => {
         {selectedSub && DetailedCorrectionsModal()}
         {loginModalRole && RoleLoginModal()}
         
-        <div className="toast-container">
+        <div className="toast-container" style={{ position: 'fixed', right: '24px', bottom: globalProgress.active ? '72px' : '24px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '10px', transition: 'bottom 0.3s ease' }}>
           {toasts.map(t => (
             <div key={t.id} className={`toast ${t.type}`}>
               {t.type === 'success' && <CheckCircle size={18} color="var(--success)" />}
