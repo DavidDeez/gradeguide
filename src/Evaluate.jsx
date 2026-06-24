@@ -1729,6 +1729,7 @@ export default function EvaluateApp() {
       const resolvedParts = await Promise.all(files.map(async f => {
         if (f.base64 && f.base64.startsWith('http')) {
           const blobRes = await fetch(f.base64);
+          if (!blobRes.ok) throw new Error(`Failed to download attached file from storage. Status: ${blobRes.status}`);
           const blob = await blobRes.blob();
           
           const uploadRes = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${activeGeminiKey}`, {
@@ -1855,29 +1856,7 @@ export default function EvaluateApp() {
     const initialFiles = assessment.contextPdfBase64 ? [{ mime: assessment.contextFileMime || "application/pdf", base64: assessment.contextPdfBase64 }] : (courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : []);
     const allFilesToResolve = [...initialFiles, ...studentFiles];
     
-    const resolvedFiles = [];
-    for (const file of allFilesToResolve) {
-      if (file.base64 && file.base64.startsWith('http')) {
-        try {
-          const res = await fetch(file.base64);
-          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-          const blob = await res.blob();
-          const b64 = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result.split(',')[1]);
-            reader.readAsDataURL(blob);
-          });
-          resolvedFiles.push({ mime: file.mime, base64: b64 });
-        } catch (e) {
-          console.error("Failed to fetch file from URL:", e);
-          throw new Error("Failed to download attached file from storage. Ensure your Supabase Storage 'grader-files' bucket is set to PUBLIC.");
-        }
-      } else {
-        resolvedFiles.push(file);
-      }
-    }
-
-    const result = await callAI(prompt, system, resolvedFiles);
+    const result = await callAI(prompt, system, allFilesToResolve);
     try {
       let cleaned = result.replace(/```json/gi, '').replace(/```/g, '').trim();
       const match = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
@@ -2569,30 +2548,38 @@ export default function EvaluateApp() {
       }
       setAiGenerating(true);
       window.showToast(`Generating ${genCount} theory questions from context...`, 'info');
-      let finalPdfBase64 = assessmentContext.pdfBase64;
-      if (finalPdfBase64 && finalPdfBase64.startsWith('http')) {
-        try {
-          const res = await fetch(finalPdfBase64);
-          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-          const blob = await res.blob();
-          finalPdfBase64 = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result.split(',')[1]);
-            reader.readAsDataURL(blob);
-          });
-        } catch (e) {
-          console.error("Failed to fetch context PDF from URL:", e);
-          window.showToast("Failed to download reference PDF. Make sure your Supabase Storage 'grader-files' bucket is set to PUBLIC.", "error");
-          setAiGenerating(false);
-          return;
-        }
-      }
-
       try {
+        let finalPdfBase64 = assessmentContext.pdfBase64;
+        let fileParts = [];
+        
+        if (finalPdfBase64 && finalPdfBase64.startsWith('http')) {
+          const res = await fetch(finalPdfBase64);
+          if (!res.ok) throw new Error(`Failed to fetch file from storage. Status: ${res.status}`);
+          const blob = await res.blob();
+          const mime = assessmentContext.fileMime || 'application/pdf';
+          
+          const uploadRes = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${geminiKey}`, {
+            method: 'POST',
+            headers: {
+              'X-Goog-Upload-Protocol': 'raw',
+              'X-Goog-Upload-Command': 'start, upload, finalize',
+              'X-Goog-Upload-Header-Content-Length': blob.size.toString(),
+              'X-Goog-Upload-Header-Content-Type': mime,
+              'Content-Type': mime
+            },
+            body: blob
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadData.error) throw new Error(`Gemini File API Error: ${uploadData.error.message}`);
+          fileParts.push({ file_data: { mime_type: mime, file_uri: uploadData.file.uri } });
+        } else if (finalPdfBase64) {
+          fileParts.push({ inline_data: { mime_type: assessmentContext.fileMime || 'application/pdf', data: finalPdfBase64 } });
+        }
+
         const prompt = `You are an expert academic exam setter. Based on the provided context material, generate exactly ${genCount} theory/essay-style exam questions that test deep understanding. Questions should be clear, specific, and suitable for university-level assessment. Return ONLY a JSON array of strings: ["Question 1 text", "Question 2 text", ...]. No numbering, no markdown, no extra text.`;
         const body = {
           contents: [{ role: 'user', parts: [
-            ...(finalPdfBase64 ? [{ inline_data: { mime_type: assessmentContext.fileMime || 'application/pdf', data: finalPdfBase64 } }] : []),
+            ...fileParts,
             { text: assessmentContext.text ? `Context:\n${assessmentContext.text}\n\n${prompt}` : prompt }
           ]}],
           generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 8000 }
