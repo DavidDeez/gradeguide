@@ -2805,6 +2805,20 @@ export default function EvaluateApp() {
                     {[5,10,20,30,50,75,100].map(n => <option key={n} value={n}>{n} Qs</option>)}
                   </select>
                 </div>
+                {aiGenerating && (
+                  <div style={{ marginTop: '16px', flexBasis: '100%', animation: 'fadeIn 0.3s ease-out' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.85rem', color: 'var(--text-main)', fontWeight: 'bold' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Activity size={14} className="text-blue-400 animate-pulse" /> Generating Questions via AI Engine...
+                      </span>
+                    </div>
+                    <div className="upload-progress-container" style={{ padding: '4px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--panel-border)' }}>
+                      <div className="glass-progress-bar" style={{ height: '8px', borderRadius: '8px', overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
+                        <div className="glass-progress-fill" style={{ width: '100%', height: '100%', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #3b82f6)', backgroundSize: '200% 100%', animation: 'shimmer 2s infinite linear', borderRadius: '8px' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {editingAssessmentId && (
                   <button 
                     className="btn btn-outline" 
