@@ -2490,8 +2490,17 @@ export default function EvaluateApp() {
       if (file.type === 'application/pdf') {
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        if (window.showToast) window.showToast("Uploading PDF to cloud storage...");
+        setGlobalProgress({ active: true, percent: 5 });
+        let progress = 5;
+        const interval = setInterval(() => {
+          progress += Math.floor(Math.random() * 15) + 5;
+          if (progress > 90) clearInterval(interval);
+          else setGlobalProgress({ active: true, percent: progress });
+        }, 200);
         supabase.storage.from('grader-files').upload(`uploads/${fileName}`, file).then(({ error }) => {
+          clearInterval(interval);
+          setGlobalProgress({ active: true, percent: 100 });
+          setTimeout(() => setGlobalProgress({ active: false, percent: 0 }), 800);
           if (error) return window.showToast("Upload failed: " + error.message, "error");
           const { data } = supabase.storage.from('grader-files').getPublicUrl(`uploads/${fileName}`);
           setCourseMaterial({ ...courseMaterial, pdfBase64: data.publicUrl, pdfName: file.name, text: '' });
@@ -2512,8 +2521,17 @@ export default function EvaluateApp() {
       if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        if (window.showToast) window.showToast("Uploading file to cloud storage...");
+        setGlobalProgress({ active: true, percent: 5 });
+        let progress = 5;
+        const interval = setInterval(() => {
+          progress += Math.floor(Math.random() * 15) + 5;
+          if (progress > 90) clearInterval(interval);
+          else setGlobalProgress({ active: true, percent: progress });
+        }, 200);
         supabase.storage.from('grader-files').upload(`uploads/${fileName}`, file).then(({ error }) => {
+          clearInterval(interval);
+          setGlobalProgress({ active: true, percent: 100 });
+          setTimeout(() => setGlobalProgress({ active: false, percent: 0 }), 800);
           if (error) return window.showToast("Upload failed: " + error.message, "error");
           const { data } = supabase.storage.from('grader-files').getPublicUrl(`uploads/${fileName}`);
           setAssessmentContext({ ...assessmentContext, pdfBase64: data.publicUrl, pdfName: file.name, text: '', fileMime: file.type });
