@@ -11,7 +11,7 @@ import {
   BarChart, X, Plus, Trash2, Check, Video, Layout, LogOut, 
   FileBadge, Sliders, Play, Save, ChevronRight, Activity, 
   ShieldCheck, Brain, Star, Smartphone, AlertCircle, Eye, Edit, Download, Menu,
-  Send, Terminal, Zap, Info
+  Send, Terminal, Zap, Info, Users, Wrench
 } from 'lucide-react';
 
 const GlobalStyles = () => (
@@ -2480,8 +2480,12 @@ export default function EvaluateApp() {
           
           {role !== 'Admin' && (
             <>
-              <div className={`side-nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => { setLecturerTab('build'); setIsMobileMenuOpen(false); }}>🛠️ Assessment Builder</div>
-              <div className={`side-nav-tab ${lecturerTab === 'students' ? 'active' : ''}`} onClick={() => { setLecturerTab('students'); setIsMobileMenuOpen(false); }}>👥 Student Management</div>
+              <div className={`side-nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => { setLecturerTab('build'); setIsMobileMenuOpen(false); }}>
+                <Wrench size={18} style={{ marginRight: '6px' }} /> Assessment Builder
+              </div>
+              <div className={`side-nav-tab ${lecturerTab === 'students' ? 'active' : ''}`} onClick={() => { setLecturerTab('students'); setIsMobileMenuOpen(false); }}>
+                <Users size={18} style={{ marginRight: '6px' }} /> Student Management
+              </div>
               <div className={`side-nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => { setLecturerTab('results'); setIsMobileMenuOpen(false); }}>
                 <FileText size={18} style={{ marginRight: '6px' }} /> Grading Desk
                 {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
