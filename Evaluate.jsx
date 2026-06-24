@@ -4154,7 +4154,7 @@ const StudentLoginScreen = () => {
         
         {globalProgress.active && (
           <div style={{
-            position: 'fixed', bottom: '24px', right: '24px', background: 'rgba(15,15,15,0.95)', 
+            position: 'fixed', bottom: '24px', left: '24px', background: 'rgba(15,15,15,0.95)', 
             border: '1px solid var(--primary)', padding: '16px 24px', borderRadius: '12px',
             color: 'white', display: 'flex', alignItems: 'center', gap: '16px', zIndex: 99999,
             boxShadow: '0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(121, 192, 255, 0.2)', 
