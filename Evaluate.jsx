@@ -2757,15 +2757,8 @@ export default function EvaluateApp() {
                   </label>
                 </div>
                 <div style={{ position: 'relative' }}>
-                  <textarea 
-                    className="input-field scrollbar" 
-                    rows={4} 
-                    placeholder="Alternatively, paste specific context here. AI will use this strictly for grading this exam..."
-                    value={assessmentContext.text}
-                    onChange={e => setAssessmentContext({...assessmentContext, text: e.target.value})}
-                  />
                   {assessmentContext.pdfBase64 && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '12px' }}>
                       <div className="badge badge-success" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => {
                         if (assessmentContext.pdfBase64 && assessmentContext.pdfBase64.startsWith('http')) {
                           window.open(assessmentContext.pdfBase64, '_blank');
@@ -2783,6 +2776,13 @@ export default function EvaluateApp() {
                       </div>
                     </div>
                   )}
+                  <textarea 
+                    className="input-field scrollbar" 
+                    rows={4} 
+                    placeholder="Alternatively, paste specific context here. AI will use this strictly for grading this exam..."
+                    value={assessmentContext.text}
+                    onChange={e => setAssessmentContext({...assessmentContext, text: e.target.value})}
+                  />
                 </div>
                 {showCam && <CameraModal onClose={() => setShowCam(false)} onExtract={t => setAssessmentContext(p => ({...p, text: p.text + '\n' + t}))} />}
               </div>
