@@ -4183,15 +4183,23 @@ const StudentLoginScreen = () => {
         
         {globalProgress.active && (
           <div style={{
-            position: 'fixed', bottom: '24px', left: '24px', background: 'rgba(10,10,10,0.4)', 
-            border: '1px solid rgba(255,255,255,0.08)', padding: '10px 16px', borderRadius: '30px',
-            color: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', gap: '10px', zIndex: 99999,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)', 
-            fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '0.85rem',
-            animation: 'fadeIn 0.3s ease', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)'
+            position: 'fixed', bottom: 0, left: 0, right: 0, height: '44px',
+            background: 'rgba(5,5,5,0.7)', borderTop: '1px solid rgba(255,255,255,0.08)',
+            display: 'flex', alignItems: 'center', padding: '0 24px', zIndex: 99999,
+            backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
           }}>
-            <Activity size={16} className="animate-spin" color="var(--primary)" />
-            <span>Processing... <span style={{ color: 'var(--primary)' }}>{globalProgress.percent}%</span></span>
+            <div style={{
+              position: 'absolute', top: 0, left: 0, bottom: 0,
+              width: `${globalProgress.percent}%`,
+              background: 'linear-gradient(90deg, rgba(56,139,253,0.05), rgba(56,139,253,0.2))',
+              borderRight: '1px solid var(--primary)',
+              transition: 'width 0.2s linear', zIndex: 1,
+              boxShadow: '4px 0 16px rgba(56,139,253,0.3)'
+            }} />
+            <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '12px', color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '0.85rem' }}>
+              <Activity size={16} className="animate-spin" color="var(--primary)" />
+              <span>Processing... <span style={{ color: 'var(--primary)' }}>{globalProgress.percent}%</span></span>
+            </div>
           </div>
         )}
       </div>
