@@ -2829,8 +2829,10 @@ export default function EvaluateApp() {
                         } else {
                           // FALLBACK FOR PRESENTATION
                           try {
+                            const safeExam = { ...createdExam };
+                            delete safeExam.contextPdfBase64;
                             const localAss = JSON.parse(localStorage.getItem('gg_local_assessments') || '[]');
-                            localStorage.setItem('gg_local_assessments', JSON.stringify([createdExam, ...localAss]));
+                            localStorage.setItem('gg_local_assessments', JSON.stringify([safeExam, ...localAss]));
                             setAssessments([createdExam, ...assessments]);
                             window.showToast(`Saved to Local Device (DB Error: ${error.message}). It is available for your presentation!`, "success");
                           } catch (e) {
@@ -2926,6 +2928,21 @@ export default function EvaluateApp() {
                       </button>
                       <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'var(--danger)', color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => {
                         if (window.confirm(`Are you sure you want to permanently delete "${a.title}"? This cannot be undone.`)) {
+                          supabase.from('submissions').select('files').eq('assessment_id', a.id).then(({data}) => {
+                            if (data) {
+                              const pathsToDelete = [];
+                              data.forEach(sub => {
+                                if (sub.files) {
+                                  sub.files.forEach(f => {
+                                    if (f.storagePath) pathsToDelete.push(f.storagePath);
+                                  });
+                                }
+                              });
+                              if (pathsToDelete.length > 0) {
+                                supabase.storage.from('grader-files').remove(pathsToDelete);
+                              }
+                            }
+                          });
                           supabase.from('assessments').delete().eq('id', a.id).then(({error}) => {
                             if (!error) setAssessments(assessments.filter(x => x.id !== a.id));
                             else window.showToast("Failed to delete from database.");
@@ -3053,6 +3070,20 @@ export default function EvaluateApp() {
                     <ScoreRing score={percentage} size={50} strokeWidth={5} />
                     <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => setSelectedSub(sub)}>
                       <Eye size={14} /> Review
+                    </button>
+                    <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} onClick={() => {
+                      if (window.confirm("Are you sure you want to delete this submission? Attached files will also be permanently deleted.")) {
+                        if (sub.files && sub.files.length > 0) {
+                          const paths = sub.files.filter(f => f.storagePath).map(f => f.storagePath);
+                          if (paths.length > 0) supabase.storage.from('grader-files').remove(paths);
+                        }
+                        supabase.from('submissions').delete().eq('id', sub.id).then(({error}) => {
+                          if (!error) setSubmissions(submissions.filter(s => s.id !== sub.id));
+                          else window.showToast("Failed to delete submission.");
+                        });
+                      }
+                    }}>
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
