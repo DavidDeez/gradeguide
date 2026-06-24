@@ -2415,8 +2415,38 @@ export default function EvaluateApp() {
           <MagneticButton className="btn-outline" style={{ marginTop: 'auto', width: '100%' }}>Enter <ChevronRight size={16}/></MagneticButton>
         </div>
       </div>
-      <button className="btn btn-outline" style={{ marginTop: '40px', border: 'none' }} onClick={() => setRole(null)}>
-        <LogOut size={18} style={{ marginRight: '8px' }}/> Sign Out
+      <button 
+        className="glass-panel" 
+        style={{ 
+          marginTop: '40px', 
+          padding: '12px 24px',
+          border: '1px solid rgba(255, 255, 255, 0.1)', 
+          background: 'rgba(255, 255, 255, 0.03)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          color: 'var(--text-main)',
+          fontWeight: '500',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+        }} 
+        onClick={() => setRole(null)}
+        onMouseOver={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+          e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+          e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+        }}
+      >
+        <LogOut size={18} style={{ marginRight: '8px', color: 'var(--danger)' }}/> Sign Out
       </button>
     </div>
   );
