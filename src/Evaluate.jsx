@@ -1525,7 +1525,7 @@ export default function EvaluateApp() {
       try {
         const [appStateRes, subRes, assRes, stdRes] = await Promise.all([
           supabase.from('app_state').select('data').eq('id', 1).single(),
-          supabase.from('submissions').select('*').order('created_at', { ascending: false }),
+          supabase.from('submissions').select('*').order('created_at', { ascending: false }).limit(50),
           supabase.from('assessments').select('*').order('created_at', { ascending: false }),
           supabase.from('students').select('*').order('created_at', { ascending: false })
         ]);
@@ -1839,19 +1839,20 @@ export default function EvaluateApp() {
       };
     }
 
-    const system = "You are an objective, highly accurate academic grading system. 1. ANCHORING: Base your evaluation STRICTLY on the provided Reference Context. Recognize conceptual understanding and synonyms; do not penalize for exact phrasing unless quoting is required. 2. FAIRNESS & PARTIAL CREDIT: Award proportional partial credit. If an answer hits 3 out of 4 required points, award 75%. 3. MAINTAIN RIGOR: Do not be overly lax. Deduct points for factual inaccuracies, hallucinations, or irrelevant rambling. Students must demonstrate true comprehension. 4. ANTI-BIAS: Grade purely on factual accuracy and logical coherence. Ignore minor typos or grammatical errors. Be constructive. 5. FEEDBACK: Explain exactly why points were awarded or lost. Return ONLY a RAW JSON object exactly matching this schema: {\"results\": [{\"questionId\": <number>, \"score\": <number>, \"grade\": \"<string>\", \"feedback\": \"<string>\", \"strengths\": [\"<string>\"], \"improvements\": [\"<string>\"]}], \"authenticity\": <number 0-100>, \"authenticityReason\": \"<string>\"}. CRITICAL: You MUST escape all double quotes inside your JSON string values using a backslash (e.g. \\\"). DO NOT output markdown blocks or unescaped newlines.";
-    const prompt = `Grading task for: ${assessment.title}\nQuestions: ${JSON.stringify(assessment.questions)}\nStudent Typed Answers: ${JSON.stringify(answers)}\nReference Context: ${assessment.contextText || courseMaterial.text}\nIf a student file is attached, read the answers directly from the file to grade. Also, strictly evaluate the student answers for AI-generation or plagiarism.`;
-    const files = assessment.contextPdfBase64 ? [{ mime: assessment.contextFileMime || "application/pdf", base64: assessment.contextPdfBase64 }] : (courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : []);
-    
-    if (studentFiles.length > 0) files.push(...studentFiles);
+    // NEW: Delegate to secure Supabase Edge Function
+    const { data, error } = await supabase.functions.invoke('grade-submission', {
+      body: { assessment, answers, studentFiles }
+    });
 
-    const result = await callAI(prompt, system, files);
-    try {
-      let cleaned = result.replace(/```json/gi, '').replace(/```/g, '').trim();
-      const match = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-      if (match) cleaned = match[0];
-      return JSON.parse(cleaned);
-    } catch(e) { throw new Error(`AI output parsing failed. Raw: ${result.substring(0, 80)}...`); }
+    if (error) {
+      throw new Error(`Edge Function Error: ${error.message || 'Failed to grade submission securely.'}`);
+    }
+
+    if (data.error) {
+      throw new Error(`Edge Function Error: ${data.error}`);
+    }
+
+    return data;
   };
 
   const handleBulkUpload = (e, target, idx = null) => {
@@ -1981,7 +1982,7 @@ export default function EvaluateApp() {
       
       try {
         // 1. Live Sync: Fetch fresh submissions to keep the Faculty Dashboard UI completely real-time
-        const { data: allSubs } = await supabase.from('submissions').select('*').order('created_at', { ascending: false });
+        const { data: allSubs } = await supabase.from('submissions').select('*').order('created_at', { ascending: false }).limit(50);
         if (allSubs) {
           const mappedSubs = allSubs.map(row => ({
             id: row.id, assessmentId: row.assessment_id, studentId: row.student_id,
@@ -2063,7 +2064,7 @@ export default function EvaluateApp() {
       if (hasPending) {
         interval = setInterval(async () => {
           try {
-            const { data: subRes, error } = await supabase.from('submissions').select('*').order('created_at', { ascending: false });
+            const { data: subRes, error } = await supabase.from('submissions').select('*').order('created_at', { ascending: false }).limit(50);
             if (subRes) {
               const mappedSubs = subRes.map(row => ({
                 id: row.id, assessmentId: row.assessment_id, studentId: row.student_id,
