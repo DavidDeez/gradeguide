@@ -2926,11 +2926,14 @@ export default function EvaluateApp() {
                       <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>AI OCR via Vision</p>
                     </div>
                   </div>
-                  <label className="role-card" style={{ padding: '16px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', flexDirection: 'row', alignItems: 'center' }}>
-                    <Upload size={24} color="var(--success)" />
-                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                  <label className="role-card" style={{ position: 'relative', padding: '16px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
+                    {globalProgress.active && globalProgress.percent > 0 && (
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, height: '4px', background: 'var(--success)', width: `${globalProgress.percent}%`, transition: 'width 0.2s ease', zIndex: 0 }} />
+                    )}
+                    <Upload size={24} color="var(--success)" style={{ zIndex: 1 }} />
+                    <div style={{ flex: 1, overflow: 'hidden', zIndex: 1 }}>
                       <h4 style={{ margin: 0, fontSize: '0.95rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{assessmentContext.pdfName || 'Upload Digital Copy'}</h4>
-                      <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF, TXT, MD, JPG</p>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>{globalProgress.active && globalProgress.percent > 0 && globalProgress.percent < 100 ? `Uploading... ${globalProgress.percent}%` : 'PDF, TXT, MD, JPG'}</p>
                     </div>
                     <input type="file" hidden onChange={handleAssessmentFileUpload} accept="application/pdf,text/plain,image/jpeg,image/png,.pdf,.txt,.md,.jpg,.jpeg,.png" />
                   </label>
