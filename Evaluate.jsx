@@ -3495,9 +3495,24 @@ const text = document.getElementById('bulkStudCSV').value;
                if (window.showToast) window.showToast("Submission Attached!", "success");
              });
           }} />
-          <button className="btn btn-outline" style={{ width: '100%', padding: '14px' }} onClick={() => document.getElementById('studentUpload').click()}>
-            <Upload size={18}/> {studentUpload ? studentUpload.name : 'Upload PDF or Image Script'}
-          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button className="btn btn-outline" style={{ flex: 1, padding: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={() => document.getElementById('studentUpload').click()}>
+              <Upload size={18} style={{ flexShrink: 0 }} /> {studentUpload ? studentUpload.name : 'Upload PDF or Image Script'}
+            </button>
+            {studentUpload && (
+              <button 
+                className="btn btn-outline" 
+                style={{ padding: '14px', color: 'var(--danger)', borderColor: 'rgba(248,81,73,0.3)', flexShrink: 0 }} 
+                onClick={() => {
+                  setStudentUpload(null);
+                  document.getElementById('studentUpload').value = '';
+                }}
+                title="Remove uploaded file"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
         </div>
 
         <button id="submitExamBtn" className="btn btn-primary" style={{ width: '100%', padding: '18px' }} disabled={examLoading} onClick={async () => {
