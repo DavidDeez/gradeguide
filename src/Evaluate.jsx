@@ -2588,7 +2588,7 @@ export default function EvaluateApp() {
         const modelsToTry = [
           aiSettings.geminiModel || 'gemini-flash-latest', 
           'gemini-1.5-pro-latest',
-          'gemini-2.0-flash-exp'
+          'gemini-2.0-flash'
         ];
         
         let data = null;
@@ -2787,36 +2787,34 @@ export default function EvaluateApp() {
                 >
                   <Plus size={18} /> Add Question
                 </button>
-                <div style={{ display: 'flex', gap: '8px', flex: 2 }}>
-                  <button
-                    className="btn"
-                    style={{ flex: 1, background: 'linear-gradient(135deg, #1e3a5f, #1a4a7a)', border: '1px solid rgba(59,130,246,0.4)', color: '#60a5fa', fontWeight: 600, opacity: aiGenerating ? 0.7 : 1 }}
-                    onClick={generateQuestionsFromContext}
-                    disabled={aiGenerating}
-                  >
-                    {aiGenerating ? <><Activity size={16} className="animate-spin" /> Generating...</> : <><Brain size={16} /> AI Generate Questions</>}
-                  </button>
-                  <select
-                    className="input-field"
-                    style={{ width: '90px', flex: 'none' }}
-                    value={genCount}
-                    onChange={e => setGenCount(Number(e.target.value))}
-                  >
-                    {[5,10,20,30,50,75,100].map(n => <option key={n} value={n}>{n} Qs</option>)}
-                  </select>
-                </div>
-                {aiGenerating && (
-                  <div style={{ marginTop: '16px', flexBasis: '100%', animation: 'fadeIn 0.3s ease-out' }}>
+                {aiGenerating ? (
+                  <div className="upload-progress-container" style={{ flex: 2, padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--panel-border)', display: 'flex', flexDirection: 'column', justifyContent: 'center', animation: 'fadeIn 0.3s ease-out' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.85rem', color: 'var(--text-main)', fontWeight: 'bold' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <Activity size={14} className="text-blue-400 animate-pulse" /> Generating Questions via AI Engine...
                       </span>
                     </div>
-                    <div className="upload-progress-container" style={{ padding: '4px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--panel-border)' }}>
-                      <div className="glass-progress-bar" style={{ height: '8px', borderRadius: '8px', overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
-                        <div className="glass-progress-fill" style={{ width: '100%', height: '100%', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #3b82f6)', backgroundSize: '200% 100%', animation: 'shimmer 2s infinite linear', borderRadius: '8px' }}></div>
-                      </div>
+                    <div className="glass-progress-bar" style={{ height: '8px', borderRadius: '8px', overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
+                      <div className="glass-progress-fill" style={{ width: '100%', height: '100%', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #3b82f6)', backgroundSize: '200% 100%', animation: 'shimmer 2s infinite linear', borderRadius: '8px' }}></div>
                     </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px', flex: 2 }}>
+                    <button
+                      className="btn"
+                      style={{ flex: 1, background: 'linear-gradient(135deg, #1e3a5f, #1a4a7a)', border: '1px solid rgba(59,130,246,0.4)', color: '#60a5fa', fontWeight: 600 }}
+                      onClick={generateQuestionsFromContext}
+                    >
+                      <Brain size={16} /> AI Generate Questions
+                    </button>
+                    <select
+                      className="input-field"
+                      style={{ width: '90px', flex: 'none' }}
+                      value={genCount}
+                      onChange={e => setGenCount(Number(e.target.value))}
+                    >
+                      {[5,10,20,30,50,75,100].map(n => <option key={n} value={n}>{n} Qs</option>)}
+                    </select>
                   </div>
                 )}
                 {editingAssessmentId && (
