@@ -2765,7 +2765,7 @@ export default function EvaluateApp() {
                     onChange={e => setAssessmentContext({...assessmentContext, text: e.target.value})}
                   />
                   {assessmentContext.pdfBase64 && (
-                    <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '12px' }}>
                       <div className="badge badge-success" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => {
                         if (assessmentContext.pdfBase64 && assessmentContext.pdfBase64.startsWith('http')) {
                           window.open(assessmentContext.pdfBase64, '_blank');
