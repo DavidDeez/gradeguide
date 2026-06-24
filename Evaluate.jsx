@@ -4154,14 +4154,14 @@ const StudentLoginScreen = () => {
         
         {globalProgress.active && (
           <div style={{
-            position: 'fixed', bottom: '24px', left: '24px', background: 'rgba(15,15,15,0.95)', 
-            border: '1px solid var(--primary)', padding: '16px 24px', borderRadius: '12px',
-            color: 'white', display: 'flex', alignItems: 'center', gap: '16px', zIndex: 99999,
-            boxShadow: '0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(121, 192, 255, 0.2)', 
-            fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '1.1rem',
-            animation: 'fadeIn 0.3s ease', backdropFilter: 'blur(10px)'
+            position: 'fixed', bottom: '24px', left: '24px', background: 'rgba(10,10,10,0.4)', 
+            border: '1px solid rgba(255,255,255,0.08)', padding: '10px 16px', borderRadius: '30px',
+            color: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', gap: '10px', zIndex: 99999,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5)', 
+            fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '0.85rem',
+            animation: 'fadeIn 0.3s ease', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)'
           }}>
-            <Activity size={24} className="animate-spin" color="var(--primary)" />
+            <Activity size={16} className="animate-spin" color="var(--primary)" />
             <span>Processing... <span style={{ color: 'var(--primary)' }}>{globalProgress.percent}%</span></span>
           </div>
         )}
