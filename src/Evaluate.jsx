@@ -1860,6 +1860,7 @@ export default function EvaluateApp() {
       if (file.base64 && file.base64.startsWith('http')) {
         try {
           const res = await fetch(file.base64);
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
           const blob = await res.blob();
           const b64 = await new Promise((resolve) => {
             const reader = new FileReader();
@@ -1869,6 +1870,7 @@ export default function EvaluateApp() {
           resolvedFiles.push({ mime: file.mime, base64: b64 });
         } catch (e) {
           console.error("Failed to fetch file from URL:", e);
+          throw new Error("Failed to download attached file from storage. Ensure your Supabase Storage 'grader-files' bucket is set to PUBLIC.");
         }
       } else {
         resolvedFiles.push(file);
@@ -2571,6 +2573,7 @@ export default function EvaluateApp() {
       if (finalPdfBase64 && finalPdfBase64.startsWith('http')) {
         try {
           const res = await fetch(finalPdfBase64);
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
           const blob = await res.blob();
           finalPdfBase64 = await new Promise((resolve) => {
             const reader = new FileReader();
@@ -2579,6 +2582,9 @@ export default function EvaluateApp() {
           });
         } catch (e) {
           console.error("Failed to fetch context PDF from URL:", e);
+          window.showToast("Failed to download reference PDF. Make sure your Supabase Storage 'grader-files' bucket is set to PUBLIC.", "error");
+          setAiGenerating(false);
+          return;
         }
       }
 
