@@ -905,30 +905,30 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
               style={{ 
                 background: 'rgba(255,255,255,0.02)', 
                 border: '1px solid var(--panel-border)', 
-                padding: '16px',
+                padding: '12px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '10px',
+                gap: '8px',
                 cursor: rRunning ? 'not-allowed' : 'pointer',
                 opacity: rRunning ? 0.6 : 1,
                 textAlign: 'left',
-                width: 'calc(50% - 6px)',
-                minWidth: '280px',
+                width: 'calc(33.333% - 8px)',
+                minWidth: '220px',
                 transition: 'all 0.2s ease',
                 flexGrow: 1
               }}
               onClick={() => { if(!rRunning) runComparison(demo.q, demo.ms, demo.ans, demo.max, demo.lec, demo.lecFeedback); }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <span className="badge badge-success" style={{ fontSize: '0.75rem', padding: '4px 8px', fontFamily: 'var(--font-mono)' }}>Q{demo.qNum}</span>
-                  <span className="badge" style={{ fontSize: '0.75rem', padding: '4px 8px', background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)' }}>Student {demo.studentId}</span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <span className="badge badge-success" style={{ fontSize: '0.65rem', padding: '2px 6px', fontFamily: 'var(--font-mono)' }}>Q{demo.qNum}</span>
+                  <span className="badge" style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)' }}>Student {demo.studentId}</span>
                 </div>
-                <div className="btn" style={{ background: 'var(--primary)', border: 'none', padding: '6px', borderRadius: '50%' }}>
-                  <Play size={14} color="white" fill="white" style={{ marginLeft: '2px' }} />
+                <div className="btn" style={{ background: 'var(--primary)', border: 'none', padding: '4px', borderRadius: '50%' }}>
+                  <Play size={12} color="white" fill="white" style={{ marginLeft: '1px' }} />
                 </div>
               </div>
-              <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-main)', fontWeight: '600', lineHeight: '1.4' }}>
+              <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-main)', fontWeight: '600', lineHeight: '1.3' }}>
                 {demo.examTitle}
               </h4>
             </div>
