@@ -206,6 +206,13 @@ const GlobalStyles = () => (
     }
     .spotlight-wrapper:hover .spotlight-glow { opacity: 1; }
 
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .animate-spin {
+      animation: spin 1s linear infinite;
+    }
     @keyframes glitch {
       0%, 100% { text-shadow: 2px 2px 0px var(--panel-bg); transform: translate(0); }
       20% { text-shadow: 2px 2px 0px var(--panel-bg); transform: translate(0); }
