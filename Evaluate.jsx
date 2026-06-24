@@ -2087,6 +2087,17 @@ export default function EvaluateApp() {
               <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Student Reference ID: {selectedSub.studentId}</p>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
+              {selectedSub.files && selectedSub.files.length > 0 && selectedSub.files[0].base64 && (
+                <button className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--primary)', borderColor: 'var(--primary)' }} onClick={() => {
+                  const f = selectedSub.files[0];
+                  const link = document.createElement('a');
+                  link.href = `data:${f.mime || 'application/pdf'};base64,${f.base64}`;
+                  link.download = f.name || 'Student_Submission.pdf';
+                  link.click();
+                }}>
+                  <Download size={16} /> Download Attached Script
+                </button>
+              )}
               {selectedSub.studentEmail && (
                 <button className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }} onClick={() => {
                   const profile = { email: selectedSub.studentEmail, name: selectedSub.studentName, matricNo: selectedSub.studentId };
@@ -2621,8 +2632,8 @@ export default function EvaluateApp() {
                         });
                       }
                       
-                      if (JSON.stringify(payloadQuestions).length > 2500000) {
-                         window.showToast("The attached PDF is too large to save to the database. Please upload a smaller file.", "error");
+                      if (JSON.stringify(payloadQuestions).length > 5500000) {
+                         window.showToast("The attached PDF is too large to save to the database. Please upload a smaller file (under 4MB).", "error");
                          return;
                       }
 
@@ -2647,8 +2658,8 @@ export default function EvaluateApp() {
                         });
                       }
                       
-                      if (JSON.stringify(payloadQuestions).length > 2500000) {
-                         window.showToast("The attached PDF is too large to save to the database. Please upload a smaller file.", "error");
+                      if (JSON.stringify(payloadQuestions).length > 5500000) {
+                         window.showToast("The attached PDF is too large to save to the database. Please upload a smaller file (under 4MB).", "error");
                          return;
                       }
 
@@ -2712,8 +2723,18 @@ export default function EvaluateApp() {
                     onChange={e => setAssessmentContext({...assessmentContext, text: e.target.value})}
                   />
                   {assessmentContext.pdfBase64 && (
-                    <div style={{ position: 'absolute', top: '10px', right: '10px' }} className="badge badge-success">
-                      <FileText size={14} style={{ marginRight: '6px' }} /> Linked Context File
+                    <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px' }}>
+                      <div className="badge badge-success" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = `data:${assessmentContext.fileMime || 'application/pdf'};base64,${assessmentContext.pdfBase64}`;
+                        link.download = assessmentContext.pdfName || 'Course_Context.pdf';
+                        link.click();
+                      }}>
+                        <Download size={14} style={{ marginRight: '6px' }} /> Download PDF
+                      </div>
+                      <div className="badge badge-success" style={{ display: 'flex', alignItems: 'center' }}>
+                        <FileText size={14} style={{ marginRight: '6px' }} /> Linked Context File
+                      </div>
                     </div>
                   )}
                 </div>
