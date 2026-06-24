@@ -1818,6 +1818,17 @@ export default function EvaluateApp() {
 
 
   const markSubmission = async (assessment, answers, studentFiles = []) => {
+    const hasAnswers = Object.values(answers).some(val => typeof val === 'string' && val.trim().length > 0) || studentFiles.length > 0;
+    if (!hasAnswers) {
+      return {
+        results: assessment.questions.map(q => ({
+          questionId: q.id, score: 0, grade: "Fail", feedback: "No answer was provided for this question.", strengths: [], improvements: ["Provide an answer next time."]
+        })),
+        authenticity: 100,
+        authenticityReason: "No content submitted to analyze."
+      };
+    }
+
     const system = "You are an objective, highly accurate academic grading system. 1. ANCHORING: Base your evaluation STRICTLY on the provided Reference Context. Recognize conceptual understanding and synonyms; do not penalize for exact phrasing unless quoting is required. 2. FAIRNESS & PARTIAL CREDIT: Award proportional partial credit. If an answer hits 3 out of 4 required points, award 75%. 3. MAINTAIN RIGOR: Do not be overly lax. Deduct points for factual inaccuracies, hallucinations, or irrelevant rambling. Students must demonstrate true comprehension. 4. ANTI-BIAS: Grade purely on factual accuracy and logical coherence. Ignore minor typos or grammatical errors. Be constructive. 5. FEEDBACK: Explain exactly why points were awarded or lost. Return ONLY a RAW JSON object exactly matching this schema: {\"results\": [{\"questionId\": <number>, \"score\": <number>, \"grade\": \"<string>\", \"feedback\": \"<string>\", \"strengths\": [\"<string>\"], \"improvements\": [\"<string>\"]}], \"authenticity\": <number 0-100>, \"authenticityReason\": \"<string>\"}. CRITICAL: You MUST escape all double quotes inside your JSON string values using a backslash (e.g. \\\"). DO NOT output markdown blocks or unescaped newlines.";
     const prompt = `Grading task for: ${assessment.title}\nQuestions: ${JSON.stringify(assessment.questions)}\nStudent Typed Answers: ${JSON.stringify(answers)}\nReference Context: ${assessment.contextText || courseMaterial.text}\nIf a student file is attached, read the answers directly from the file to grade. Also, strictly evaluate the student answers for AI-generation or plagiarism.`;
     const files = assessment.contextPdfBase64 ? [{ mime: assessment.contextFileMime || "application/pdf", base64: assessment.contextPdfBase64 }] : (courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : []);
@@ -3556,15 +3567,26 @@ const text = document.getElementById('bulkStudCSV').value;
             };
             
             setSubmissions(prev => [localSub, ...prev]);
-            setActiveExam(null);
-            
-            if (window.showToast) window.showToast("Exam Submitted Successfully! It is now in the grading queue.", "success");
             
             if (studentProfile) {
               localStorage.removeItem(`draft_${studentProfile.matricNo}_${activeExam.id}`);
             }
-          } catch(e) { window.showToast(e.message); }
-          setExamLoading(false);
+
+            setGlobalProgress({ active: true, percent: 100 });
+            setTimeout(() => {
+              setExamLoading(false);
+              setGlobalProgress({ active: false, percent: 0 });
+              setActiveExam(null);
+              setExamAnswers({});
+              setStudentTabState('results');
+              if (window.showToast) window.showToast("Exam Submitted Successfully! See your results.", "success");
+            }, 800);
+
+          } catch(e) { 
+            setExamLoading(false);
+            setGlobalProgress({ active: false, percent: 0 });
+            if (window.showToast) window.showToast(e.message); 
+          }
         }}>
           {examLoading ? <Activity className="animate-spin" /> : <><CheckCircle size={20}/> Submit for AI Grading</>}
         </button>
