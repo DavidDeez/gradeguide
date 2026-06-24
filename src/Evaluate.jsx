@@ -2706,7 +2706,7 @@ export default function EvaluateApp() {
                 <button 
                   className="btn btn-primary" 
                   style={{ flex: 1 }}
-                  onClick={() => {
+                  onClick={async () => {
                     if (!newTitle.trim()) { window.showToast("Please enter an assessment title."); return; }
                     const invalidQ = newQuestions.find(q => !q.text.trim());
                     if (invalidQ) { window.showToast("Please enter text for all questions."); return; }
@@ -3577,9 +3577,11 @@ const text = document.getElementById('bulkStudCSV').value;
               timestamp: new Date().toLocaleString()
             };
             
-            // 0. Check Grading Strategy
-            // Forcefully evaluate instantly to prevent presentation stalling
-            if (true || aiSettings.gradingStrategy === 'instant') {
+            // 0. Check Grading Queue Logic
+            const examSubCount = submissions.filter(s => s.assessmentId == activeExam.id).length;
+            const shouldQueue = examSubCount >= 50 || aiSettings.gradingStrategy === 'background';
+            
+            if (!shouldQueue) {
               if (window.showToast) window.showToast("Instant Grading Enabled. AI is evaluating your exam...", "info");
               try {
                 const aiResult = await markSubmission(activeExam, examAnswers, uploadPayload);

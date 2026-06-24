@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GRADER.ai - Intelligent Academic Assessment Platform</title>
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#a371f7" />
+    <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/GitHub_Invertocat_Logo.svg/1024px-GitHub_Invertocat_Logo.svg.png" />
+    
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.3/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://cdn.jsdelivr.net/npm/react@18.2.0/+esm",
+        "react-dom/client": "https://cdn.jsdelivr.net/npm/react-dom@18.2.0/client/+esm",
+        "lucide-react": "https://cdn.jsdelivr.net/npm/lucide-react@0.344.0/+esm",
+        "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/+esm"
+      }
+    }
+    </script>
+
+    <style>
+        body { margin: 0; background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        #loading { font-size: 1.2rem; display: flex; align-items: center; gap: 12px; font-weight: 500; }
+        .spinner { width: 24px; height: 24px; border: 3px solid rgba(201, 209, 217, 0.2); border-top-color: #c9d1d9; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div id="loading">
+            <div class="spinner"></div>
+            <span>Initializing GRADER.ai...</span>
+        </div>
+    </div>
+
+    <script type="text/babel" data-type="module">
+        import React from 'react';
+        import { createRoot } from 'react-dom/client';
+
+        async function startApp() {
+            try {
+                // Fetch the JSX source code with a timestamp to prevent caching
+                const response = await fetch(`./Evaluate.jsx?v=${Date.now()}`);
+                if (!response.ok) throw new Error(`Failed to load Evaluate.jsx: ${response.statusText}`);
+                const code = await response.text();
+
+                // Transpile JSX to JS
+                const transpiledCode = Babel.transform(code, {
+                    presets: ['react'],
+                    filename: 'Evaluate.jsx'
+                }).code;
+
+                const blob = new Blob([transpiledCode], { type: 'application/javascript' });
+                const url = URL.createObjectURL(blob);
+                
+                const module = await import(url);
+                const EvaluateApp = module.default;
+
+                const root = createRoot(document.getElementById('root'));
+                root.render(<EvaluateApp />);
+                
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error("Evaluate Startup Error:", error);
+                document.getElementById('root').innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; background: rgba(239, 68, 68, 0.05);">
+                        <h2 style="margin-top: 0;">Startup Failed</h2>
+                        <p>${error.message}</p>
+                        <p style="font-size: 0.9rem; color: #94a3b8;">Check the browser console for details.</p>
+                    </div>
+                `;
+            }
+        }
+
+        startApp();
+    </script>
+</body>
+</html>
