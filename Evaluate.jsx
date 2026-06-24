@@ -11,7 +11,7 @@ import {
   BarChart, X, Plus, Trash2, Check, Video, Layout, LogOut, 
   FileBadge, Sliders, Play, Save, ChevronRight, Activity, 
   ShieldCheck, Brain, Star, Smartphone, AlertCircle, Eye, Edit, Download, Menu,
-  Send, Terminal, Zap, Info, Users, Wrench
+  Send, Terminal, Zap, Info, Users, Wrench, GraduationCap, MessageCircle
 } from 'lucide-react';
 
 const GlobalStyles = () => (
@@ -3553,13 +3553,13 @@ const text = document.getElementById('bulkStudCSV').value;
         <div className={`side-menu glass-panel ${isMobileMenuOpen ? 'open' : ''}`} style={{ padding: '20px 12px' }}>
           <h3 style={{ margin: '0 0 16px 12px', fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Student Portal</h3>
           <div className={`side-nav-tab ${studentTabState === 'exams' ? 'active' : ''}`} onClick={() => { setStudentTabState('exams'); setIsMobileMenuOpen(false); }}>
-            📚 Available Assessments
+            <Book size={18} style={{ marginRight: '6px' }} /> Available Assessments
           </div>
           <div className={`side-nav-tab ${studentTabState === 'results' ? 'active' : ''}`} onClick={() => { setStudentTabState('results'); setIsMobileMenuOpen(false); }}>
-            🎓 My Graded Results ({submissions.length})
+            <GraduationCap size={18} style={{ marginRight: '6px' }} /> My Graded Results ({submissions.length})
           </div>
           <div className={`side-nav-tab ${studentTabState === 'support' ? 'active' : ''}`} onClick={() => { setStudentTabState('support'); setIsMobileMenuOpen(false); }}>
-            💬 Help & Support
+            <MessageCircle size={18} style={{ marginRight: '6px' }} /> Help & Support
           </div>
         </div>
 
