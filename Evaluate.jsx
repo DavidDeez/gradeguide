@@ -742,6 +742,9 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         if (studAns.trim() && DEMO_QUESTIONS.length < 8) {
           const prevRes = sub.results?.find(r => r.questionId === qObj.id || r.questionId === idx);
           DEMO_QUESTIONS.push({
+            examTitle: ass.title,
+            qNum: idx + 1,
+            studentId: sub.student_id || sub.studentId,
             title: `Exam: ${ass.title.length > 25 ? ass.title.substring(0,25) + '...' : ass.title}  •  Question ${idx+1}  •  Student: ${sub.studentId}`,
             q: qObj.text,
             ms: qObj.context || '',
@@ -896,15 +899,39 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         <p style={{ margin:'0 0 12px 0', fontSize:'0.85rem', color:'var(--text-muted)', fontWeight:'bold', textTransform:'uppercase' }}>Quick Demo Assessments</p>
         <div style={{ display:'flex', gap:'12px', flexWrap:'wrap', alignItems: 'center' }}>
           {DEMO_QUESTIONS.map((demo, i) => (
-            <button 
+            <div 
               key={i} 
-              className="btn" 
-              style={{ background: '#1f2937', border: '1px solid #374151', padding: '8px 16px' }}
-              onClick={() => runComparison(demo.q, demo.ms, demo.ans, demo.max, demo.lec, demo.lecFeedback)}
-              disabled={rRunning}
+              className="role-card" 
+              style={{ 
+                background: 'rgba(255,255,255,0.02)', 
+                border: '1px solid var(--panel-border)', 
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                cursor: rRunning ? 'not-allowed' : 'pointer',
+                opacity: rRunning ? 0.6 : 1,
+                textAlign: 'left',
+                width: 'calc(50% - 6px)',
+                minWidth: '280px',
+                transition: 'all 0.2s ease',
+                flexGrow: 1
+              }}
+              onClick={() => { if(!rRunning) runComparison(demo.q, demo.ms, demo.ans, demo.max, demo.lec, demo.lecFeedback); }}
             >
-              <Play size={16} /> {demo.title}
-            </button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <span className="badge badge-success" style={{ fontSize: '0.75rem', padding: '4px 8px', fontFamily: 'var(--font-mono)' }}>Q{demo.qNum}</span>
+                  <span className="badge" style={{ fontSize: '0.75rem', padding: '4px 8px', background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)' }}>Student {demo.studentId}</span>
+                </div>
+                <div className="btn" style={{ background: 'var(--primary)', border: 'none', padding: '6px', borderRadius: '50%' }}>
+                  <Play size={14} color="white" fill="white" style={{ marginLeft: '2px' }} />
+                </div>
+              </div>
+              <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-main)', fontWeight: '600', lineHeight: '1.4' }}>
+                {demo.examTitle}
+              </h4>
+            </div>
           ))}
           {rResults.length > 0 && (
             <button className="btn" onClick={exportCSV} style={{ padding: '8px 16px' }}><Download size={16} /> Export CSV</button>
