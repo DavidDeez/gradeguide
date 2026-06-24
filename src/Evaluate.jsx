@@ -4361,13 +4361,7 @@ const StudentLoginScreen = () => {
           </div>
           <div className="header-actions" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} onClick={() => { 
-              if (role === 'Lecturer' || role === 'Admin') {
-                setRole('FacultyHub');
-              } else {
-                setRole(null); 
-                setStudentProfile(null); 
-                setAuthScreen('landing'); 
-              }
+              window.location.reload();
             }}>
               <LogOut size={18}/> <span className="btn-text">Exit</span>
             </button>
