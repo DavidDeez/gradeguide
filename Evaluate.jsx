@@ -2481,7 +2481,6 @@ export default function EvaluateApp() {
           {role !== 'Admin' && (
             <>
               <div className={`side-nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => { setLecturerTab('build'); setIsMobileMenuOpen(false); }}>🛠️ Assessment Builder</div>
-              <div className={`side-nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => { setLecturerTab('scanner'); setIsMobileMenuOpen(false); }}>📸 Offline Scanner</div>
               <div className={`side-nav-tab ${lecturerTab === 'students' ? 'active' : ''}`} onClick={() => { setLecturerTab('students'); setIsMobileMenuOpen(false); }}>👥 Student Management</div>
               <div className={`side-nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => { setLecturerTab('results'); setIsMobileMenuOpen(false); }}>
                 <FileText size={18} style={{ marginRight: '6px' }} /> Grading Desk
@@ -2513,7 +2512,6 @@ export default function EvaluateApp() {
             {role !== 'Admin' && (
               <>
                 <div className={`nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => setLecturerTab('build')}>Assessment Builder</div>
-                <div className={`nav-tab ${lecturerTab === 'scanner' ? 'active' : ''}`} onClick={() => setLecturerTab('scanner')}>Offline Scanner</div>
                 <div className={`nav-tab ${lecturerTab === 'students' ? 'active' : ''}`} onClick={() => setLecturerTab('students')}>Student Management</div>
                 <div className={`nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => setLecturerTab('results')}>
                   Grading Desk
@@ -2855,79 +2853,6 @@ export default function EvaluateApp() {
                 )}
               </div>
             </div>
-          </div>
-        )}
-
-        {lecturerTab === 'scanner' && (
-          <div className="glass-panel" style={{ padding: '40px', animation: 'fadeIn 0.5s ease' }}>
-            <h2 style={{ marginTop: 0, marginBottom: '24px' }}>Offline Script Scanner (Bulk Grading)</h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>Snap a marking guide, then scan physical student scripts. The AI will mark them all instantly without them logging in.</p>
-            
-            <div style={{ marginBottom: '40px' }}>
-              <h3 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}><Book size={20}/> 1. Provide Marking Guide</h3>
-              <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setBulkScannerCam({ active: true, target: 'guide', idx: null })}><Camera size={18}/> Snap Rubric</button>
-                <input type="file" id="bulkGuideUpload" hidden accept="application/pdf,text/plain,image/jpeg,image/png,.txt,.pdf,.jpg,.png" onChange={e => handleBulkUpload(e, 'guide')} />
-                <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => document.getElementById('bulkGuideUpload').click()}><Upload size={18}/> Upload Rubric</button>
-              </div>
-              <textarea className="input-field scrollbar" rows={3} placeholder="Extracted marking guide text will appear here..." value={bulkState.guideText} onChange={e => setBulkState({...bulkState, guideText: e.target.value})}></textarea>
-              {bulkState.guideBase64 && <div className="badge badge-success" style={{ marginTop: '12px' }}><FileText size={14} style={{ marginRight: '6px' }}/> Marking Guide Document Attached</div>}
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><FileBadge size={20}/> 2. Add Student Scripts</h3>
-                <button className="btn btn-primary" onClick={() => setBulkState({...bulkState, scripts: [...bulkState.scripts, { id: Date.now(), matric: '', text: '', base64: null, mime: '', result: null, loading: false }]})}><Plus size={18}/> Add Student</button>
-              </div>
-              
-              <div style={{ display: 'grid', gap: '24px' }}>
-                {bulkState.scripts.map((script, idx) => (
-                  <div key={script.id} style={{ background: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '16px', border: '1px solid var(--panel-border)' }}>
-                    <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                      <input className="input-field" placeholder="Student Matric Number" value={script.matric} onChange={e => {
-                        const newScripts = [...bulkState.scripts]; newScripts[idx].matric = e.target.value; setBulkState({...bulkState, scripts: newScripts});
-                      }} style={{ flex: 1, minWidth: '200px' }} />
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button className="btn btn-outline" style={{ padding: '10px' }} onClick={() => setBulkScannerCam({ active: true, target: 'script', idx })}><Camera size={18}/> Snap Script</button>
-                        <input type="file" id={`scriptUpload-${script.id}`} hidden accept="application/pdf,text/plain,image/jpeg,image/png,.txt,.pdf,.jpg,.png" onChange={e => handleBulkUpload(e, 'script', idx)} />
-                        <button className="btn btn-outline" style={{ padding: '10px' }} onClick={() => document.getElementById(`scriptUpload-${script.id}`).click()}><Upload size={18}/></button>
-                        <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)', padding: '10px' }} onClick={() => {
-                          setBulkState({...bulkState, scripts: bulkState.scripts.filter((_, i) => i !== idx)});
-                        }}><Trash2 size={18}/></button>
-                      </div>
-                    </div>
-                    <textarea className="input-field scrollbar" rows={3} placeholder="Extracted script text will appear here..." value={script.text} onChange={e => {
-                      const newScripts = [...bulkState.scripts]; newScripts[idx].text = e.target.value; setBulkState({...bulkState, scripts: newScripts});
-                    }}></textarea>
-                    {script.base64 && <div className="badge badge-primary" style={{ marginTop: '12px' }}><FileText size={14} style={{ marginRight: '6px' }}/> Image/Doc Attached</div>}
-                    
-                    <button className="btn btn-primary" style={{ marginTop: '20px', width: '100%', padding: '14px' }} disabled={script.loading || (!bulkState.guideText && !bulkState.guideBase64)} onClick={() => gradeBulkScript(idx)}>
-                      {script.loading ? <Activity className="animate-spin" /> : <><CheckCircle size={18}/> Mark this Script</>}
-                    </button>
-                    
-                    {script.result && (
-                      <div style={{ marginTop: '20px', padding: '20px', background: 'rgba(46,160,67,0.1)', border: '1px solid var(--success)', borderRadius: '12px', animation: 'fadeIn 0.5s ease' }}>
-                        <h3 style={{ margin: '0 0 12px 0', color: 'var(--success)' }}>Score: {script.result.score}%</h3>
-                        <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>{script.result.feedback}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {bulkState.scripts.length === 0 && <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>Click "Add Student" to start scanning scripts.</div>}
-              </div>
-            </div>
-            
-            {bulkScannerCam.active && <CameraModal onClose={() => setBulkScannerCam({ active: false })} onExtract={(text, b64) => {
-              if (bulkScannerCam.target === 'guide') {
-                setBulkState({...bulkState, guideText: bulkState.guideText + '\n' + text, guideBase64: b64, guideMime: 'image/jpeg' });
-              } else {
-                const newScripts = [...bulkState.scripts];
-                newScripts[bulkScannerCam.idx].text += '\n' + text;
-                newScripts[bulkScannerCam.idx].base64 = b64;
-                newScripts[bulkScannerCam.idx].mime = 'image/jpeg';
-                setBulkState({...bulkState, scripts: newScripts});
-              }
-            }} />}
           </div>
         )}
 
