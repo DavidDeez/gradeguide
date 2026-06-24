@@ -3507,7 +3507,11 @@ const text = document.getElementById('bulkStudCSV').value;
           <div style={{ display: 'flex', gap: '12px' }}>
             <button className="btn btn-outline" style={{ flex: 1, padding: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={() => {
               isUploadingRef.current = true;
-              document.getElementById('studentUpload').click();
+              const uploadInput = document.getElementById('studentUpload');
+              if (uploadInput) {
+                uploadInput.value = null;
+                uploadInput.click();
+              }
             }}>
               <Upload size={18} style={{ flexShrink: 0 }} /> {studentUpload ? studentUpload.name : 'Upload PDF or Image Script'}
             </button>
