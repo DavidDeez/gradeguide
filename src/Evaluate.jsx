@@ -2920,7 +2920,7 @@ export default function EvaluateApp() {
               </div>
 
               <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--panel-border)' }}>
-                <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold', color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>Specific Assessment Context Material (Optional)</label>
+                <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold', color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>Specific Assessment Context Material</label>
                 <div className="two-col-grid" style={{ marginBottom: '12px' }}>
                   <div className="role-card" style={{ padding: '16px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', flexDirection: 'row', alignItems: 'center' }} onClick={() => setShowCam(true)}>
                     <Camera size={24} color="var(--text-main)" />
