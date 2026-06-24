@@ -1661,7 +1661,32 @@ export default function EvaluateApp() {
     // ── Helper: call Gemini ──────────────────────────────────────────
     const tryGemini = async (modelName) => {
       if (!activeGeminiKey) throw new Error('No Gemini key');
-      const contents = [{ role: "user", parts: files.map(f => ({ inline_data: { mime_type: f.mime, data: f.base64 } })) }];
+      
+      const resolvedParts = await Promise.all(files.map(async f => {
+        if (f.base64 && f.base64.startsWith('http')) {
+          const blobRes = await fetch(f.base64);
+          const blob = await blobRes.blob();
+          
+          const uploadRes = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${activeGeminiKey}`, {
+            method: 'POST',
+            headers: {
+              'X-Goog-Upload-Protocol': 'raw',
+              'X-Goog-Upload-Command': 'start, upload, finalize',
+              'X-Goog-Upload-Header-Content-Length': blob.size.toString(),
+              'X-Goog-Upload-Header-Content-Type': f.mime,
+              'Content-Type': f.mime
+            },
+            body: blob
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadData.error) throw new Error(`Gemini File API Error: ${uploadData.error.message}`);
+          return { file_data: { mime_type: f.mime, file_uri: uploadData.file.uri } };
+        } else {
+          return { inline_data: { mime_type: f.mime, data: f.base64 } };
+        }
+      }));
+      
+      const contents = [{ role: "user", parts: resolvedParts }];
       contents[0].parts.push({ text: prompt });
       const body = { contents, generationConfig: { responseMimeType: "application/json", maxOutputTokens: 8000 } };
       if (system) body.system_instruction = { parts: [{ text: system }] };
@@ -2090,10 +2115,14 @@ export default function EvaluateApp() {
               {selectedSub.files && selectedSub.files.length > 0 && selectedSub.files[0].base64 && (
                 <button className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--primary)', borderColor: 'var(--primary)' }} onClick={() => {
                   const f = selectedSub.files[0];
-                  const link = document.createElement('a');
-                  link.href = `data:${f.mime || 'application/pdf'};base64,${f.base64}`;
-                  link.download = f.name || 'Student_Submission.pdf';
-                  link.click();
+                  if (f.base64 && f.base64.startsWith('http')) {
+                    window.open(f.base64, '_blank');
+                  } else {
+                    const link = document.createElement('a');
+                    link.href = `data:${f.mime || 'application/pdf'};base64,${f.base64}`;
+                    link.download = f.name || 'Student_Submission.pdf';
+                    link.click();
+                  }
                 }}>
                   <Download size={16} /> Download Attached Script
                 </button>
@@ -2334,10 +2363,16 @@ export default function EvaluateApp() {
       if(!file) return;
       const reader = new FileReader();
       
-      // Clean previous state to avoid showing binary data
       if (file.type === 'application/pdf') {
-        reader.onload = ev => setCourseMaterial({ ...courseMaterial, pdfBase64: ev.target.result.split(',')[1], pdfName: file.name, text: '' });
-        reader.readAsDataURL(file);
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        if (window.showToast) window.showToast("Uploading PDF to cloud storage...");
+        supabase.storage.from('grader-files').upload(`uploads/${fileName}`, file).then(({ error }) => {
+          if (error) return window.showToast("Upload failed: " + error.message, "error");
+          const { data } = supabase.storage.from('grader-files').getPublicUrl(`uploads/${fileName}`);
+          setCourseMaterial({ ...courseMaterial, pdfBase64: data.publicUrl, pdfName: file.name, text: '' });
+          if (window.showToast) window.showToast("PDF Uploaded Successfully!", "success");
+        });
       } else if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
         reader.onload = ev => setCourseMaterial({ ...courseMaterial, text: ev.target.result, pdfBase64: null, pdfName: '' });
         reader.readAsText(file);
@@ -2351,8 +2386,15 @@ export default function EvaluateApp() {
       if(!file) return;
       const reader = new FileReader();
       if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
-        reader.onload = ev => setAssessmentContext({ ...assessmentContext, pdfBase64: ev.target.result.split(',')[1], pdfName: file.name, text: '', fileMime: file.type });
-        reader.readAsDataURL(file);
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        if (window.showToast) window.showToast("Uploading file to cloud storage...");
+        supabase.storage.from('grader-files').upload(`uploads/${fileName}`, file).then(({ error }) => {
+          if (error) return window.showToast("Upload failed: " + error.message, "error");
+          const { data } = supabase.storage.from('grader-files').getPublicUrl(`uploads/${fileName}`);
+          setAssessmentContext({ ...assessmentContext, pdfBase64: data.publicUrl, pdfName: file.name, text: '', fileMime: file.type });
+          if (window.showToast) window.showToast("File Uploaded Successfully!", "success");
+        });
       } else if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
         reader.onload = ev => setAssessmentContext({ ...assessmentContext, text: ev.target.result, pdfBase64: null, pdfName: '' });
         reader.readAsText(file);
@@ -2725,10 +2767,14 @@ export default function EvaluateApp() {
                   {assessmentContext.pdfBase64 && (
                     <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px' }}>
                       <div className="badge badge-success" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = `data:${assessmentContext.fileMime || 'application/pdf'};base64,${assessmentContext.pdfBase64}`;
-                        link.download = assessmentContext.pdfName || 'Course_Context.pdf';
-                        link.click();
+                        if (assessmentContext.pdfBase64 && assessmentContext.pdfBase64.startsWith('http')) {
+                          window.open(assessmentContext.pdfBase64, '_blank');
+                        } else {
+                          const link = document.createElement('a');
+                          link.href = `data:${assessmentContext.fileMime || 'application/pdf'};base64,${assessmentContext.pdfBase64}`;
+                          link.download = assessmentContext.pdfName || 'Course_Context.pdf';
+                          link.click();
+                        }
                       }}>
                         <Download size={14} style={{ marginRight: '6px' }} /> Download PDF
                       </div>
@@ -3447,9 +3493,18 @@ const text = document.getElementById('bulkStudCSV').value;
           <input type="file" id="studentUpload" hidden accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" onChange={e => {
              const f = e.target.files[0];
              if(!f) return;
-             const r = new FileReader();
-             r.onload = ev => setStudentUpload({ mime: f.type, base64: ev.target.result.split(',')[1], name: f.name });
-             r.readAsDataURL(f);
+             const fileExt = f.name.split('.').pop();
+             const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+             if (window.showToast) window.showToast("Uploading submission securely...");
+             supabase.storage.from('grader-files').upload(`student_uploads/${fileName}`, f).then(({ error }) => {
+               if (error) {
+                 if (window.showToast) window.showToast("Upload failed: " + error.message, "error");
+                 return;
+               }
+               const { data } = supabase.storage.from('grader-files').getPublicUrl(`student_uploads/${fileName}`);
+               setStudentUpload({ mime: f.type, base64: data.publicUrl, name: f.name });
+               if (window.showToast) window.showToast("Submission Attached!", "success");
+             });
           }} />
           <button className="btn btn-outline" style={{ width: '100%', padding: '14px' }} onClick={() => document.getElementById('studentUpload').click()}>
             <Upload size={18}/> {studentUpload ? studentUpload.name : 'Upload PDF or Image Script'}
