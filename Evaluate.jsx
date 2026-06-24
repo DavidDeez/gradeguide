@@ -3497,21 +3497,19 @@ const text = document.getElementById('bulkStudCSV').value;
              supabase.storage.from('grader-files').upload(`student_uploads/${fileName}`, f).then(({ error }) => {
                if (error) {
                  if (window.showToast) window.showToast("Upload failed: " + error.message, "error");
+                 e.target.value = '';
                  return;
                }
                const { data } = supabase.storage.from('grader-files').getPublicUrl(`student_uploads/${fileName}`);
                setStudentUpload({ mime: f.type, base64: data.publicUrl, name: f.name });
                if (window.showToast) window.showToast("Submission Attached!", "success");
+               e.target.value = '';
              });
           }} />
           <div style={{ display: 'flex', gap: '12px' }}>
             <button className="btn btn-outline" style={{ flex: 1, padding: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={() => {
               isUploadingRef.current = true;
-              const uploadInput = document.getElementById('studentUpload');
-              if (uploadInput) {
-                uploadInput.value = null;
-                uploadInput.click();
-              }
+              document.getElementById('studentUpload').click();
             }}>
               <Upload size={18} style={{ flexShrink: 0 }} /> {studentUpload ? studentUpload.name : 'Upload PDF or Image Script'}
             </button>
