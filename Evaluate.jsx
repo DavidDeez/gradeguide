@@ -1354,6 +1354,7 @@ export default function EvaluateApp() {
   const [newQuestions, setNewQuestions] = useState([{ id: 1, text: '', maxMarks: 10 }]);
   const [assessmentContext, setAssessmentContext] = useState({ text: '', pdfBase64: null, pdfName: '' });
   const [editingAssessmentId, setEditingAssessmentId] = useState(null);
+  const [editingAssessmentOriginal, setEditingAssessmentOriginal] = useState(null);
   
   const [activeExam, setActiveExam] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
@@ -2747,6 +2748,18 @@ export default function EvaluateApp() {
                          return;
                       }
 
+                      // Optimistic Locking Check
+                      const { data: dbAss } = await supabase.from('assessments').select('title, questions').eq('id', editingAssessmentId).single();
+                      if (dbAss && editingAssessmentOriginal) {
+                         const dbQStr = JSON.stringify(dbAss.questions);
+                         const origQStr = JSON.stringify(editingAssessmentOriginal.questions);
+                         if (dbAss.title !== editingAssessmentOriginal.title || dbQStr !== origQStr) {
+                            setGlobalProgress({ active: false, percent: 0 });
+                            window.showToast("⚠️ COLLISION: Another faculty member has updated this assessment since you opened it. Please refresh and review their changes.", "error");
+                            return;
+                         }
+                      }
+
                       supabase.from('assessments').update({
                         title: createdExam.title, duration: createdExam.duration, questions: payloadQuestions
                       }).eq('id', editingAssessmentId).then(({error}) => {
@@ -2872,6 +2885,7 @@ export default function EvaluateApp() {
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => {
                         setEditingAssessmentId(a.id);
+                        setEditingAssessmentOriginal(a);
                         setNewTitle(a.title);
                         setNewDuration(a.duration ? a.duration.toString() : '30');
                         setAssessmentContext({ text: a.contextText || '', pdfBase64: a.contextPdfBase64 || null, pdfName: 'Digital Copy (Loaded)', fileMime: a.contextFileMime || '' });
@@ -3491,6 +3505,19 @@ const text = document.getElementById('bulkStudCSV').value;
           <input type="file" id="studentUpload" hidden accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" onChange={e => {
              const f = e.target.files[0];
              if(!f) return;
+             
+             if (f.size > 5 * 1024 * 1024) {
+               if (window.showToast) window.showToast("File is too large! Maximum allowed size is 5MB.", "error");
+               e.target.value = '';
+               return;
+             }
+             const validMimes = ['application/pdf', 'image/jpeg', 'image/png'];
+             if (!validMimes.includes(f.type)) {
+               if (window.showToast) window.showToast("Invalid file type! Please upload a PDF, JPG, or PNG.", "error");
+               e.target.value = '';
+               return;
+             }
+             
              const fileExt = f.name.split('.').pop();
              const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
              if (window.showToast) window.showToast("Uploading submission securely...");
