@@ -2482,6 +2482,8 @@ export default function EvaluateApp() {
   );
 
   const LecturerDashboard = () => {
+    const [uploadProgress, setUploadProgress] = useState(0);
+
     const handleFileUpload = (e) => {
       const file = e.target.files[0];
       if(!file) return;
@@ -2490,17 +2492,17 @@ export default function EvaluateApp() {
       if (file.type === 'application/pdf') {
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        setGlobalProgress({ active: true, percent: 5 });
+        setUploadProgress(5);
         let progress = 5;
         const interval = setInterval(() => {
           progress += Math.floor(Math.random() * 15) + 5;
           if (progress > 90) clearInterval(interval);
-          else setGlobalProgress({ active: true, percent: progress });
+          else setUploadProgress(progress);
         }, 200);
         supabase.storage.from('grader-files').upload(`uploads/${fileName}`, file).then(({ error }) => {
           clearInterval(interval);
-          setGlobalProgress({ active: true, percent: 100 });
-          setTimeout(() => setGlobalProgress({ active: false, percent: 0 }), 800);
+          setUploadProgress(100);
+          setTimeout(() => setUploadProgress(0), 800);
           if (error) return window.showToast("Upload failed: " + error.message, "error");
           const { data } = supabase.storage.from('grader-files').getPublicUrl(`uploads/${fileName}`);
           setCourseMaterial({ ...courseMaterial, pdfBase64: data.publicUrl, pdfName: file.name, text: '' });
@@ -2521,17 +2523,17 @@ export default function EvaluateApp() {
       if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        setGlobalProgress({ active: true, percent: 5 });
+        setUploadProgress(5);
         let progress = 5;
         const interval = setInterval(() => {
           progress += Math.floor(Math.random() * 15) + 5;
           if (progress > 90) clearInterval(interval);
-          else setGlobalProgress({ active: true, percent: progress });
+          else setUploadProgress(progress);
         }, 200);
         supabase.storage.from('grader-files').upload(`uploads/${fileName}`, file).then(({ error }) => {
           clearInterval(interval);
-          setGlobalProgress({ active: true, percent: 100 });
-          setTimeout(() => setGlobalProgress({ active: false, percent: 0 }), 800);
+          setUploadProgress(100);
+          setTimeout(() => setUploadProgress(0), 800);
           if (error) return window.showToast("Upload failed: " + error.message, "error");
           const { data } = supabase.storage.from('grader-files').getPublicUrl(`uploads/${fileName}`);
           setAssessmentContext({ ...assessmentContext, pdfBase64: data.publicUrl, pdfName: file.name, text: '', fileMime: file.type });
@@ -2927,13 +2929,13 @@ export default function EvaluateApp() {
                     </div>
                   </div>
                   <label className="role-card" style={{ position: 'relative', padding: '16px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
-                    {globalProgress.active && globalProgress.percent > 0 && (
-                      <div style={{ position: 'absolute', bottom: 0, left: 0, height: '4px', background: 'var(--success)', width: `${globalProgress.percent}%`, transition: 'width 0.2s ease', zIndex: 0 }} />
+                    {uploadProgress > 0 && (
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, height: '4px', background: 'var(--success)', width: `${uploadProgress}%`, transition: 'width 0.2s ease', zIndex: 0 }} />
                     )}
                     <Upload size={24} color="var(--success)" style={{ zIndex: 1 }} />
                     <div style={{ flex: 1, overflow: 'hidden', zIndex: 1 }}>
                       <h4 style={{ margin: 0, fontSize: '0.95rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{assessmentContext.pdfName || 'Upload Digital Copy'}</h4>
-                      <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>{globalProgress.active && globalProgress.percent > 0 && globalProgress.percent < 100 ? `Uploading... ${globalProgress.percent}%` : 'PDF, TXT, MD, JPG'}</p>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>{uploadProgress > 0 && uploadProgress < 100 ? `Uploading... ${uploadProgress}%` : 'PDF, TXT, MD, JPG'}</p>
                     </div>
                     <input type="file" hidden onChange={handleAssessmentFileUpload} accept="application/pdf,text/plain,image/jpeg,image/png,.pdf,.txt,.md,.jpg,.jpeg,.png" />
                   </label>
