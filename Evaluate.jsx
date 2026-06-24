@@ -1261,6 +1261,7 @@ export default function EvaluateApp() {
     return () => clearInterval(interval);
   }, [globalProgress]);
   const lastInfractionTime = React.useRef(0);
+  const isUploadingRef = React.useRef(false);
   const [role, setRole] = useState(() => {
     return localStorage.getItem('gg_main_role') || null;
   });
@@ -1456,6 +1457,7 @@ export default function EvaluateApp() {
       return;
     }
     const handleFocusLoss = () => {
+      if (isUploadingRef.current) return;
       if (document.hidden || !document.hasFocus()) {
         const now = Date.now();
         if (now - lastInfractionTime.current > 3000) {
@@ -1467,11 +1469,18 @@ export default function EvaluateApp() {
         }
       }
     };
+    const handleFocusGain = () => {
+      if (isUploadingRef.current) {
+        setTimeout(() => { isUploadingRef.current = false; }, 1000);
+      }
+    };
     window.addEventListener('blur', handleFocusLoss);
     document.addEventListener('visibilitychange', handleFocusLoss);
+    window.addEventListener('focus', handleFocusGain);
     return () => {
       window.removeEventListener('blur', handleFocusLoss);
       document.removeEventListener('visibilitychange', handleFocusLoss);
+      window.removeEventListener('focus', handleFocusGain);
     };
   }, [activeExam]);
 
@@ -3496,7 +3505,10 @@ const text = document.getElementById('bulkStudCSV').value;
              });
           }} />
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button className="btn btn-outline" style={{ flex: 1, padding: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={() => document.getElementById('studentUpload').click()}>
+            <button className="btn btn-outline" style={{ flex: 1, padding: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={() => {
+              isUploadingRef.current = true;
+              document.getElementById('studentUpload').click();
+            }}>
               <Upload size={18} style={{ flexShrink: 0 }} /> {studentUpload ? studentUpload.name : 'Upload PDF or Image Script'}
             </button>
             {studentUpload && (
