@@ -1239,6 +1239,20 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
           </div>
         </div>
       )}
+      
+      {globalProgress.active && (
+        <div style={{
+          position: 'fixed', bottom: '24px', right: '24px', background: 'rgba(15,15,15,0.95)', 
+          border: '1px solid var(--primary)', padding: '16px 24px', borderRadius: '12px',
+          color: 'white', display: 'flex', alignItems: 'center', gap: '16px', zIndex: 99999,
+          boxShadow: '0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(121, 192, 255, 0.2)', 
+          fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '1.1rem',
+          animation: 'fadeIn 0.3s ease', backdropFilter: 'blur(10px)'
+        }}>
+          <Activity size={24} className="animate-spin" color="var(--primary)" />
+          <span>Processing... <span style={{ color: 'var(--primary)' }}>{globalProgress.percent}%</span></span>
+        </div>
+      )}
     </div>
   );
 };
@@ -1250,6 +1264,16 @@ export default function EvaluateApp() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+  const [globalProgress, setGlobalProgress] = useState({ active: false, percent: 0 });
+  useEffect(() => {
+    let interval;
+    if (globalProgress.active && globalProgress.percent < 99) {
+      interval = setInterval(() => {
+        setGlobalProgress(prev => ({ ...prev, percent: Math.min(prev.percent + Math.floor(Math.random() * 5) + 2, 99) }));
+      }, 200);
+    }
+    return () => clearInterval(interval);
+  }, [globalProgress]);
   const lastInfractionTime = React.useRef(0);
   const [role, setRole] = useState(() => {
     return localStorage.getItem('gg_main_role') || null;
@@ -2696,6 +2720,8 @@ export default function EvaluateApp() {
                       }))
                     };
                     
+                    setGlobalProgress({ active: true, percent: 0 });
+
                     if (editingAssessmentId) {
                       const payloadQuestions = [...createdExam.questions];
                       if (createdExam.contextText || createdExam.contextPdfBase64) {
@@ -2710,6 +2736,7 @@ export default function EvaluateApp() {
                       }
                       
                       if (JSON.stringify(payloadQuestions).length > 5500000) {
+                         setGlobalProgress({ active: false, percent: 0 });
                          window.showToast("The attached PDF is too large to save to the database. Please upload a smaller file (under 4MB).", "error");
                          return;
                       }
@@ -2717,6 +2744,7 @@ export default function EvaluateApp() {
                       supabase.from('assessments').update({
                         title: createdExam.title, duration: createdExam.duration, questions: payloadQuestions
                       }).eq('id', editingAssessmentId).then(({error}) => {
+                        setGlobalProgress({ active: false, percent: 0 });
                         if (!error) {
                           setAssessments(assessments.map(a => a.id === editingAssessmentId ? createdExam : a));
                           window.showToast(`Assessment "${createdExam.title}" has been successfully updated!`);
@@ -2736,6 +2764,7 @@ export default function EvaluateApp() {
                       }
                       
                       if (JSON.stringify(payloadQuestions).length > 5500000) {
+                         setGlobalProgress({ active: false, percent: 0 });
                          window.showToast("The attached PDF is too large to save to the database. Please upload a smaller file (under 4MB).", "error");
                          return;
                       }
@@ -2744,6 +2773,7 @@ export default function EvaluateApp() {
                         id: createdExam.id, title: createdExam.title, duration: createdExam.duration, questions: payloadQuestions,
                         published: true
                       }).then(({error}) => {
+                        setGlobalProgress({ active: false, percent: 0 });
                         if (!error) {
                           setAssessments([createdExam, ...assessments]);
                           window.showToast(`Assessment "${createdExam.title}" has been successfully published to the Student Portal!`);
@@ -3475,6 +3505,7 @@ const text = document.getElementById('bulkStudCSV').value;
 
         <button id="submitExamBtn" className="btn btn-primary" style={{ width: '100%', padding: '18px' }} disabled={examLoading} onClick={async () => {
           setExamLoading(true);
+          setGlobalProgress({ active: true, percent: 0 });
           try {
             const uploadPayload = studentUpload ? [studentUpload] : [];
             const newSub = { 
@@ -3523,9 +3554,10 @@ const text = document.getElementById('bulkStudCSV').value;
             // 1. Insert directly to the dedicated SQL table
             const { error } = await supabase.from('submissions').insert([newSub]);
             if (error) {
+              setExamLoading(false);
+              setGlobalProgress({ active: false, percent: 0 });
               console.error("Database Insert Error:", error);
               window.showToast("Failed to submit exam. Please check your network and try again.");
-              setExamLoading(false);
               return;
             }
             
