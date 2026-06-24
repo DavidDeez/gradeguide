@@ -2584,13 +2584,34 @@ export default function EvaluateApp() {
           ]}],
           generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 8000 }
         };
-        // Use the user's selected model from the settings menu so you can switch it instantly if one goes down or hits a limit
-        const genModel = aiSettings.geminiModel || 'gemini-2.0-flash';
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${genModel}:generateContent?key=${geminiKey}`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message);
+
+        const modelsToTry = [
+          aiSettings.geminiModel || 'gemini-flash-latest', 
+          'gemini-1.5-pro-latest',
+          'gemini-2.0-flash-exp'
+        ];
+        
+        let data = null;
+        let lastErr = null;
+
+        for (const m of modelsToTry) {
+          try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${geminiKey}`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+            });
+            const resData = await res.json();
+            if (resData.error) throw new Error(resData.error.message);
+            data = resData;
+            break; // Success! Exit the loop.
+          } catch (err) {
+            lastErr = err;
+            console.warn(`Model ${m} failed:`, err);
+            // Continue to the next model in the fallback list
+          }
+        }
+
+        if (!data) throw new Error(lastErr ? lastErr.message : 'All Gemini models are currently overloaded.');
+        
         const txt = data.candidates?.[0]?.content?.parts?.find(p => p.text)?.text || '[]';
         const questions = JSON.parse(txt.replace(/```json|```/gi, '').trim());
         if (!Array.isArray(questions) || questions.length === 0) throw new Error('AI returned no questions.');
