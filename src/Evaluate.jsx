@@ -2487,8 +2487,8 @@ export default function EvaluateApp() {
     const handleFileUpload = (e) => {
       const file = e.target.files[0];
       if(!file) return;
-      if (file.size > 5 * 1024 * 1024) {
-        if (window.showToast) window.showToast("File is too large! Maximum allowed size is 5MB to ensure fast AI processing.", "error");
+      if (file.size > 20 * 1024 * 1024) {
+        if (window.showToast) window.showToast("File is too large! Maximum allowed size is 20MB to ensure fast AI processing.", "error");
         return;
       }
       const reader = new FileReader();
@@ -2523,8 +2523,8 @@ export default function EvaluateApp() {
     const handleAssessmentFileUpload = (e) => {
       const file = e.target.files[0];
       if(!file) return;
-      if (file.size > 5 * 1024 * 1024) {
-        if (window.showToast) window.showToast("File is too large! Maximum allowed size is 5MB to ensure fast AI processing.", "error");
+      if (file.size > 20 * 1024 * 1024) {
+        if (window.showToast) window.showToast("File is too large! Maximum allowed size is 20MB to ensure fast AI processing.", "error");
         return;
       }
       const reader = new FileReader();
