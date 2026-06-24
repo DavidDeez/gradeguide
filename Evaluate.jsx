@@ -897,7 +897,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       {/* Demo Quick Load */}
       <div style={{ marginBottom:'24px' }}>
         <p style={{ margin:'0 0 12px 0', fontSize:'0.85rem', color:'var(--text-muted)', fontWeight:'bold', textTransform:'uppercase' }}>Quick Demo Assessments</p>
-        <div style={{ display:'flex', gap:'12px', flexWrap:'wrap', alignItems: 'center' }}>
+        <div style={{ display:'flex', gap:'12px', flexWrap:'wrap', alignItems: 'stretch' }}>
           {DEMO_QUESTIONS.map((demo, i) => (
             <div 
               key={i} 
@@ -914,8 +914,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
                 textAlign: 'left',
                 width: 'calc(33.333% - 8px)',
                 minWidth: '220px',
-                transition: 'all 0.2s ease',
-                flexGrow: 1
+                transition: 'all 0.2s ease'
               }}
               onClick={() => { if(!rRunning) runComparison(demo.q, demo.ms, demo.ans, demo.max, demo.lec, demo.lecFeedback); }}
             >
