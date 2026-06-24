@@ -1530,10 +1530,21 @@ export default function EvaluateApp() {
           supabase.from('students').select('*').order('created_at', { ascending: false })
         ]);
         
+        let finalAppStateData = null;
         if (appStateRes.error) {
-          console.error("Error loading app_state:", appStateRes.error);
-          window.showToast("Database connection failed. Please refresh the page.");
-          return; // DO NOT set isLoaded to true, prevents wiping DB
+          if (appStateRes.error.code === 'PGRST116') {
+            // Row 1 doesn't exist, heal the database
+            console.warn("app_state row 1 missing! Healing database...");
+            const initRes = await supabase.from('app_state').insert({ id: 1, data: {} }).select('data').single();
+            if (!initRes.error) finalAppStateData = initRes.data;
+          }
+          if (!finalAppStateData) {
+            console.error("Error loading app_state:", appStateRes.error);
+            window.showToast("Database connection failed. Please refresh the page.");
+            return; // DO NOT set isLoaded to true, prevents wiping DB
+          }
+        } else {
+          finalAppStateData = appStateRes.data;
         }
 
         if (assRes.data) {
@@ -1843,7 +1854,27 @@ export default function EvaluateApp() {
     const prompt = `Grading task for: ${assessment.title}\nQuestions: ${JSON.stringify(assessment.questions)}\nStudent Typed Answers: ${JSON.stringify(answers)}\nReference Context: ${assessment.contextText || courseMaterial.text}\nIf a student file is attached, read the answers directly from the file to grade. Also, strictly evaluate the student answers for AI-generation or plagiarism.`;
     const files = assessment.contextPdfBase64 ? [{ mime: assessment.contextFileMime || "application/pdf", base64: assessment.contextPdfBase64 }] : (courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : []);
     
-    if (studentFiles.length > 0) files.push(...studentFiles);
+    const resolvedStudentFiles = [];
+    for (const file of studentFiles) {
+      if (file.base64 && file.base64.startsWith('http')) {
+        try {
+          const res = await fetch(file.base64);
+          const blob = await res.blob();
+          const b64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.readAsDataURL(blob);
+          });
+          resolvedStudentFiles.push({ mime: file.mime, base64: b64 });
+        } catch (e) {
+          console.error("Failed to fetch student file from URL:", e);
+        }
+      } else {
+        resolvedStudentFiles.push(file);
+      }
+    }
+
+    if (resolvedStudentFiles.length > 0) files.push(...resolvedStudentFiles);
 
     const result = await callAI(prompt, system, files);
     try {
@@ -3190,7 +3221,20 @@ const text = document.getElementById('bulkStudCSV').value;
                           <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{s.email}</td>
                           <td style={{ padding: '12px', textAlign: 'right' }}>
                             <button className="btn btn-outline" style={{ padding: '6px 10px', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.2)' }} onClick={() => {
-                              if(window.confirm(`Remove ${s.name}?`)) {
+                              if(window.confirm(`Remove ${s.name}? All their submissions and files will be permanently deleted.`)) {
+                                supabase.from('submissions').select('id, files').eq('student_id', s.matricNo).then(({data}) => {
+                                  if (data && data.length > 0) {
+                                    const pathsToDelete = [];
+                                    const subIdsToDelete = [];
+                                    data.forEach(sub => {
+                                      subIdsToDelete.push(sub.id);
+                                      if (sub.files) sub.files.forEach(f => { if (f.storagePath) pathsToDelete.push(f.storagePath); });
+                                    });
+                                    if (pathsToDelete.length > 0) supabase.storage.from('grader-files').remove(pathsToDelete);
+                                    supabase.from('submissions').delete().in('id', subIdsToDelete).then();
+                                  }
+                                });
+
                                 supabase.from('students').delete().eq('matric_no', s.matricNo).then(({error}) => {
                                   if (!error) setStudents(students.filter(stud => stud.matricNo !== s.matricNo));
                                   else window.showToast("Failed to remove student from database.");
@@ -3488,9 +3532,22 @@ const text = document.getElementById('bulkStudCSV').value;
                   </button>
 
                   <button className="btn btn-outline" style={{ flex: 1, color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => {
-                    if (window.confirm("Are you sure you want to delete all registered students?")) {
-                      setStudents([]);
-                      window.showToast("Students database wiped. You can now re-register with your test emails.");
+                    if (window.confirm("Are you sure you want to delete all registered students? This will also delete ALL their submissions and files.")) {
+                      supabase.from('submissions').select('files').then(({data}) => {
+                        if (data) {
+                           const paths = [];
+                           data.forEach(sub => { if (sub.files) sub.files.forEach(f => { if (f.storagePath) paths.push(f.storagePath); })});
+                           if (paths.length > 0) supabase.storage.from('grader-files').remove(paths);
+                        }
+                        supabase.from('submissions').delete().neq('id', '0').then();
+                      });
+                      supabase.from('students').delete().neq('matric_no', '0').then(({error}) => {
+                        if (!error) {
+                          setStudents([]);
+                          setSubmissions([]);
+                          window.showToast("Students and submissions database fully wiped.");
+                        }
+                      });
                     }
                   }}>
                     <Trash2 size={16} /> Delete Students
