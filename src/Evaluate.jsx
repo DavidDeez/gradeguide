@@ -2407,7 +2407,7 @@ export default function EvaluateApp() {
   };
 
   const FacultyHubScreen = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px', position: 'relative', zIndex: 1 }}>
       <div style={{ textAlign: 'center', marginBottom: '40px', animation: 'fadeIn 1s ease' }}>
         <h1 className="brand-title">Faculty Hub</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', fontWeight: '500' }}>Select your workspace</p>
@@ -2852,8 +2852,6 @@ export default function EvaluateApp() {
                       }))
                     };
                     
-                    setGlobalProgress({ active: true, percent: 0 });
-
                     if (editingAssessmentId) {
                       const payloadQuestions = [...createdExam.questions];
                       if (createdExam.contextText || createdExam.contextPdfBase64) {
