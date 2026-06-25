@@ -979,11 +979,11 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
           <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Review & Compare</h3>
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>FULL ASSESSMENT (Read Only)</label>
-            <textarea className="input-field" rows={4} value={rQuestion} readOnly style={{ background: 'rgba(255,255,255,0.02)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }} />
+            <textarea className="input-field" rows={4} value={rQuestion} readOnly style={{ background: 'rgba(255,255,255,0.02)', fontSize: '0.75rem' }} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>STUDENT ANSWERS (Read Only)</label>
-            <textarea className="input-field" rows={6} value={rAnswer} readOnly style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'var(--primary)', borderWidth: '2px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }} />
+            <textarea className="input-field" rows={6} value={rAnswer} readOnly style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'var(--primary)', borderWidth: '2px', fontSize: '0.75rem' }} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignSelf: 'flex-start' }}>
             <button 
@@ -995,7 +995,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
               <Play size={18} fill="white" /> {rRunning ? 'Comparing...' : 'Start Model Comparison'}
             </button>
             {rRunning && (
-              <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.1)', borderRadius: '1px', overflow: 'hidden' }}>
                 <div style={{ 
                   height: '100%', 
                   width: `${(rResults.length / COMPARISON_MODELS.length) * 100}%`, 
