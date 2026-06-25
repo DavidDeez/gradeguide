@@ -794,7 +794,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       if (!activeGeminiKey) throw new Error('No Gemini key');
       const body = {
         contents: [{ role:'user', parts:[{ text: userPrompt }] }],
-        generationConfig: { responseMimeType:'application/json', maxOutputTokens:2000 },
+        generationConfig: { responseMimeType:'application/json', maxOutputTokens:2000, temperature: 0 },
         system_instruction: { parts:[{ text: systemPrompt }] }
       };
       const res  = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent?key=${activeGeminiKey}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
@@ -807,7 +807,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       let lastErr = null;
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-          const res  = await fetch('https://openrouter.ai/api/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${activeORKey}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'GRADER.ai Research'}, body:JSON.stringify({ model:model.id, max_tokens:1000, messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}] }) });
+          const res  = await fetch('https://openrouter.ai/api/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${activeORKey}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'GRADER.ai Research'}, body:JSON.stringify({ model:model.id, temperature:0, max_tokens:1000, messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}] }) });
           const data = await res.json();
           if (data.error) throw new Error(data.error.message || data.error.metadata?.message);
           const txt  = data.choices?.[0]?.message?.content || '';
@@ -1835,7 +1835,7 @@ export default function EvaluateApp() {
       
       const contents = [{ role: "user", parts: resolvedParts }];
       contents[0].parts.push({ text: prompt });
-      const body = { contents, generationConfig: { responseMimeType: "application/json", maxOutputTokens: 8000 } };
+      const body = { contents, generationConfig: { temperature: 0, responseMimeType: "application/json", maxOutputTokens: 8000 } };
       if (system) body.system_instruction = { parts: [{ text: system }] };
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${activeGeminiKey}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
@@ -1865,7 +1865,7 @@ export default function EvaluateApp() {
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: { "Authorization": `Bearer ${activeOpenRouterKey}`, "Content-Type": "application/json", "HTTP-Referer": window.location.origin, "X-Title": "GRADER.ai" },
-        body: JSON.stringify({ model: modelId, max_tokens: 4000, messages })
+        body: JSON.stringify({ model: modelId, temperature: 0, max_tokens: 4000, messages })
       });
       const data = await res.json();
       if (data.error) throw new Error(`OpenRouter Error: ${data.error.message || data.error.metadata?.message || 'Unknown error'}`);
@@ -2663,7 +2663,7 @@ export default function EvaluateApp() {
             ...fileParts,
             { text: assessmentContext.text ? `Context:\n${assessmentContext.text}\n\n${prompt}` : prompt }
           ]}],
-          generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 8000 }
+          generationConfig: { temperature: 0, responseMimeType: 'application/json', maxOutputTokens: 8000 }
         };
 
         const modelsToTry = [
