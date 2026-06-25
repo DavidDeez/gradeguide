@@ -11,7 +11,7 @@ import {
   BarChart, X, Plus, Trash2, Check, Video, Layout, LogOut, 
   FileBadge, Sliders, Play, Save, ChevronRight, Activity, 
   ShieldCheck, Brain, Star, Smartphone, AlertCircle, Eye, Edit, Download, Menu,
-  Send, Terminal, Zap, Info, Users, Wrench, GraduationCap, MessageCircle
+  Send, Terminal, Zap, Info, Users, Wrench, GraduationCap, MessageCircle, Clock
 } from 'lucide-react';
 
 const GlobalStyles = () => (
@@ -3673,7 +3673,7 @@ const text = document.getElementById('bulkStudCSV').value;
                 boxShadow: timeLeft < 60 ? '0 0 10px rgba(248, 81, 73, 0.3)' : '0 0 10px rgba(46, 160, 67, 0.15)',
                 animation: timeLeft < 60 ? 'pulse 1s infinite' : 'none'
               }}>
-                <span style={{ fontSize: '1rem', marginRight: '4px' }}>⏱️</span>
+                <Clock size={18} style={{ marginRight: '4px' }} />
                 <span>
                   {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
                 </span>
