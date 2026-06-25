@@ -738,30 +738,51 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const activeGeminiKey  = aiSettings.geminiKey;
   const activeORKey      = aiSettings.openrouterKey;
 
-  // Generate Quick Load Demo questions from REAL student submissions
+  // Generate Quick Load Demo questions from REAL student submissions (Full Exam)
   const DEMO_QUESTIONS = [];
   if (assessments && submissions) {
     submissions.forEach(sub => {
       const ass = assessments.find(a => a.id == sub.assessmentId);
       if (!ass || !ass.questions) return;
+      
+      let fullQ = '';
+      let fullMS = '';
+      let fullAns = '';
+      let totalMax = 0;
+      let totalLecScore = 0;
+      let allLecFeedback = '';
+      let hasAnswers = false;
+
       ass.questions.forEach((qObj, idx) => {
         const studAns = sub.answers?.[qObj.id] || sub.answers?.[idx] || '';
-        if (studAns.trim() && DEMO_QUESTIONS.length < 8) {
-          const prevRes = sub.results?.find(r => r.questionId === qObj.id || r.questionId === idx);
-          DEMO_QUESTIONS.push({
-            examTitle: ass.title,
-            qNum: idx + 1,
-            studentId: sub.student_id || sub.studentId,
-            title: `Exam: ${ass.title.length > 25 ? ass.title.substring(0,25) + '...' : ass.title}  •  Question ${idx+1}  •  Student: ${sub.studentId}`,
-            q: qObj.text,
-            ms: qObj.context || '',
-            ans: studAns,
-            max: qObj.maxScore || 10,
-            lec: prevRes ? prevRes.score : '',
-            lecFeedback: prevRes ? prevRes.feedback : ''
-          });
+        const prevRes = sub.results?.find(r => r.questionId === qObj.id || r.questionId === idx);
+        
+        if (studAns.trim()) hasAnswers = true;
+
+        fullQ += `[Q${idx+1}] ${qObj.text}\n\n`;
+        fullMS += `[Q${idx+1} Scheme] ${qObj.context || 'Standard evaluation'}\n\n`;
+        fullAns += `[Answer ${idx+1}] ${studAns}\n\n`;
+        totalMax += (qObj.maxScore || qObj.maxMarks || 10);
+        
+        if (prevRes && prevRes.score !== undefined) {
+          totalLecScore += prevRes.score;
+          if (prevRes.feedback) allLecFeedback += `[Q${idx+1}] ${prevRes.feedback} `;
         }
       });
+
+      if (hasAnswers && DEMO_QUESTIONS.length < 8) {
+        DEMO_QUESTIONS.push({
+          examTitle: ass.title,
+          studentId: sub.student_id || sub.studentId,
+          title: `Exam: ${ass.title.length > 25 ? ass.title.substring(0,25) + '...' : ass.title}  •  Student: ${sub.studentId}`,
+          q: fullQ.trim(),
+          ms: fullMS.trim(),
+          ans: fullAns.trim(),
+          max: totalMax,
+          lec: totalLecScore,
+          lecFeedback: allLecFeedback.trim()
+        });
+      }
     });
   }
 
@@ -957,12 +978,12 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Review & Compare</h3>
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>QUESTION</label>
-            <textarea className="input-field" rows={2} value={rQuestion} readOnly style={{ background: 'rgba(255,255,255,0.02)' }} />
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>FULL ASSESSMENT (Read Only)</label>
+            <textarea className="input-field" rows={4} value={rQuestion} readOnly style={{ background: 'rgba(255,255,255,0.02)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>STUDENT ANSWER</label>
-            <textarea className="input-field" rows={4} value={rAnswer} readOnly style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'var(--primary)', borderWidth: '2px' }} />
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>STUDENT ANSWERS (Read Only)</label>
+            <textarea className="input-field" rows={6} value={rAnswer} readOnly style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'var(--primary)', borderWidth: '2px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }} />
           </div>
           <button 
             className="btn" 
