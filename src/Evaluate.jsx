@@ -923,7 +923,13 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
                 minWidth: '220px',
                 transition: 'all 0.2s ease'
               }}
-              onClick={() => { if(!rRunning) runComparison(demo.q, demo.ms, demo.ans, demo.max, demo.lec, demo.lecFeedback); }}
+              onClick={() => { 
+                if(!rRunning) {
+                  setRQuestion(demo.q); setRMarkScheme(demo.ms); setRAnswer(demo.ans); 
+                  setRMaxScore(demo.max); setRLecScore(demo.lec); setRLecFeedback(demo.lecFeedback);
+                  setRResults([]);
+                }
+              }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                 <div style={{ display: 'flex', gap: '6px' }}>
@@ -931,7 +937,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
                   <span className="badge" style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)' }}>Student {demo.studentId}</span>
                 </div>
                 <div className="btn" style={{ background: 'var(--primary)', border: 'none', padding: '4px', borderRadius: '50%' }}>
-                  <Play size={12} color="white" fill="white" style={{ marginLeft: '1px' }} />
+                  <Edit size={12} color="white" fill="white" style={{ marginLeft: '1px' }} />
                 </div>
               </div>
               <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-main)', fontWeight: '600', lineHeight: '1.3' }}>
@@ -945,6 +951,33 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         </div>
         {rProgress && <p style={{ margin:'12px 0 0', fontSize:'0.85rem', color: rProgress.includes('complete') ? 'var(--success)' : 'var(--warning)', display: 'flex', alignItems: 'center', gap: '6px' }}>{rProgress.includes('complete') && <CheckCircle size={16} />}{rProgress}</p>}
       </div>
+
+      {/* Editor UI */}
+      {rQuestion && (
+        <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Edit & Compare</h3>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>QUESTION</label>
+            <textarea className="input-field" rows={2} value={rQuestion} onChange={e => setRQuestion(e.target.value)} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>MARKING SCHEME</label>
+            <textarea className="input-field" rows={3} value={rMarkScheme} onChange={e => setRMarkScheme(e.target.value)} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>STUDENT ANSWER (Fix/Edit to test AI)</label>
+            <textarea className="input-field" rows={4} value={rAnswer} onChange={e => setRAnswer(e.target.value)} style={{ borderColor: 'var(--primary)', borderWidth: '2px' }} />
+          </div>
+          <button 
+            className="btn" 
+            style={{ padding: '12px 24px', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}
+            disabled={rRunning}
+            onClick={() => runComparison()}
+          >
+            <Play size={18} fill="white" /> {rRunning ? 'Comparing...' : 'Start Model Comparison'}
+          </button>
+        </div>
+      )}
 
       {/* Manual Score Overrides */}
       {rQuestion && (
@@ -3369,9 +3402,9 @@ const text = document.getElementById('bulkStudCSV').value;
         )}
 
 
-        {lecturerTab === 'research' && (
-          <ModelComparisonLab aiSettings={aiSettings} assessments={assessments} submissions={submissions} />
-        )}
+          <div style={{ display: lecturerTab === 'research' ? 'block' : 'none' }}>
+            <ModelComparisonLab aiSettings={aiSettings} assessments={assessments} submissions={submissions} />
+          </div>
 
         {lecturerTab === 'audit' && (
           <div className="audit-grid" style={{ animation: 'fadeIn 0.5s ease' }}>
