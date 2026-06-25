@@ -955,18 +955,14 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       {/* Editor UI */}
       {rQuestion && (
         <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Edit & Compare</h3>
+          <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Review & Compare</h3>
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>QUESTION</label>
-            <textarea className="input-field" rows={2} value={rQuestion} onChange={e => setRQuestion(e.target.value)} />
+            <textarea className="input-field" rows={2} value={rQuestion} readOnly style={{ background: 'rgba(255,255,255,0.02)' }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>MARKING SCHEME</label>
-            <textarea className="input-field" rows={3} value={rMarkScheme} onChange={e => setRMarkScheme(e.target.value)} />
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>STUDENT ANSWER (Fix/Edit to test AI)</label>
-            <textarea className="input-field" rows={4} value={rAnswer} onChange={e => setRAnswer(e.target.value)} style={{ borderColor: 'var(--primary)', borderWidth: '2px' }} />
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>STUDENT ANSWER</label>
+            <textarea className="input-field" rows={4} value={rAnswer} readOnly style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'var(--primary)', borderWidth: '2px' }} />
           </div>
           <button 
             className="btn" 
