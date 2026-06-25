@@ -3662,8 +3662,21 @@ const text = document.getElementById('bulkStudCSV').value;
           <h2 style={{ margin: 0 }}>{activeExam.title}</h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {timeLeft !== null && (
-              <div className="badge badge-success" style={{ fontSize: '1rem', padding: '8px 16px', background: timeLeft < 60 ? 'var(--danger)' : 'rgba(255,255,255,0.1)' }}>
-                ⏱️ {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
+              <div style={{ 
+                display: 'flex', alignItems: 'center', gap: '8px',
+                background: timeLeft < 60 ? 'rgba(248, 81, 73, 0.1)' : 'rgba(46, 160, 67, 0.1)', 
+                border: `1px solid ${timeLeft < 60 ? 'var(--danger)' : 'var(--success)'}`,
+                padding: '6px 16px', borderRadius: '12px',
+                color: timeLeft < 60 ? 'var(--danger)' : 'var(--success)',
+                fontFamily: "'Courier New', Courier, monospace",
+                fontWeight: 'bold', fontSize: '1.2rem', letterSpacing: '2px',
+                boxShadow: timeLeft < 60 ? '0 0 10px rgba(248, 81, 73, 0.3)' : '0 0 10px rgba(46, 160, 67, 0.15)',
+                animation: timeLeft < 60 ? 'pulse 1s infinite' : 'none'
+              }}>
+                <span style={{ fontSize: '1rem', marginRight: '4px' }}>⏱️</span>
+                <span>
+                  {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
+                </span>
               </div>
             )}
             <button className="btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => {
