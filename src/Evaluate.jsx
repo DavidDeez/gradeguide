@@ -985,21 +985,34 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>STUDENT ANSWERS (Read Only)</label>
             <textarea className="input-field" rows={6} value={rAnswer} readOnly style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'var(--primary)', borderWidth: '2px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }} />
           </div>
-          <button 
-            className="btn" 
-            style={{ padding: '12px 24px', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}
-            disabled={rRunning}
-            onClick={() => runComparison()}
-          >
-            <Play size={18} fill="white" /> {rRunning ? 'Comparing...' : 'Start Model Comparison'}
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignSelf: 'flex-start' }}>
+            <button 
+              className="btn" 
+              style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}
+              disabled={rRunning}
+              onClick={() => runComparison()}
+            >
+              <Play size={18} fill="white" /> {rRunning ? 'Comparing...' : 'Start Model Comparison'}
+            </button>
+            {rRunning && (
+              <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                <div style={{ 
+                  height: '100%', 
+                  width: `${(rResults.length / COMPARISON_MODELS.length) * 100}%`, 
+                  background: 'var(--success)', 
+                  transition: 'width 0.4s ease',
+                  boxShadow: '0 0 8px var(--success)'
+                }} />
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* Manual Score Overrides */}
       {rQuestion && (
         <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '24px', display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div>
+          <div style={{ display: 'none' }}>
             <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>MAX MARKS</span>
             <input type="number" className="input-field" value={rMaxScore} onChange={e => setRMaxScore(e.target.value)} style={{ width: '120px' }} />
           </div>
@@ -2921,17 +2934,6 @@ export default function EvaluateApp() {
                          return;
                       }
 
-                      // Optimistic Locking Check
-                      const { data: dbAss } = await supabase.from('assessments').select('title, questions').eq('id', editingAssessmentId).single();
-                      if (dbAss && editingAssessmentOriginal) {
-                         const dbQStr = JSON.stringify(dbAss.questions);
-                         const origQStr = JSON.stringify(editingAssessmentOriginal.questions);
-                         if (dbAss.title !== editingAssessmentOriginal.title || dbQStr !== origQStr) {
-                            setGlobalProgress({ active: false, percent: 0 });
-                            window.showToast("⚠️ COLLISION: Another faculty member has updated this assessment since you opened it. Please refresh and review their changes.", "error");
-                            return;
-                         }
-                      }
 
                       supabase.from('assessments').update({
                         title: createdExam.title, duration: createdExam.duration, questions: payloadQuestions
