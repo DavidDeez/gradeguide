@@ -985,23 +985,41 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>STUDENT ANSWERS (Read Only)</label>
             <textarea className="input-field" rows={6} value={rAnswer} readOnly style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'var(--primary)', borderWidth: '2px', fontSize: '0.75rem' }} />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignSelf: 'flex-start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignSelf: 'flex-start', width: '100%', maxWidth: '320px', marginTop: '8px' }}>
             <button 
               className="btn" 
-              style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}
+              style={{ 
+                padding: '14px 24px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                gap: '10px', 
+                fontSize: '0.95rem',
+                fontWeight: '600',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                fontFamily: 'var(--font-mono)',
+                background: rRunning ? 'rgba(255,255,255,0.05)' : 'var(--primary)',
+                color: rRunning ? 'var(--text-muted)' : '#000',
+                border: rRunning ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                borderRadius: '6px',
+                boxShadow: rRunning ? 'none' : '0 0 20px rgba(240, 246, 252, 0.15)',
+                transition: 'all 0.3s ease'
+              }}
               disabled={rRunning}
               onClick={() => runComparison()}
             >
-              <Play size={18} fill="white" /> {rRunning ? 'Comparing...' : 'Start Model Comparison'}
+              <Play size={16} fill={rRunning ? "var(--text-muted)" : "#000"} /> 
+              {rRunning ? 'COMPARING MODELS...' : 'START MODEL COMPARISON'}
             </button>
             {rRunning && (
-              <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.1)', borderRadius: '1px', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
                 <div style={{ 
                   height: '100%', 
                   width: `${(rResults.length / COMPARISON_MODELS.length) * 100}%`, 
                   background: 'var(--success)', 
-                  transition: 'width 0.4s ease',
-                  boxShadow: '0 0 8px var(--success)'
+                  transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 0 12px var(--success), 0 0 4px var(--success)'
                 }} />
               </div>
             )}
