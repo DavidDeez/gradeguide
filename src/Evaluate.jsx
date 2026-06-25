@@ -799,7 +799,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       };
       const res  = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent?key=${activeGeminiKey}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
       const data = await res.json();
-      if (data.error) throw new Error(data.error.message);
+      if (data.error) throw new Error(data.error.message.includes('Quota exceeded') ? 'Google API Free Tier Quota Exceeded. Please upgrade to a paid API key.' : data.error.message);
       const txt = data.candidates?.[0]?.content?.parts?.find(p=>p.text)?.text || '';
       return JSON.parse(txt.replace(/```json|```/gi,'').trim());
     } else {
@@ -1841,7 +1841,7 @@ export default function EvaluateApp() {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
       });
       const data = await res.json();
-      if (data.error) throw new Error(`Gemini Error: ${data.error.message}`);
+      if (data.error) throw new Error(data.error.message.includes('Quota exceeded') ? 'Google API Free Tier Quota Exceeded. Please upgrade to a paid API key.' : `Gemini Error: ${data.error.message}`);
       if (!data.candidates?.[0]?.content) throw new Error('Gemini empty response');
       const textPart = (data.candidates[0].content.parts || []).find(p => p.text !== undefined);
       if (!textPart) throw new Error('Gemini no text part');
@@ -2681,7 +2681,7 @@ export default function EvaluateApp() {
               method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
             });
             const resData = await res.json();
-            if (resData.error) throw new Error(resData.error.message);
+            if (resData.error) throw new Error(resData.error.message.includes('Quota exceeded') ? 'Google API Free Tier Quota Exceeded.' : resData.error.message);
             data = resData;
             break; // Success! Exit the loop.
           } catch (err) {
