@@ -1313,7 +1313,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
                     {agr !== null && <span style={{ background: parseFloat(agr)>=90?'rgba(46,160,67,0.2)':'rgba(248,81,73,0.2)', padding:'2px 8px', borderRadius:'4px', fontSize:'0.75rem', color: parseFloat(agr)>=90?'var(--success)':'var(--danger)' }}>vs Consensus: <strong>{agr}%</strong></span>}
                   </div>
                   <strong style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>REASON FOR SCORE:</strong>
-                  <p style={{ margin:0, fontSize:'0.78rem', color:'var(--text-muted)', lineHeight:1.5 }}>{r.error ? r.feedback : (r.feedback||'').substring(0,160)}{(!r.error && (r.feedback||'').length>160)?'…':''}</p>
+                  <p style={{ margin:0, fontSize:'0.78rem', color:'var(--text-muted)', lineHeight:1.5 }}>{r.feedback || ''}</p>
                 </div>
               );
             })}
