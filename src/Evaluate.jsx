@@ -7,7 +7,8 @@ const supabaseKey = 'sb_publishable_YBhB3VAvGfm6ZnHOGA1jGw_G9a8GYb_';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 import * as pdfjsLib from 'pdfjs-dist';
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 import {
   Settings, Camera, Upload, Book, FileText, CheckCircle, 
