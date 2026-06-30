@@ -2878,15 +2878,17 @@ export default function EvaluateApp() {
                     >
                       <Brain size={16} /> AI Generate Questions
                     </button>
-                    <select
+                    <input
+                      type="number"
                       className="input-field"
                       style={{ width: '90px', flex: 'none' }}
                       value={genCount}
                       onChange={e => setGenCount(Number(e.target.value))}
                       disabled={aiGenerating}
-                    >
-                      {[5,10,20,30,50,75,100].map(n => <option key={n} value={n}>{n} Qs</option>)}
-                    </select>
+                      min="1"
+                      max="200"
+                      placeholder="Qs"
+                    />
                   </div>
                   {aiGenerating && (
                     <div style={{ width: '100%', height: '2px', background: 'rgba(59,130,246,0.2)', marginTop: '6px', overflow: 'hidden', borderRadius: '2px', position: 'relative' }}>
