@@ -2674,7 +2674,6 @@ export default function EvaluateApp() {
       setAiGenerating(true);
       window.showToast(`Generating ${genCount} theory questions from context...`, 'info');
       try {
-        const prompt = `You are an expert academic exam setter. Based on the provided context material, generate exactly ${genCount} theory/essay-style exam questions that test deep understanding. Questions should be clear, specific, and suitable for university-level assessment. Return ONLY a JSON array of strings: ["Question 1 text", "Question 2 text", ...]. No numbering, no markdown, no extra text.`;
         const system = `You must return ONLY a raw JSON array of strings.`;
         
         let finalContextText = assessmentContext.text || '';
@@ -2684,23 +2683,38 @@ export default function EvaluateApp() {
           finalContextText += '\n\n[Extracted PDF Content]:\n' + pdfText;
         }
 
-        const combinedPrompt = finalContextText ? `Context:\n${finalContextText}\n\n${prompt}` : prompt;
+        let allGeneratedQs = [];
+        const batchSize = 30; // Max safe number of questions per LLM call to avoid token limit cutoffs
+        const numBatches = Math.ceil(genCount / batchSize);
         
-        const txt = await callAI(combinedPrompt, system, []);
-        
-        let questions = [];
-        try {
-          const match = txt.match(/\[[\s\S]*\]/);
-          if (!match) throw new Error("No JSON array found.");
-          questions = JSON.parse(match[0]);
-        } catch (err) {
-          if (txt.toLowerCase().includes("cannot") || txt.toLowerCase().includes("unable")) {
-            throw new Error("The AI refused to process this file. Note: The free fallback models cannot read PDFs natively. Please paste your text manually in the 'Paste Text' tab.");
+        for (let i = 0; i < numBatches; i++) {
+          const currentBatchCount = (i === numBatches - 1) ? (genCount - (i * batchSize)) : batchSize;
+          if (window.showToast && numBatches > 1) {
+            window.showToast(`Generating batch ${i + 1} of ${numBatches} (${currentBatchCount} Qs)...`, 'info');
           }
-          throw new Error(`Invalid JSON format from AI: ${txt.substring(0, 50)}...`);
+          
+          const prompt = `You are an expert academic exam setter. Based on the provided context material, generate exactly ${currentBatchCount} theory/essay-style exam questions that test deep understanding. Questions should be clear, specific, and suitable for university-level assessment. Return ONLY a JSON array of strings: ["Question 1 text", "Question 2 text", ...]. No numbering, no markdown, no extra text.`;
+          const combinedPrompt = finalContextText ? `Context:\n${finalContextText}\n\n${prompt}` : prompt;
+          
+          const txt = await callAI(combinedPrompt, system, []);
+          
+          try {
+            const match = txt.match(/\[[\s\S]*\]/);
+            if (!match) throw new Error("No JSON array found.");
+            const parsed = JSON.parse(match[0]);
+            if (Array.isArray(parsed)) allGeneratedQs = allGeneratedQs.concat(parsed);
+          } catch (err) {
+            console.error("Batch error:", err, txt);
+            if (txt.toLowerCase().includes("cannot") || txt.toLowerCase().includes("unable")) {
+              throw new Error("The AI refused to process this file.");
+            }
+            if (numBatches === 1) throw new Error(`Invalid JSON format from AI: ${txt.substring(0, 50)}...`);
+            // If one batch fails out of many, we just skip it to salvage the rest
+          }
         }
-        if (!Array.isArray(questions) || questions.length === 0) throw new Error('AI returned no questions.');
-        const newQs = questions.map((q, i) => ({ id: Date.now() + i, text: String(q).trim(), maxMarks: 10 }));
+        
+        if (allGeneratedQs.length === 0) throw new Error('AI returned no valid questions across all batches.');
+        const newQs = allGeneratedQs.map((q, i) => ({ id: Date.now() + i, text: String(q).trim(), maxMarks: 10 }));
         setNewQuestions(newQs);
         window.showToast(`${newQs.length} questions generated! Review and edit before saving.`, 'success');
       } catch (e) {
