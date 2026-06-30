@@ -6,6 +6,9 @@ const supabaseUrl = 'https://rnayaaqjbkbuiderdngu.supabase.co';
 const supabaseKey = 'sb_publishable_YBhB3VAvGfm6ZnHOGA1jGw_G9a8GYb_';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+import * as pdfjsLib from 'pdfjs-dist';
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
 import {
   Settings, Camera, Upload, Book, FileText, CheckCircle, 
   BarChart, X, Plus, Trash2, Check, Video, Layout, LogOut, 
@@ -1797,6 +1800,38 @@ export default function EvaluateApp() {
   };
 
 
+  // ── Local PDF Text Extractor ──────────────────────────────────────────
+  const extractPdfText = async (base64OrUrl) => {
+    try {
+      let dataToParse;
+      if (base64OrUrl.startsWith('http')) {
+        const res = await fetch(base64OrUrl);
+        const arrayBuffer = await res.arrayBuffer();
+        dataToParse = new Uint8Array(arrayBuffer);
+      } else {
+        const base64Data = base64OrUrl.split(',')[1] || base64OrUrl;
+        const binaryString = window.atob(base64Data);
+        dataToParse = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          dataToParse[i] = binaryString.charCodeAt(i);
+        }
+      }
+      
+      const pdf = await pdfjsLib.getDocument({ data: dataToParse }).promise;
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += pageText + '\n';
+      }
+      return fullText;
+    } catch (e) {
+      console.error("PDF Extraction Error:", e);
+      throw new Error("Failed to extract text from PDF locally.");
+    }
+  };
+
   // ── Auto-failover AI caller ─────────────────────────────────────────
   // Tries each provider in sequence. If one fails (rate limit, high demand,
   // etc.) it silently moves to the next free option.
@@ -1938,7 +1973,20 @@ export default function EvaluateApp() {
     const initialFiles = assessment.contextPdfBase64 ? [{ mime: assessment.contextFileMime || "application/pdf", base64: assessment.contextPdfBase64 }] : (courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : []);
     const allFilesToResolve = [...initialFiles, ...studentFiles];
     
-    const result = await callAI(prompt, system, allFilesToResolve);
+    let finalPrompt = prompt;
+    const nonPdfFiles = [];
+    
+    for (const file of allFilesToResolve) {
+      if (file.mime === 'application/pdf' || file.mime === 'application/x-pdf') {
+        if (window.showToast) window.showToast("Extracting text from PDF locally...", 'info');
+        const pdfText = await extractPdfText(file.base64);
+        finalPrompt += '\n\n[Extracted PDF Content]:\n' + pdfText;
+      } else {
+        nonPdfFiles.push(file);
+      }
+    }
+    
+    const result = await callAI(finalPrompt, system, nonPdfFiles);
     try {
       let cleaned = result.replace(/```json/gi, '').replace(/```/g, '').trim();
       const match = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
@@ -2627,14 +2675,17 @@ export default function EvaluateApp() {
       try {
         const prompt = `You are an expert academic exam setter. Based on the provided context material, generate exactly ${genCount} theory/essay-style exam questions that test deep understanding. Questions should be clear, specific, and suitable for university-level assessment. Return ONLY a JSON array of strings: ["Question 1 text", "Question 2 text", ...]. No numbering, no markdown, no extra text.`;
         const system = `You must return ONLY a raw JSON array of strings.`;
-        const combinedPrompt = assessmentContext.text ? `Context:\n${assessmentContext.text}\n\n${prompt}` : prompt;
         
-        let files = [];
+        let finalContextText = assessmentContext.text || '';
         if (assessmentContext.pdfBase64) {
-          files.push({ base64: assessmentContext.pdfBase64, mime: assessmentContext.fileMime || 'application/pdf' });
+          if (window.showToast) window.showToast("Extracting text from PDF locally...", 'info');
+          const pdfText = await extractPdfText(assessmentContext.pdfBase64);
+          finalContextText += '\n\n[Extracted PDF Content]:\n' + pdfText;
         }
 
-        const txt = await callAI(combinedPrompt, system, files);
+        const combinedPrompt = finalContextText ? `Context:\n${finalContextText}\n\n${prompt}` : prompt;
+        
+        const txt = await callAI(combinedPrompt, system, []);
         
         let questions = [];
         try {
