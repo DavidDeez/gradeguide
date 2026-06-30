@@ -1801,8 +1801,8 @@ export default function EvaluateApp() {
   // Tries each provider in sequence. If one fails (rate limit, high demand,
   // etc.) it silently moves to the next free option.
   const callAI = async (prompt, system, files = []) => {
-    const activeOpenRouterKey = OBFUSCATED_OPENROUTER_KEY || aiSettings.openrouterKey;
-    const activeGeminiKey = OBFUSCATED_GEMINI_KEY || aiSettings.geminiKey;
+    const activeOpenRouterKey = aiSettings.openrouterKey || OBFUSCATED_OPENROUTER_KEY;
+    const activeGeminiKey = aiSettings.geminiKey || OBFUSCATED_GEMINI_KEY;
 
     // ── Helper: call Gemini ──────────────────────────────────────────
     const tryGemini = async (modelName) => {
