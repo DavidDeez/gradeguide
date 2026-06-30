@@ -2622,78 +2622,20 @@ export default function EvaluateApp() {
         window.showToast('Please upload a PDF or paste context material first.', 'warning');
         return;
       }
-      const geminiKey = aiSettings.geminiKey;
-      if (!geminiKey) {
-        window.showToast('No Gemini API key configured. Go to System Audit & Engine to add it.', 'warning');
-        return;
-      }
       setAiGenerating(true);
       window.showToast(`Generating ${genCount} theory questions from context...`, 'info');
       try {
-        let finalPdfBase64 = assessmentContext.pdfBase64;
-        let fileParts = [];
-        
-        if (finalPdfBase64 && finalPdfBase64.startsWith('http')) {
-          const res = await fetch(finalPdfBase64);
-          if (!res.ok) throw new Error(`Failed to fetch file from storage. Status: ${res.status}`);
-          const blob = await res.blob();
-          const mime = assessmentContext.fileMime || 'application/pdf';
-          
-          const uploadRes = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${geminiKey}`, {
-            method: 'POST',
-            headers: {
-              'X-Goog-Upload-Protocol': 'raw',
-              'X-Goog-Upload-Command': 'start, upload, finalize',
-              'X-Goog-Upload-Header-Content-Length': blob.size.toString(),
-              'X-Goog-Upload-Header-Content-Type': mime,
-              'Content-Type': mime
-            },
-            body: blob
-          });
-          const uploadData = await uploadRes.json();
-          if (uploadData.error) throw new Error(`Gemini File API Error: ${uploadData.error.message}`);
-          fileParts.push({ file_data: { mime_type: mime, file_uri: uploadData.file.uri } });
-        } else if (finalPdfBase64) {
-          fileParts.push({ inline_data: { mime_type: assessmentContext.fileMime || 'application/pdf', data: finalPdfBase64 } });
-        }
-
         const prompt = `You are an expert academic exam setter. Based on the provided context material, generate exactly ${genCount} theory/essay-style exam questions that test deep understanding. Questions should be clear, specific, and suitable for university-level assessment. Return ONLY a JSON array of strings: ["Question 1 text", "Question 2 text", ...]. No numbering, no markdown, no extra text.`;
-        const body = {
-          contents: [{ role: 'user', parts: [
-            ...fileParts,
-            { text: assessmentContext.text ? `Context:\n${assessmentContext.text}\n\n${prompt}` : prompt }
-          ]}],
-          generationConfig: { temperature: 0, responseMimeType: 'application/json', maxOutputTokens: 8000 }
-        };
-
-        const modelsToTry = [
-          aiSettings.geminiModel || 'gemini-flash-latest', 
-          'gemini-1.5-pro-latest',
-          'gemini-2.0-flash'
-        ];
+        const system = `You must return ONLY a raw JSON array of strings.`;
+        const combinedPrompt = assessmentContext.text ? `Context:\n${assessmentContext.text}\n\n${prompt}` : prompt;
         
-        let data = null;
-        let lastErr = null;
-
-        for (const m of modelsToTry) {
-          try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${geminiKey}`, {
-              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-            });
-            const resData = await res.json();
-            if (resData.error) throw new Error(resData.error.message.includes('Quota exceeded') ? 'Google API Free Tier Quota Exceeded.' : resData.error.message);
-            data = resData;
-            break; // Success! Exit the loop.
-          } catch (err) {
-            lastErr = err;
-            console.warn(`Model ${m} failed:`, err);
-            // Continue to the next model in the fallback list
-          }
+        let files = [];
+        if (assessmentContext.pdfBase64) {
+          files.push({ base64: assessmentContext.pdfBase64, mime: assessmentContext.fileMime || 'application/pdf' });
         }
 
-        if (!data) throw new Error(lastErr ? lastErr.message : 'All Gemini models are currently overloaded.');
+        const txt = await callAI(combinedPrompt, system, files);
         
-        const txt = data.candidates?.[0]?.content?.parts?.find(p => p.text)?.text || '[]';
         const questions = JSON.parse(txt.replace(/```json|```/gi, '').trim());
         if (!Array.isArray(questions) || questions.length === 0) throw new Error('AI returned no questions.');
         const newQs = questions.map((q, i) => ({ id: Date.now() + i, text: String(q).trim(), maxMarks: 10 }));
