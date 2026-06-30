@@ -2636,7 +2636,17 @@ export default function EvaluateApp() {
 
         const txt = await callAI(combinedPrompt, system, files);
         
-        const questions = JSON.parse(txt.replace(/```json|```/gi, '').trim());
+        let questions = [];
+        try {
+          const match = txt.match(/\[[\s\S]*\]/);
+          if (!match) throw new Error("No JSON array found.");
+          questions = JSON.parse(match[0]);
+        } catch (err) {
+          if (txt.toLowerCase().includes("cannot") || txt.toLowerCase().includes("unable")) {
+            throw new Error("The AI refused to process this file. Note: The free fallback models cannot read PDFs natively. Please paste your text manually in the 'Paste Text' tab.");
+          }
+          throw new Error(`Invalid JSON format from AI: ${txt.substring(0, 50)}...`);
+        }
         if (!Array.isArray(questions) || questions.length === 0) throw new Error('AI returned no questions.');
         const newQs = questions.map((q, i) => ({ id: Date.now() + i, text: String(q).trim(), maxMarks: 10 }));
         setNewQuestions(newQs);
