@@ -1828,7 +1828,7 @@ export default function EvaluateApp() {
       return fullText;
     } catch (e) {
       console.error("PDF Extraction Error:", e);
-      throw new Error("Failed to extract text from PDF locally.");
+      throw new Error(`Failed to extract text from PDF locally: ${e.message}`);
     }
   };
 
