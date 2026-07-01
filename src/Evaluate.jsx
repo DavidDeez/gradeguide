@@ -3775,38 +3775,46 @@ const text = document.getElementById('bulkStudCSV').value;
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
           <h2 style={{ margin: 0 }}>{activeExam.title}</h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--success)', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '4px', animation: 'fadeIn 1s ease' }}>
+              <CheckCircle size={14} /> Auto-Saved
+            </span>
             {timeLeft !== null && (
               <div style={{ 
                 display: 'flex', alignItems: 'center', gap: '8px',
                 background: timeLeft < 60 ? 'rgba(248, 81, 73, 0.1)' : 'rgba(46, 160, 67, 0.1)', 
                 border: `1px solid ${timeLeft < 60 ? 'var(--danger)' : 'var(--success)'}`,
-                padding: '6px 16px', borderRadius: '12px',
+                padding: '6px 16px', borderRadius: '30px', 
                 color: timeLeft < 60 ? 'var(--danger)' : 'var(--success)',
-                fontFamily: "'Courier New', Courier, monospace",
-                fontWeight: 'bold', fontSize: '1.2rem', letterSpacing: '2px',
+                fontWeight: 'bold', fontFamily: 'var(--font-heading)',
                 boxShadow: timeLeft < 60 ? '0 0 10px rgba(248, 81, 73, 0.3)' : '0 0 10px rgba(46, 160, 67, 0.15)',
                 animation: timeLeft < 60 ? 'pulse 1s infinite' : 'none'
               }}>
-                <Clock size={18} style={{ marginRight: '4px' }} />
-                <span>
+                <Clock size={16} /> 
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
                 </span>
               </div>
             )}
             <button className="btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => {
-            if (window.confirm("Are you sure you want to go back? Your current answers will be lost.")) {
+            if (window.confirm("Are you sure you want to go back? Your draft will be saved, but the timer will continue if applicable.")) {
               setActiveExam(null);
               setExamAnswers({});
             }
           }}>
-            <X size={16}/> Back
+            <X size={16}/> Save & Exit
           </button>
           </div>
         </div>
         {activeExam.questions.map(q => (
           <div key={q.id} style={{ marginBottom: '32px' }}>
             <p style={{ fontSize: '1.1rem', marginBottom: '16px', fontWeight: '500' }}>{q.text}</p>
-            <textarea className="input-field" rows={4} placeholder="Type your answer clearly..." onChange={e => setExamAnswers({...examAnswers, [q.id]: e.target.value})} />
+            <textarea 
+              className="input-field" 
+              rows={4} 
+              placeholder="Type your answer clearly..." 
+              value={examAnswers[q.id] || ''}
+              onChange={e => setExamAnswers({...examAnswers, [q.id]: e.target.value})} 
+            />
           </div>
         ))}
         <div style={{ marginBottom: '24px', padding: '24px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed var(--primary)' }}>
