@@ -2197,6 +2197,18 @@ export default function EvaluateApp() {
     };
   }, [role, aiSettings.gradingStrategy]);
 
+  // --- Autonomous Auto-Pilot Wake Up ---
+  useEffect(() => {
+    if ((role === 'FacultyHub' || role === 'Admin') && aiSettings.gradingStrategy !== 'background') {
+      const hasPending = submissions.some(s => s.status === 'pending');
+      if (hasPending) {
+        setAiSettings(prev => ({ ...prev, gradingStrategy: 'background' }));
+        setAutoPilotLogs(prev => ["[System] Auto-Pilot autonomously waking up to handle pending queue...", ...prev]);
+        if (window.showToast) window.showToast("Auto-Pilot has autonomously woken up to handle pending exams!", "info");
+      }
+    }
+  }, [submissions, role, aiSettings.gradingStrategy]);
+
   // --- Student Polling Hook (Moved to global scope to prevent React Hooks crash) ---
   useEffect(() => {
     let interval;
