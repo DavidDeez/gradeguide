@@ -2696,20 +2696,25 @@ export default function EvaluateApp() {
           const prompt = `You are an expert academic exam setter. Based on the provided context material, generate exactly ${currentBatchCount} theory/essay-style exam questions that test deep understanding. Questions should be clear, specific, and suitable for university-level assessment. Return ONLY a JSON array of strings: ["Question 1 text", "Question 2 text", ...]. No numbering, no markdown, no extra text.`;
           const combinedPrompt = finalContextText ? `Context:\n${finalContextText}\n\n${prompt}` : prompt;
           
-          const txt = await callAI(combinedPrompt, system, []);
-          
+          let txt = '';
           try {
+            txt = await callAI(combinedPrompt, system, []);
             const match = txt.match(/\[[\s\S]*\]/);
             if (!match) throw new Error("No JSON array found.");
             const parsed = JSON.parse(match[0]);
             if (Array.isArray(parsed)) allGeneratedQs = allGeneratedQs.concat(parsed);
           } catch (err) {
             console.error("Batch error:", err, txt);
-            if (txt.toLowerCase().includes("cannot") || txt.toLowerCase().includes("unable")) {
+            if (txt && (txt.toLowerCase().includes("cannot") || txt.toLowerCase().includes("unable"))) {
               throw new Error("The AI refused to process this file.");
             }
-            if (numBatches === 1) throw new Error(`Invalid JSON format from AI: ${txt.substring(0, 50)}...`);
+            if (numBatches === 1) throw new Error(`AI or Network Error: ${err.message}`);
             // If one batch fails out of many, we just skip it to salvage the rest
+          }
+          
+          // Rate-limit safety: Wait 2 seconds between batches to avoid Free-Tier 429 errors
+          if (i < numBatches - 1) {
+            await new Promise(resolve => setTimeout(resolve, 2500));
           }
         }
         
