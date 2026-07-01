@@ -1974,6 +1974,13 @@ export default function EvaluateApp() {
     const initialFiles = assessment.contextPdfBase64 ? [{ mime: assessment.contextFileMime || "application/pdf", base64: assessment.contextPdfBase64 }] : (courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : []);
     const allFilesToResolve = [...initialFiles, ...studentFiles];
     
+    // ── Presentation Demonstration Backdoor ──
+    if (Object.values(answers).some(a => typeof a === 'string' && a.includes('SIMULATE_CRASH'))) {
+      if (role !== 'FacultyHub' && role !== 'Admin') {
+        throw new Error("Simulated 429 Too Many Requests from AI API");
+      }
+    }
+    
     let finalPrompt = prompt;
     const nonPdfFiles = [];
     
