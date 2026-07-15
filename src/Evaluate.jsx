@@ -3517,7 +3517,9 @@ const text = document.getElementById('bulkStudCSV').value;
             </div>
 
             <div className="glass-panel" style={{ padding: '20px 24px' }}>
-              <h4 style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-heading)', fontSize: '1.05rem' }}><Terminal size={16}/> Node Terminal</h4>
+              <h4 style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-heading)', fontSize: '1.05rem' }}>
+                <Terminal size={16}/> Node Terminal (DEBUG: V2, Subs: {submissions.length}, Pending: {submissions.filter(s => s.status === 'pending').length})
+              </h4>
               <div className="scrollbar" style={{ background: '#0d1117', borderRadius: '6px', padding: '12px', height: '240px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.8rem', color: '#00ff00', border: '1px solid #30363d' }}>
                 {aiSettings.gradingStrategy !== 'background' && <div style={{ color: '#8b949e' }}>[System] Auto-Pilot is currently offline. Instant Grading on Submit is active.</div>}
                 {autoPilotLogs.map((log, i) => (
