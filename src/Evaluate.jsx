@@ -1970,7 +1970,6 @@ export default function EvaluateApp() {
     }
 
     const system = "You are an objective, highly accurate academic grading system. 1. ANCHORING: Base your evaluation STRICTLY on the provided Reference Context. Recognize conceptual understanding and synonyms; do not penalize for exact phrasing unless quoting is required. 2. FAIRNESS & PARTIAL CREDIT: Award proportional partial credit. If an answer hits 3 out of 4 required points, award 75%. 3. MAINTAIN RIGOR: Do not be overly lax. Deduct points for factual inaccuracies, hallucinations, or irrelevant rambling. Students must demonstrate true comprehension. 4. ANTI-BIAS: Grade purely on factual accuracy and logical coherence. Ignore minor typos or grammatical errors. Be constructive. 5. FEEDBACK: Explain exactly why points were awarded or lost. Return ONLY a RAW JSON object exactly matching this schema: {\"results\": [{\"questionId\": <number>, \"score\": <number>, \"grade\": \"<string>\", \"feedback\": \"<string>\", \"strengths\": [\"<string>\"], \"improvements\": [\"<string>\"]}], \"authenticity\": <number 0-100>, \"authenticityReason\": \"<string>\"}. CRITICAL: You MUST escape all double quotes inside your JSON string values using a backslash (e.g. \\\"). DO NOT output markdown blocks or unescaped newlines.";
-    const prompt = `Grading task for: ${assessment.title}\nQuestions: ${JSON.stringify(assessment.questions)}\nStudent Typed Answers: ${JSON.stringify(answers)}\nReference Context: ${assessment.contextText || courseMaterial.text}\nIf a student file is attached, read the answers directly from the file to grade. Also, strictly evaluate the student answers for AI-generation or plagiarism.`;
     const initialFiles = assessment.contextPdfBase64 ? [{ mime: assessment.contextFileMime || "application/pdf", base64: assessment.contextPdfBase64 }] : (courseMaterial.pdfBase64 ? [{ mime: "application/pdf", base64: courseMaterial.pdfBase64 }] : []);
     const allFilesToResolve = [...initialFiles, ...studentFiles];
     
@@ -1981,26 +1980,67 @@ export default function EvaluateApp() {
       }
     }
     
-    let finalPrompt = prompt;
+    let baseContext = assessment.contextText || courseMaterial.text || "";
     const nonPdfFiles = [];
     
     for (const file of allFilesToResolve) {
       if (file.mime === 'application/pdf' || file.mime === 'application/x-pdf') {
         if (window.showToast) window.showToast("Extracting text from PDF locally...", 'info');
         const pdfText = await extractPdfText(file.base64);
-        finalPrompt += '\n\n[Extracted PDF Content]:\n' + pdfText;
+        baseContext += '\n\n[Extracted PDF Content]:\n' + pdfText;
       } else {
         nonPdfFiles.push(file);
       }
     }
+
+    const BATCH_SIZE = 15;
+    const totalBatches = Math.ceil(assessment.questions.length / BATCH_SIZE);
+    let allResults = [];
+    let avgAuthenticity = 0;
+    let combinedAuthReasons = [];
     
-    const result = await callAI(finalPrompt, system, nonPdfFiles);
-    try {
-      let cleaned = result.replace(/```json/gi, '').replace(/```/g, '').trim();
-      const match = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-      if (match) cleaned = match[0];
-      return JSON.parse(cleaned);
-    } catch(e) { throw new Error(`AI output parsing failed. Raw: ${result.substring(0, 80)}...`); }
+    for (let i = 0; i < totalBatches; i++) {
+      const batchQuestions = assessment.questions.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
+      const batchQuestionIds = batchQuestions.map(q => q.id);
+      
+      const batchAnswers = {};
+      batchQuestionIds.forEach(id => {
+        if (answers[id] !== undefined) batchAnswers[id] = answers[id];
+      });
+
+      const batchPrompt = `Grading task for: ${assessment.title} (Batch ${i+1} of ${totalBatches})\nQuestions: ${JSON.stringify(batchQuestions)}\nStudent Typed Answers: ${JSON.stringify(batchAnswers)}\nReference Context: ${baseContext}\nIf a student file is attached, read the answers directly from the file to grade. Also, strictly evaluate the student answers for AI-generation or plagiarism.`;
+      
+      try {
+        const result = await callAI(batchPrompt, system, nonPdfFiles);
+        let cleaned = result.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const match = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        if (match) cleaned = match[0];
+        const parsed = JSON.parse(cleaned);
+        
+        if (parsed.results && Array.isArray(parsed.results)) {
+          allResults = [...allResults, ...parsed.results];
+        } else if (Array.isArray(parsed)) {
+          allResults = [...allResults, ...parsed];
+        }
+        
+        if (parsed.authenticity !== undefined) avgAuthenticity += parsed.authenticity;
+        if (parsed.authenticityReason) combinedAuthReasons.push(`B${i+1}: ${parsed.authenticityReason}`);
+      } catch(e) {
+        console.error(`Batch ${i+1} grading failed:`, e);
+        throw new Error(`AI output parsing failed during batch ${i+1}.`);
+      }
+      
+      if (i < totalBatches - 1) {
+        if (window.showToast) window.showToast(`Batch ${i+1}/${totalBatches} graded. Pacing API requests...`, 'info');
+        await new Promise(res => setTimeout(res, 2500));
+      }
+    }
+    
+    return {
+      results: allResults,
+      authenticity: avgAuthenticity > 0 ? Math.round(avgAuthenticity / totalBatches) : 100,
+      authenticityReason: combinedAuthReasons.join(" | ") || "No significant authenticity issues detected."
+    };
   };
 
   const handleBulkUpload = (e, target, idx = null) => {
@@ -2128,6 +2168,8 @@ export default function EvaluateApp() {
         return;
       }
       
+      let currentSubId = null;
+      
       try {
         // 1. Live Sync: Fetch fresh submissions to keep the Faculty Dashboard UI completely real-time
         const { data: allSubs } = await supabase.from('submissions').select('*').order('created_at', { ascending: false }).limit(50);
@@ -2146,6 +2188,7 @@ export default function EvaluateApp() {
           const pendingSub = pendingSubs.length > 0 ? pendingSubs[pendingSubs.length - 1] : null;
           
           if (pendingSub && active) {
+            currentSubId = pendingSub.id;
             setAutoPilotLogs(prev => [`[${new Date().toLocaleTimeString()}] Detected pending exam for ${pendingSub.studentId}. Grading...`, ...prev].slice(0, 10));
             
             // 3. Lock it by setting status to 'processing' directly in the SQL table
@@ -2188,6 +2231,10 @@ export default function EvaluateApp() {
         }
       } catch (err) {
         console.error("AutoPilot Error:", err);
+        if (currentSubId) {
+          await supabase.from('submissions').update({ status: 'failed' }).eq('id', currentSubId);
+          setAutoPilotLogs(prev => [`[${new Date().toLocaleTimeString()}] Crash recovered! Submission ${currentSubId} unlocked and marked as failed.`, ...prev].slice(0, 10));
+        }
       }
       
       // Delay before next poll/grade. Sped up to 2000ms.
