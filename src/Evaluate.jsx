@@ -2172,7 +2172,8 @@ export default function EvaluateApp() {
       
       try {
         // 1. Live Sync: Fetch fresh submissions to keep the Faculty Dashboard UI completely real-time
-        const { data: allSubs } = await supabase.from('submissions').select('*').order('created_at', { ascending: false }).limit(50);
+        const { data: allSubs, error: dbError } = await supabase.from('submissions').select('*').order('created_at', { ascending: false }).limit(50);
+        if (dbError) throw new Error("DB Fetch failed: " + dbError.message);
         if (allSubs) {
           const mappedSubs = allSubs.map(row => ({
             id: row.id, assessmentId: row.assessment_id, studentId: row.student_id,
@@ -2231,6 +2232,7 @@ export default function EvaluateApp() {
         }
       } catch (err) {
         console.error("AutoPilot Error:", err);
+        setAutoPilotLogs(prev => [`[${new Date().toLocaleTimeString()}] CRASH: ${err.message}`, ...prev].slice(0, 10));
         if (currentSubId) {
           await supabase.from('submissions').update({ status: 'failed' }).eq('id', currentSubId);
           setAutoPilotLogs(prev => [`[${new Date().toLocaleTimeString()}] Crash recovered! Submission ${currentSubId} unlocked and marked as failed.`, ...prev].slice(0, 10));
