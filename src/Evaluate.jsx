@@ -985,11 +985,11 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
           <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Review & Compare</h3>
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>FULL ASSESSMENT (Read Only)</label>
-            <textarea className="input-field" rows={4} value={rQuestion} readOnly style={{ background: 'rgba(255,255,255,0.02)', fontSize: '0.75rem' }} />
+            <textarea className="input-field" rows={4} value={rQuestion && rQuestion.length > 800 ? rQuestion.substring(0, 800) + '...\n\n[TRUNCATED FOR DISPLAY - FULL EXAM WILL BE GRADED]' : rQuestion} readOnly style={{ background: 'rgba(255,255,255,0.02)', fontSize: '0.75rem' }} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>STUDENT ANSWERS (Read Only)</label>
-            <textarea className="input-field" rows={6} value={rAnswer} readOnly style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'var(--primary)', borderWidth: '2px', fontSize: '0.75rem' }} />
+            <textarea className="input-field" rows={6} value={rAnswer && rAnswer.length > 800 ? rAnswer.substring(0, 800) + '...\n\n[TRUNCATED FOR DISPLAY - FULL EXAM WILL BE GRADED]' : rAnswer} readOnly style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'var(--primary)', borderWidth: '2px', fontSize: '0.75rem' }} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignSelf: 'flex-start', width: '100%', maxWidth: '320px', marginTop: '8px' }}>
             <button 
