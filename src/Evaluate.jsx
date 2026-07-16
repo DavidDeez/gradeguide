@@ -2010,24 +2010,39 @@ export default function EvaluateApp() {
 
       const batchPrompt = `Grading task for: ${assessment.title} (Batch ${i+1} of ${totalBatches})\nQuestions: ${JSON.stringify(batchQuestions)}\nStudent Typed Answers: ${JSON.stringify(batchAnswers)}\nReference Context: ${baseContext}\nIf a student file is attached, read the answers directly from the file to grade. Also, strictly evaluate the student answers for AI-generation or plagiarism.`;
       
-      try {
-        const result = await callAI(batchPrompt, system, nonPdfFiles);
-        let cleaned = result.replace(/```json/gi, '').replace(/```/g, '').trim();
-        const match = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-        if (match) cleaned = match[0];
-        const parsed = JSON.parse(cleaned);
-        
-        if (parsed.results && Array.isArray(parsed.results)) {
-          allResults = [...allResults, ...parsed.results];
-        } else if (Array.isArray(parsed)) {
-          allResults = [...allResults, ...parsed];
+      let retries = 0;
+      let batchSuccess = false;
+      while (!batchSuccess && retries < 3) {
+        try {
+          const result = await callAI(batchPrompt, system, nonPdfFiles);
+          let cleaned = result.replace(/```json/gi, '').replace(/```/g, '').trim();
+          const match = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+          if (match) cleaned = match[0];
+          const parsed = JSON.parse(cleaned);
+          
+          if (parsed.results && Array.isArray(parsed.results)) {
+            allResults = [...allResults, ...parsed.results];
+          } else if (Array.isArray(parsed)) {
+            allResults = [...allResults, ...parsed];
+          }
+          
+          if (parsed.authenticity !== undefined) avgAuthenticity += parsed.authenticity;
+          if (parsed.authenticityReason) combinedAuthReasons.push(`B${i+1}: ${parsed.authenticityReason}`);
+          batchSuccess = true;
+        } catch(e) {
+          retries++;
+          console.error(`Batch ${i+1} attempt ${retries} failed:`, e);
+          if (retries >= 3) {
+            console.error(`Batch ${i+1} permanently failed after 3 retries. Defaulting to 0.`);
+            const failedResults = batchQuestionIds.map(id => ({
+              questionId: id, score: 0, grade: "Fail", feedback: "AI grading failed for this specific question batch due to rate limits or parsing errors.", strengths: [], improvements: []
+            }));
+            allResults = [...allResults, ...failedResults];
+            batchSuccess = true; // Move on to next batch
+          } else {
+            await new Promise(res => setTimeout(res, 2000 * retries)); // Exponential backoff
+          }
         }
-        
-        if (parsed.authenticity !== undefined) avgAuthenticity += parsed.authenticity;
-        if (parsed.authenticityReason) combinedAuthReasons.push(`B${i+1}: ${parsed.authenticityReason}`);
-      } catch(e) {
-        console.error(`Batch ${i+1} grading failed:`, e);
-        throw new Error(`AI output parsing failed during batch ${i+1}.`);
       }
       
       if (i < totalBatches - 1) {
@@ -2158,12 +2173,14 @@ export default function EvaluateApp() {
   };
 
   // --- Auto-Pilot Queue Processor (Fully Autonomous SQL Node) ---
+  const autoPilotRunningRef = useRef(false);
+  
   useEffect(() => {
     let active = true;
     let timer;
     const processQueue = async () => {
-      // It must be set to background strategy, and the user must be logged in as Faculty or Admin
-      if ((role !== 'FacultyHub' && role !== 'Admin') || aiSettings.gradingStrategy !== 'background') {
+      // It must be set to background strategy, and the user must be logged in as Lecturer or Admin
+      if ((role !== 'Lecturer' && role !== 'Admin') || aiSettings.gradingStrategy !== 'background') {
         if (active) timer = setTimeout(processQueue, 2000);
         return;
       }
@@ -2243,12 +2260,16 @@ export default function EvaluateApp() {
       if (active) timer = setTimeout(processQueue, 2000);
     };
 
-    if ((role === 'FacultyHub' || role === 'Admin') && aiSettings.gradingStrategy === 'background') {
-      processQueue();
+    if ((role === 'Lecturer' || role === 'Admin') && aiSettings.gradingStrategy === 'background') {
+      if (!autoPilotRunningRef.current) {
+        autoPilotRunningRef.current = true;
+        processQueue();
+      }
     }
     
     return () => {
       active = false;
+      autoPilotRunningRef.current = false;
       clearTimeout(timer);
     };
   }, [role, aiSettings.gradingStrategy]);
@@ -2370,7 +2391,7 @@ export default function EvaluateApp() {
   const DetailedCorrectionsModal = () => {
     if (!selectedSub) return null;
     const ass = assessments.find(a => a.id == selectedSub.assessmentId);
-    const totalMaxMarks = ass ? ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0) : 0;
+    const totalMaxMarks = (ass?.questions || []).reduce((acc, q) => acc + (q.maxMarks || 10), 0);
     const results = selectedSub.results || [];
     const answers = selectedSub.answers || {};
     const totalScore = results.reduce((acc, r) => acc + (r.score || 0), 0);
@@ -2441,7 +2462,7 @@ export default function EvaluateApp() {
                 <h3 style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>Detailed Evaluation Breakdown</h3>
                 <div style={{ display: 'grid', gap: '32px' }}>
                 {results.map((res, index) => {
-              const qObj = ass?.questions.find(q => q.id === res.questionId) || { text: 'Academic Question', maxMarks: 10 };
+              const qObj = (ass?.questions || []).find(q => q.id === res.questionId) || { text: 'Academic Question', maxMarks: 10 };
               const studentAns = answers[res.questionId] || answers[index] || 'No answer submitted.';
               
               return (
@@ -2454,32 +2475,32 @@ export default function EvaluateApp() {
                     </span>
                   </div>
                   
-                  {/* Question Text & Student Answer Body */}
+                    {/* Question Text & Student Answer Body */}
                   <div style={{ padding: '24px' }}>
-                    <p style={{ margin: '0 0 16px 0', fontSize: '1.05rem', fontWeight: '500', color: 'var(--text-main)' }}>{qObj.text}</p>
+                    <p style={{ margin: '0 0 16px 0', fontSize: '1.05rem', fontWeight: '500', color: 'var(--text-main)' }}>{typeof qObj.text === 'object' ? JSON.stringify(qObj.text) : qObj.text}</p>
                     
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>Submitted Student Answer</label>
                     <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '12px', borderLeft: '3px solid var(--primary)', marginBottom: '24px', fontStyle: 'italic', fontSize: '0.95rem', color: 'rgba(255,255,255,0.8)', whiteSpace: 'pre-wrap' }}>
-                      "{studentAns}"
+                      "{typeof studentAns === 'object' ? JSON.stringify(studentAns) : studentAns}"
                     </div>
 
                     {/* AI Feedback & Evaluation Corrections */}
                     <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>AI Evaluation & Corrections</label>
                     
                     <div style={{ background: 'rgba(59, 130, 246, 0.03)', border: '1px solid rgba(59,130,246,0.1)', padding: '20px', borderRadius: '12px', marginBottom: '20px' }}>
-                      <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.5', color: 'rgba(255,255,255,0.9)' }}>{res.feedback}</p>
+                      <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.5', color: 'rgba(255,255,255,0.9)' }}>{typeof res.feedback === 'object' ? JSON.stringify(res.feedback) : res.feedback}</p>
                     </div>
 
                     {/* Strengths Grid */}
-                    {res.strengths && res.strengths.length > 0 && (
+                    {res.strengths && (
                       <div style={{ marginBottom: '20px' }}>
                         <span style={{ fontSize: '0.85rem', color: 'var(--success)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                           <Check size={16} /> Key Strengths
                         </span>
                         <div style={{ display: 'grid', gap: '8px' }}>
-                          {res.strengths.map((str, sIdx) => (
+                          {(Array.isArray(res.strengths) ? res.strengths : [res.strengths]).map((str, sIdx) => (
                             <div key={sIdx} style={{ fontSize: '0.9rem', color: 'var(--text-main)', background: 'rgba(46,160,67,0.1)', padding: '10px 14px', borderRadius: '8px', borderLeft: '2px solid var(--success)' }}>
-                              {str}
+                              {typeof str === 'object' ? JSON.stringify(str) : str}
                             </div>
                           ))}
                         </div>
@@ -2487,15 +2508,15 @@ export default function EvaluateApp() {
                     )}
 
                     {/* Corrections & Suggested Improvements */}
-                    {res.improvements && res.improvements.length > 0 && (
+                    {res.improvements && (
                       <div>
                         <span style={{ fontSize: '0.85rem', color: 'var(--warning)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                           <Sliders size={16} /> Corrections & Suggested Improvements
                         </span>
                         <div style={{ display: 'grid', gap: '8px' }}>
-                          {res.improvements.map((imp, iIdx) => (
+                          {(Array.isArray(res.improvements) ? res.improvements : [res.improvements]).map((imp, iIdx) => (
                             <div key={iIdx} style={{ fontSize: '0.9rem', color: 'var(--text-main)', background: 'rgba(210,153,34,0.1)', padding: '10px 14px', borderRadius: '8px', borderLeft: '2px solid var(--warning)' }}>
-                              {imp}
+                              {typeof imp === 'object' ? JSON.stringify(imp) : imp}
                             </div>
                           ))}
                         </div>
@@ -3518,7 +3539,15 @@ const text = document.getElementById('bulkStudCSV').value;
 
             <div className="glass-panel" style={{ padding: '20px 24px' }}>
               <h4 style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-heading)', fontSize: '1.05rem' }}>
-                <Terminal size={16}/> Node Terminal (DEBUG: V2, Subs: {submissions.length}, Pending: {submissions.filter(s => s.status === 'pending').length})
+                <button 
+                  onClick={async () => {
+                    await supabase.from('submissions').update({ status: 'pending' }).in('status', ['failed', 'processing']);
+                    window.showToast("Reset stuck exams to pending!", "success");
+                  }} 
+                  style={{marginLeft: 'auto', padding: '2px 8px', fontSize: '0.7rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer'}}
+                >
+                  Force Reset Failed
+                </button>
               </h4>
               <div className="scrollbar" style={{ background: '#0d1117', borderRadius: '6px', padding: '12px', height: '240px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.8rem', color: '#00ff00', border: '1px solid #30363d' }}>
                 {aiSettings.gradingStrategy !== 'background' && <div style={{ color: '#8b949e' }}>[System] Auto-Pilot is currently offline. Instant Grading on Submit is active.</div>}
