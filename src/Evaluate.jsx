@@ -737,6 +737,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     { label: 'GPT-OSS 120B (OR)',       type: 'openrouter', id: 'openai/gpt-oss-120b:free' },
     { label: 'Llama 3.1 8B (OR)',       type: 'openrouter', id: 'meta-llama/llama-3.1-8b-instruct' },
     { label: 'Nvidia Nemotron (OR)',    type: 'openrouter', id: 'nvidia/nemotron-3-super-120b-a12b:free' },
+    { label: 'Llama 3 70B (FW)',        type: 'fireworks',  id: 'accounts/fireworks/models/llama-v3-70b-instruct' },
+    { label: 'Mixtral 8x7B (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/mixtral-8x7b-instruct' },
   ];
 
   const activeGeminiKey  = aiSettings.geminiKey;
@@ -1385,6 +1387,8 @@ export default function EvaluateApp() {
     hfModelId: 'mistralai/Mistral-7B-Instruct-v0.3',
     openrouterKey: OBFUSCATED_OPENROUTER_KEY,
     openrouterModel: 'google/gemma-4-31b-it:free',
+    fireworksKey: '',
+    fireworksModel: 'accounts/fireworks/models/llama-v3-70b-instruct',
     emailjsPublicKey: 'OFoJSMtD5Dy663OcN',
     emailjsServiceId: 'service_669uej4',
     emailjsOtpTemplateId: 'template_sh27d68',
@@ -1909,6 +1913,32 @@ export default function EvaluateApp() {
       return data.choices[0].message.content;
     };
 
+    // --- Helper: call Fireworks AI ---
+    const tryFireworks = async (modelId) => {
+      const activeFireworksKey = aiSettings.fireworksKey;
+      if (!activeFireworksKey) throw new Error('No Fireworks API key configured in Settings');
+      const messages = [];
+      if (system) messages.push({ role: "system", content: system });
+      if (files.length > 0) {
+        const content = files.map(f => f.mime.startsWith("image/")
+          ? { type: "image_url", image_url: { url: `data:${f.mime};base64,${f.base64}` } }
+          : { type: "text", text: `[Attachment]: (${f.mime})` });
+        content.push({ type: "text", text: prompt });
+        messages.push({ role: "user", content });
+      } else {
+        messages.push({ role: "user", content: prompt });
+      }
+      const res = await fetch("https://api.fireworks.ai/inference/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${activeFireworksKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: modelId, temperature: 0, max_tokens: 4000, messages })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(`Fireworks Error: ${data.error.message || 'Unknown error'}`);
+      if (!data.choices?.[0]?.message?.content) throw new Error('Fireworks empty response');
+      return data.choices[0].message.content;
+    };
+
     // ── Failover chain ───────────────────────────────────────────────
     // Free OpenRouter models as of June 2026:
     // google/gemma-4-31b-it:free, openai/gpt-oss-120b:free,
@@ -1927,6 +1957,7 @@ export default function EvaluateApp() {
       attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
       attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-1.5-flash') });
       FREE_OR_MODELS.forEach(m => attempts.push({ label: m, fn: () => tryOpenRouter(m) }));
+      attempts.push({ label: 'Llama 3 70B (FW)', fn: () => tryFireworks('accounts/fireworks/models/llama-v3-70b-instruct') });
     } else if (aiSettings.provider === 'openrouter') {
       const preferred = aiSettings.openrouterModel || 'google/gemma-4-31b-it:free';
       attempts.push({ label: preferred,          fn: () => tryOpenRouter(preferred) });
@@ -1934,12 +1965,34 @@ export default function EvaluateApp() {
       attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-1.5-flash') });
       FREE_OR_MODELS.filter(m => m !== preferred).forEach(m =>
         attempts.push({ label: m, fn: () => tryOpenRouter(m) }));
+      attempts.push({ label: 'Llama 3 70B (FW)', fn: () => tryFireworks('accounts/fireworks/models/llama-v3-70b-instruct') });
+    } else if (aiSettings.provider === 'fireworks') {
+      const preferred = aiSettings.fireworksModel || 'accounts/fireworks/models/llama-v3-70b-instruct';
+      attempts.push({ label: preferred,          fn: () => tryFireworks(preferred) });
+      attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
+      attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-1.5-flash') });
+      FREE_OR_MODELS.forEach(m => attempts.push({ label: m, fn: () => tryOpenRouter(m) }));
     } else {
       attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
       FREE_OR_MODELS.forEach(m => attempts.push({ label: m, fn: () => tryOpenRouter(m) }));
+      attempts.push({ label: 'Llama 3 70B (FW)', fn: () => tryFireworks('accounts/fireworks/models/llama-v3-70b-instruct') });
     }
 
-    let lastError = null;
+    // In Model Comparison mode, override the attempts array with the single selected model
+    if (isComparison) {
+      const mLabel = modelOverride;
+      const modelDef = COMPARISON_MODELS.find(x => x.label === mLabel);
+      if (modelDef) {
+        attempts.length = 0;
+        if (modelDef.type === 'gemini') {
+          attempts.push({ label: mLabel, fn: () => tryGemini(modelDef.id) });
+        } else if (modelDef.type === 'fireworks') {
+          attempts.push({ label: mLabel, fn: () => tryFireworks(modelDef.id) });
+        } else {
+          attempts.push({ label: mLabel, fn: () => tryOpenRouter(modelDef.id) });
+        }
+      }
+    }
     for (const attempt of attempts) {
       try {
         console.log(`[AI] Trying ${attempt.label}...`);
@@ -2326,6 +2379,7 @@ export default function EvaluateApp() {
             <option value="openrouter">OpenRouter (Free Cloud Models - Recommended)</option>
             <option value="gemini">Google Gemini 1.5 Direct (CORS blocked in browser)</option>
             <option value="anthropic">Anthropic Claude 3.7</option>
+            <option value="fireworks">Fireworks AI</option>
             <option value="huggingface">HuggingFace Inference</option>
           </select>
         </div>
@@ -3583,8 +3637,21 @@ const text = document.getElementById('bulkStudCSV').value;
                   <option value="gemini">Google Gemini 1.5 Direct</option>
                   <option value="anthropic">Anthropic Claude 3.7</option>
                   <option value="huggingface">HuggingFace Inference</option>
+                  <option value="fireworks">Fireworks AI</option>
                 </select>
               </div>
+
+              {aiSettings.provider === 'fireworks' && (
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>Fireworks Model</label>
+                  <select className="input-field" value={aiSettings.fireworksModel || 'accounts/fireworks/models/llama-v3-70b-instruct'} onChange={e => setAiSettings({...aiSettings, fireworksModel: e.target.value})}>
+                    <option value="accounts/fireworks/models/llama-v3-70b-instruct">Llama 3 70B Instruct</option>
+                    <option value="accounts/fireworks/models/llama-v3-8b-instruct">Llama 3 8B Instruct</option>
+                    <option value="accounts/fireworks/models/mixtral-8x7b-instruct">Mixtral 8x7B Instruct</option>
+                    <option value="accounts/fireworks/models/qwen2-72b-instruct">Qwen2 72B Instruct</option>
+                  </select>
+                </div>
+              )}
 
               {aiSettings.provider === 'openrouter' && (
                 <div style={{ marginBottom: '20px' }}>
@@ -3611,7 +3678,7 @@ const text = document.getElementById('bulkStudCSV').value;
 
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                  {aiSettings.provider === 'openrouter' ? 'OpenRouter API Key' : aiSettings.provider === 'gemini' ? 'Gemini API Key' : aiSettings.provider === 'anthropic' ? 'Claude API Key' : 'HF Token'}
+                  {aiSettings.provider === 'openrouter' ? 'OpenRouter API Key' : aiSettings.provider === 'gemini' ? 'Gemini API Key' : aiSettings.provider === 'anthropic' ? 'Claude API Key' : aiSettings.provider === 'fireworks' ? 'Fireworks API Key' : 'HF Token'}
                 </label>
                 <input 
                   type="password" 
@@ -3621,6 +3688,7 @@ const text = document.getElementById('bulkStudCSV').value;
                     aiSettings.provider === 'openrouter' ? aiSettings.openrouterKey :
                     aiSettings.provider === 'gemini' ? aiSettings.geminiKey : 
                     aiSettings.provider === 'anthropic' ? aiSettings.anthropicKey : 
+                    aiSettings.provider === 'fireworks' ? aiSettings.fireworksKey : 
                     aiSettings.hfToken
                   }
                   onChange={e => {
@@ -3628,6 +3696,7 @@ const text = document.getElementById('bulkStudCSV').value;
                     if(aiSettings.provider === 'openrouter') setAiSettings({...aiSettings, openrouterKey: val});
                     else if(aiSettings.provider === 'gemini') setAiSettings({...aiSettings, geminiKey: val});
                     else if(aiSettings.provider === 'anthropic') setAiSettings({...aiSettings, anthropicKey: val});
+                    else if(aiSettings.provider === 'fireworks') setAiSettings({...aiSettings, fireworksKey: val});
                     else setAiSettings({...aiSettings, hfToken: val});
                   }}
                 />
@@ -3635,6 +3704,8 @@ const text = document.getElementById('bulkStudCSV').value;
                   <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
                   {aiSettings.provider === 'openrouter' ? (
                     <>Get a free key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 'bold' }}>openrouter.ai</a></>
+                  ) : aiSettings.provider === 'fireworks' ? (
+                    <>Get a key from <a href="https://fireworks.ai/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 'bold' }}>fireworks.ai</a></>
                   ) : 'Keys are saved securely in your browser cache.'}
                 </p>
               </div>
