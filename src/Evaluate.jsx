@@ -1404,25 +1404,44 @@ export default function EvaluateApp() {
   const OBFUSCATED_GEMINI_KEY = _a + _b + _c;
   const decodeKey = (str) => { try { return atob(str.split('').reverse().join('')); } catch(e) { return ''; } };
   const OBFUSCATED_OPENROUTER_KEY = decodeKey('==AZxUTY0ITM2cTO3EzMwAjNhZzMhZWY3IjNwkTM4ImY2cjMwQTOzMDOzMGZjJWM3kTNyUmZwYTMxUjMlNDZ3YmZtEjdtI3bts2c');
-  const OBFUSCATED_HUGGINGFACE_KEY = ''; // e.g. decodeKey('...')
+  const OBFUSCATED_HUGGINGFACE_KEY = '';
 
-  const [aiSettings, setAiSettings] = useState({
-    provider: 'fireworks',
-    geminiKey: OBFUSCATED_GEMINI_KEY,
-    geminiModel: 'gemini-flash-latest',
-    anthropicKey: '',
-    hfToken: OBFUSCATED_HUGGINGFACE_KEY,
-    hfModelId: 'mistralai/Mistral-7B-Instruct-v0.3',
-    openrouterKey: OBFUSCATED_OPENROUTER_KEY,
-    openrouterModel: 'google/gemma-4-31b-it:free',
-    fireworksKey: '',
-    fireworksModel: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
-    emailjsPublicKey: 'OFoJSMtD5Dy663OcN',
-    emailjsServiceId: 'service_669uej4',
-    emailjsOtpTemplateId: 'template_sh27d68',
-    emailjsResultsTemplateId: '',
-    gradingStrategy: 'instant'
+  const [aiSettings, setAiSettings] = useState(() => {
+    const saved = localStorage.getItem('gg_ai_settings');
+    const defaultSettings = {
+      provider: 'fireworks',
+      geminiKey: '',
+      anthropicKey: '',
+      hfToken: OBFUSCATED_HUGGINGFACE_KEY,
+      hfModelId: 'mistralai/Mistral-7B-Instruct-v0.3',
+      openrouterKey: OBFUSCATED_OPENROUTER_KEY,
+      openrouterModel: 'google/gemma-4-31b-it:free',
+      fireworksKey: '',
+      fireworksModel: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
+      emailjsPublicKey: 'OFoJSMtD5Dy663OcN',
+      emailjsServiceId: 'service_669uej4',
+      emailjsOtpTemplateId: 'template_ywnb23v',
+      emailjsResultTemplateId: 'template_q1we3b5',
+      ocrToken: '',
+      useOcr: false,
+      ocrThreshold: 80,
+      autoSaveInterval: 30,
+      strictMode: false,
+      gradingStrategy: 'instant'
+    };
+    if (saved) {
+      try {
+        return { ...defaultSettings, ...JSON.parse(saved) };
+      } catch (e) {
+        return defaultSettings;
+      }
+    }
+    return defaultSettings;
   });
+
+  useEffect(() => {
+    localStorage.setItem('gg_ai_settings', JSON.stringify(aiSettings));
+  }, [aiSettings]);
 
   // Auth state with LocalStorage Persistence
   const [studentProfile, setStudentProfile] = useState(() => {
@@ -2447,6 +2466,7 @@ export default function EvaluateApp() {
               aiSettings.provider === 'openrouter' ? aiSettings.openrouterKey :
               aiSettings.provider === 'gemini' ? aiSettings.geminiKey : 
               aiSettings.provider === 'anthropic' ? aiSettings.anthropicKey : 
+              aiSettings.provider === 'fireworks' ? aiSettings.fireworksKey : 
               aiSettings.hfToken
             }
             onChange={e => {
@@ -2454,6 +2474,7 @@ export default function EvaluateApp() {
               if(aiSettings.provider === 'openrouter') setAiSettings({...aiSettings, openrouterKey: val});
               else if(aiSettings.provider === 'gemini') setAiSettings({...aiSettings, geminiKey: val});
               else if(aiSettings.provider === 'anthropic') setAiSettings({...aiSettings, anthropicKey: val});
+              else if(aiSettings.provider === 'fireworks') setAiSettings({...aiSettings, fireworksKey: val});
               else setAiSettings({...aiSettings, hfToken: val});
             }}
           />
