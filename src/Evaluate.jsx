@@ -837,11 +837,10 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     if (!q || !ans) return;
     setRQuestion(q); setRMarkScheme(ms); setRAnswer(ans); setRMaxScore(maxS); setRLecScore(lecS); setRLecFeedback(lecFb);
     setRResults([]); setRRunning(true);
+    setRProgress(`Querying all ${COMPARISON_MODELS.length} models in parallel...`);
+    
     const out = [];
-    for (let i = 0; i < COMPARISON_MODELS.length; i++) {
-      const m = COMPARISON_MODELS[i];
-      setRProgress(`[${i+1}/${COMPARISON_MODELS.length}] Querying ${m.label}...`);
-
+    await Promise.all(COMPARISON_MODELS.map(async (m) => {
       try {
         const start = performance.now();
         const r = await gradeWithModel(m, q, ms, ans, maxS);
@@ -851,8 +850,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         out.push({ model: m.label, score: null, grade:'—', feedback: e.message, authenticity: null, time: null, error: true });
       }
       setRResults([...out]);
-      if (i < COMPARISON_MODELS.length - 1) await new Promise(r => setTimeout(r, rDelay));
-    }
+    }));
+
     setRRunning(false); setRProgress('Comparison complete!');
   };
 
