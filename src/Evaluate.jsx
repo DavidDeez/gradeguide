@@ -731,14 +731,14 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const [chartType,   setChartType]   = React.useState('both'); // 'bars' | 'curve' | 'both'
 
   const COMPARISON_MODELS = [
-    { label: 'Gemini 2.0 Flash',       type: 'gemini',     id: 'gemini-2.0-flash' },
-    { label: 'Gemini 1.5 Flash',       type: 'gemini',     id: 'gemini-flash-latest' },
-    { label: 'Gemma 4 31B (OR)',        type: 'openrouter', id: 'google/gemma-4-31b-it:free' },
-    { label: 'GPT-OSS 120B (OR)',       type: 'openrouter', id: 'openai/gpt-oss-120b:free' },
-    { label: 'Llama 3.1 8B (OR)',       type: 'openrouter', id: 'meta-llama/llama-3.1-8b-instruct' },
-    { label: 'Nvidia Nemotron (OR)',    type: 'openrouter', id: 'nvidia/nemotron-3-super-120b-a12b:free' },
     { label: 'Llama 3 70B (FW)',        type: 'fireworks',  id: 'accounts/fireworks/models/llama-v3-70b-instruct' },
+    { label: 'Llama 3 8B (FW)',         type: 'fireworks',  id: 'accounts/fireworks/models/llama-v3-8b-instruct' },
     { label: 'Mixtral 8x7B (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/mixtral-8x7b-instruct' },
+    { label: 'Mixtral 8x22B (FW)',      type: 'fireworks',  id: 'accounts/fireworks/models/mixtral-8x22b-instruct' },
+    { label: 'Qwen 2 72B (FW)',         type: 'fireworks',  id: 'accounts/fireworks/models/qwen2-72b-instruct' },
+    { label: 'DBRX Instruct (FW)',      type: 'fireworks',  id: 'accounts/fireworks/models/dbrx-instruct' },
+    { label: 'Yi Large (FW)',           type: 'fireworks',  id: 'accounts/fireworks/models/yi-large' },
+    { label: 'Firefunction v2 (FW)',    type: 'fireworks',  id: 'accounts/fireworks/models/firefunction-v2' }
   ];
 
   const activeGeminiKey  = aiSettings.geminiKey;
@@ -1381,7 +1381,7 @@ export default function EvaluateApp() {
   const OBFUSCATED_HUGGINGFACE_KEY = ''; // e.g. decodeKey('...')
 
   const [aiSettings, setAiSettings] = useState({
-    provider: 'gemini',
+    provider: 'fireworks',
     geminiKey: OBFUSCATED_GEMINI_KEY,
     geminiModel: 'gemini-flash-latest',
     anthropicKey: '',
