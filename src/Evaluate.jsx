@@ -814,6 +814,27 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       if (data.error) throw new Error(data.error.message.includes('Quota exceeded') ? 'Google API Free Tier Quota Exceeded. Please upgrade to a paid API key.' : data.error.message);
       const txt = data.candidates?.[0]?.content?.parts?.find(p=>p.text)?.text || '';
       return JSON.parse(txt.replace(/```json|```/gi,'').trim());
+    } else if (model.type === 'fireworks') {
+      const activeFWKey = aiSettings.fireworksKey;
+      if (!activeFWKey) throw new Error('No Fireworks API key configured in Settings');
+      let lastErr = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const res = await fetch("https://api.fireworks.ai/inference/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${activeFWKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ model: model.id, temperature: 0, max_tokens: 1000, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] })
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(`Fireworks Error: ${data.error.message || 'Unknown error'}`);
+          const txt = data.choices?.[0]?.message?.content || '';
+          return JSON.parse(txt.replace(/```json|```/gi, '').trim());
+        } catch (err) {
+          lastErr = err;
+          if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+      throw lastErr;
     } else {
       if (!activeORKey) throw new Error('No OpenRouter key');
       let lastErr = null;
