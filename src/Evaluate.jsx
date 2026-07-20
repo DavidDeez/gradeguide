@@ -815,7 +815,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       const txt = data.candidates?.[0]?.content?.parts?.find(p=>p.text)?.text || '';
       return JSON.parse(txt.replace(/```json|```/gi,'').trim());
     } else if (model.type === 'fireworks') {
-      const activeFWKey = aiSettings.fireworksKey;
+      const activeFWKey = aiSettings.fireworksKey?.trim();
       if (!activeFWKey) throw new Error('No Fireworks API key configured in Settings');
       let lastErr = null;
       for (let attempt = 1; attempt <= 3; attempt++) {
@@ -836,11 +836,12 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       }
       throw lastErr;
     } else {
-      if (!activeORKey) throw new Error('No OpenRouter key');
+      const activeORKeyTrimmed = activeORKey?.trim();
+      if (!activeORKeyTrimmed) throw new Error('No OpenRouter key');
       let lastErr = null;
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-          const res  = await fetch('https://openrouter.ai/api/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${activeORKey}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'GRADER.ai Research'}, body:JSON.stringify({ model:model.id, temperature:0, max_tokens:1000, messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}] }) });
+          const res  = await fetch('https://openrouter.ai/api/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${activeORKeyTrimmed}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'GRADER.ai Research'}, body:JSON.stringify({ model:model.id, temperature:0, max_tokens:1000, messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}] }) });
           const data = await res.json();
           if (data.error) throw new Error(data.error.message || data.error.metadata?.message);
           const txt  = data.choices?.[0]?.message?.content || '';
@@ -1962,7 +1963,7 @@ export default function EvaluateApp() {
 
     // --- Helper: call Fireworks AI ---
     const tryFireworks = async (modelId) => {
-      const activeFireworksKey = aiSettings.fireworksKey;
+      const activeFireworksKey = aiSettings.fireworksKey?.trim();
       if (!activeFireworksKey) throw new Error('No Fireworks API key configured in Settings');
       const messages = [];
       if (system) messages.push({ role: "system", content: system });
