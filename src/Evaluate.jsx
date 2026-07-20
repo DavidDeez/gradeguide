@@ -815,7 +815,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       const txt = data.candidates?.[0]?.content?.parts?.find(p=>p.text)?.text || '';
       return JSON.parse(txt.replace(/```json|```/gi,'').trim());
     } else if (model.type === 'fireworks') {
-      const activeFWKey = aiSettings.fireworksKey?.trim();
+      let activeFWKey = aiSettings.fireworksKey?.trim() || '';
+      if (activeFWKey.toLowerCase().startsWith('bearer ')) activeFWKey = activeFWKey.slice(7).trim();
       if (!activeFWKey) throw new Error('No Fireworks API key configured in Settings');
       let lastErr = null;
       for (let attempt = 1; attempt <= 3; attempt++) {
@@ -1963,7 +1964,8 @@ export default function EvaluateApp() {
 
     // --- Helper: call Fireworks AI ---
     const tryFireworks = async (modelId) => {
-      const activeFireworksKey = aiSettings.fireworksKey?.trim();
+      let activeFireworksKey = aiSettings.fireworksKey?.trim() || '';
+      if (activeFireworksKey.toLowerCase().startsWith('bearer ')) activeFireworksKey = activeFireworksKey.slice(7).trim();
       if (!activeFireworksKey) throw new Error('No Fireworks API key configured in Settings');
       const messages = [];
       if (system) messages.push({ role: "system", content: system });
