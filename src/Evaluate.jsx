@@ -731,6 +731,12 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const [chartType,   setChartType]   = React.useState('both'); // 'bars' | 'curve' | 'both'
 
   const COMPARISON_MODELS = [
+    { label: 'Gemini 2.0 Flash',        type: 'gemini',     id: 'gemini-2.0-flash' },
+    { label: 'Gemini 1.5 Flash',        type: 'gemini',     id: 'gemini-flash-latest' },
+    { label: 'Gemma 4 31B (OR)',        type: 'openrouter', id: 'google/gemma-4-31b-it:free' },
+    { label: 'GPT-OSS 120B (OR)',       type: 'openrouter', id: 'openai/gpt-oss-120b:free' },
+    { label: 'Llama 3.1 8B (OR)',       type: 'openrouter', id: 'meta-llama/llama-3.1-8b-instruct' },
+    { label: 'Nvidia Nemotron (OR)',    type: 'openrouter', id: 'nvidia/nemotron-3-super-120b-a12b:free' },
     { label: 'Llama 3 70B (FW)',        type: 'fireworks',  id: 'accounts/fireworks/models/llama-v3-70b-instruct' },
     { label: 'Llama 3 8B (FW)',         type: 'fireworks',  id: 'accounts/fireworks/models/llama-v3-8b-instruct' },
     { label: 'Mixtral 8x7B (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/mixtral-8x7b-instruct' },
