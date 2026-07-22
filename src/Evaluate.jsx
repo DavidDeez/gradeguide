@@ -2712,7 +2712,7 @@ export default function EvaluateApp() {
 
                     <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
                       <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>Assign Grade</label>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(11, 1fr)', gap: '8px' }}>
                         {[
                           { val: 0, label: '0' },
                           { val: 1, label: '1' },
@@ -2734,7 +2734,7 @@ export default function EvaluateApp() {
                             <button
                               key={btn.val}
                               className={`btn ${isSelected ? 'btn-primary' : 'btn-outline'}`}
-                              style={{ flex: '1', minWidth: '100px', fontSize: '0.85rem', padding: '10px', borderColor: isSelected ? 'transparent' : 'rgba(255,255,255,0.2)' }}
+                              style={{ width: '100%', fontSize: '0.85rem', padding: '10px 0', textAlign: 'center', borderColor: isSelected ? 'transparent' : 'rgba(255,255,255,0.2)' }}
                               onClick={async () => {
                                 const newResults = [...results];
                                 if (!newResults[index]) {
