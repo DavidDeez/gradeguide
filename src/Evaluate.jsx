@@ -1084,25 +1084,6 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         </div>
       )}
 
-      {/* Manual Score Overrides */}
-      {rQuestion && (
-        <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '24px', display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'none' }}>
-            <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>MAX MARKS</span>
-            <input type="number" className="input-field" value={rMaxScore} onChange={e => setRMaxScore(e.target.value)} style={{ width: '120px' }} />
-          </div>
-          <div>
-            <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>HUMAN BENCHMARK SCORE (%)</span>
-            <input type="number" className="input-field" value={rLecData['Manual Override']?.score || ''} onChange={e => setRLecData({ ...rLecData, 'Manual Override': { score: parseFloat(e.target.value) || 0, feedback: 'Manual Override' }})} style={{ width: '180px', borderColor: 'var(--warning)', borderWidth: '2px' }} placeholder="Enter human score..." />
-          </div>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              <Info size={14} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} />
-              Type your score above to inject your grading into the lineup. The chart will update to compare everyone's score against the group consensus.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Results */}
       {displayResults.length > 0 && (
