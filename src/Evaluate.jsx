@@ -880,7 +880,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
 
   const maxScoreNum = parseFloat(rMaxScore) || 10;
   const displayResults = rLecScore !== '' && !isNaN(parseFloat(rLecScore)) 
-    ? [{ model: 'Human Marker', score: (parseFloat(rLecScore) / 100) * maxScoreNum, grade: '—', feedback: rLecFeedback || 'Score assigned manually by human marker.', authenticity: null, time: 0, error: false, isHuman: true }, ...rResults]
+    ? [{ model: 'Manual Marking', score: (parseFloat(rLecScore) / 100) * maxScoreNum, grade: '—', feedback: rLecFeedback || 'Score assigned via Manual Marking.', authenticity: null, time: 0, error: false, isHuman: true }, ...rResults]
     : [...rResults];
   const successResults = displayResults.filter(r => !r.error && r.score !== null);
   const avgScore = successResults.length ? parseFloat((successResults.reduce((s,r)=>s+r.score,0)/successResults.length).toFixed(1)) : null;
@@ -1329,7 +1329,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
               return (
                 <div key={r.model} className="glass-panel" style={{ padding:'20px', borderColor: borderCol, background: bgCol, opacity: rRunning && rResults.length < COMPARISON_MODELS.length ? 0.6 : 1, transition:'all 0.3s', position: 'relative' }}>
                   {isRank1 && <div style={{ position:'absolute', top:'-12px', right:'-12px', background:'#d4af37', color:'#000', padding:'4px 12px', borderRadius:'12px', fontSize:'0.8rem', fontWeight:'bold', boxShadow:'0 4px 12px rgba(0,0,0,0.5)', display:'flex', alignItems:'center', gap:'4px' }}><Star size={14} fill="#000" /> #1 Closest to Consensus</div>}
-                  {r.isHuman && <div style={{ position:'absolute', top:'-12px', left:'-12px', background:'var(--primary)', color:'#000', padding:'4px 12px', borderRadius:'12px', fontSize:'0.8rem', fontWeight:'bold', boxShadow:'0 4px 12px rgba(0,0,0,0.5)', display:'flex', alignItems:'center', gap:'4px' }}><Activity size={14} fill="#000" /> Human Marker</div>}
+                  {r.isHuman && <div style={{ position:'absolute', top:'-12px', left:'-12px', background:'var(--primary)', color:'#000', padding:'4px 12px', borderRadius:'12px', fontSize:'0.8rem', fontWeight:'bold', boxShadow:'0 4px 12px rgba(0,0,0,0.5)', display:'flex', alignItems:'center', gap:'4px' }}><Activity size={14} fill="#000" /> Manual Marking</div>}
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
                     <strong style={{ fontSize:'0.85rem', color:'var(--text-muted)' }}>{r.model}</strong>
                     {!r.error && <span style={{ fontSize:'1.3rem', fontWeight:700, color }}>{pct}%</span>}
