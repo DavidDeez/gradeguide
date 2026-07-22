@@ -15,7 +15,7 @@ import {
   BarChart, X, Plus, Trash2, Check, Video, Layout, LogOut, 
   FileBadge, Sliders, Play, Save, ChevronRight, Activity, 
   ShieldCheck, Brain, Star, Smartphone, AlertCircle, Eye, Edit, Download, Menu,
-  Send, Terminal, Zap, Info, Users, Wrench, GraduationCap, MessageCircle, Clock
+  Send, Terminal, Zap, Info, Users, Wrench, GraduationCap, MessageCircle, Clock, Edit3, Inbox
 } from 'lucide-react';
 
 const GlobalStyles = () => (
@@ -1458,6 +1458,7 @@ export default function EvaluateApp() {
   const [loginForm, setLoginForm] = useState({ email: '', matricNo: '' });
 
   const [selectedSub, setSelectedSub] = useState(null);
+  const [manualSub, setManualSub] = useState(null);
   const [loginModalRole, setLoginModalRole] = useState(() => {
     return localStorage.getItem('gg_role') || null;
   });
@@ -2645,8 +2646,130 @@ export default function EvaluateApp() {
     );
   };
 
-  
-  
+  const ManualMarkingModal = () => {
+    if (!manualSub) return null;
+    const ass = assessments.find(a => a.id == manualSub.assessmentId);
+    if (!ass) return null;
+    const results = manualSub.results || [];
+    const answers = manualSub.answers || {};
+    const totalScore = results.reduce((acc, r) => acc + (r.score || 0), 0);
+    const maxScore = ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0);
+    const totalPercent = Math.round((totalScore / maxScore) * 100) || 0;
+
+    return (
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(10,13,18,0.95)', backdropFilter: 'blur(10px)', zIndex: 100000, overflowY: 'auto', padding: '40px 20px' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', background: 'var(--panel-bg)', border: '1px solid var(--panel-border)', borderRadius: '16px', padding: '40px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', paddingBottom: '24px', borderBottom: '1px solid var(--panel-border)' }}>
+            <div>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '1.8rem', fontFamily: 'var(--font-heading)' }}>Manual Marking</h2>
+              <p style={{ margin: 0, color: 'var(--text-muted)' }}>{ass.title}</p>
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Student Reference ID: {manualSub.studentId}</p>
+            </div>
+            <div style={{ textAlign: 'right', display: 'flex', gap: '16px', alignItems: 'center' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: totalPercent >= 50 ? 'var(--success)' : 'var(--danger)', fontFamily: 'var(--font-heading)' }}>
+                  {totalPercent}%
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Score</div>
+              </div>
+              <button className="btn-outline" style={{ padding: '8px', border: 'none' }} onClick={() => setManualSub(null)}><X size={24} /></button>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gap: '32px' }}>
+            {ass.questions.map((qObj, index) => {
+              const res = results[index] || { score: 0, feedback: 'Manually Graded' };
+              const currentScore = res.score || 0;
+              const questionMax = qObj.maxMarks || 10;
+              const qPercent = Math.round((currentScore / questionMax) * 100) || 0;
+
+              return (
+                <div key={index} style={{ background: 'var(--bg-main)', border: '1px solid var(--panel-border)', borderRadius: '12px', overflow: 'hidden' }}>
+                  <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--panel-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>
+                        {index + 1}
+                      </div>
+                      Question
+                    </div>
+                    <div className={`badge ${qPercent >= 50 ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '0.9rem', padding: '4px 10px' }}>
+                      {currentScore.toFixed(1)} / {questionMax} marks ({qPercent}%)
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '24px' }}>
+                    <div style={{ marginBottom: '20px' }}>
+                      <p style={{ margin: '0 0 16px 0', fontSize: '1.05rem', lineHeight: '1.6' }}>{qObj.question}</p>
+                      
+                      <div style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '16px', borderRadius: '8px' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'block' }}>Student's Answer</span>
+                        <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.6', color: 'var(--text-main)', whiteSpace: 'pre-wrap' }}>
+                          {answers[index] || <span style={{color:'var(--text-muted)', fontStyle:'italic'}}>No answer provided.</span>}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
+                      <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>Assign Grade</label>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {[
+                          { val: 0, label: '0 (Fail)' },
+                          { val: 1, label: '1 (Poor)' },
+                          { val: 2, label: '2 (Fair)' },
+                          { val: 3, label: '3 (Average)' },
+                          { val: 4, label: '4 (Good)' },
+                          { val: 5, label: '5 (Pass)' }
+                        ].map((btn) => {
+                          const percent = btn.val * 20;
+                          const mappedScore = (percent / 100) * questionMax;
+                          const isSelected = Math.round(currentScore) === Math.round(mappedScore);
+                          
+                          return (
+                            <button
+                              key={btn.val}
+                              className={`btn ${isSelected ? 'btn-primary' : 'btn-outline'}`}
+                              style={{ flex: '1', minWidth: '100px', fontSize: '0.85rem', padding: '10px', borderColor: isSelected ? 'transparent' : 'rgba(255,255,255,0.2)' }}
+                              onClick={async () => {
+                                const newResults = [...results];
+                                if (!newResults[index]) {
+                                  newResults[index] = { score: 0, feedback: '', improvements: [] };
+                                }
+                                newResults[index].score = mappedScore;
+                                newResults[index].feedback = `Manually Graded: ${percent}%`;
+                                
+                                const newSub = { ...manualSub, results: newResults };
+                                setManualSub(newSub);
+                                setSubmissions(submissions.map(s => s.id === manualSub.id ? newSub : s));
+                                
+                                const { error } = await supabase.from('submissions').update({ results: newResults }).eq('id', manualSub.id);
+                                if (error) {
+                                  if (window.showToast) window.showToast("Failed to save manual grade: " + error.message, "error");
+                                } else {
+                                  if (window.showToast) window.showToast(`Saved ${percent}% for Question ${index + 1}`, "success");
+                                }
+                              }}
+                            >
+                              {btn.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--panel-border)', paddingTop: '24px' }}>
+            <button className="btn btn-primary" onClick={() => setManualSub(null)}>Done Marking</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const RoleLoginModal = () => {
     const handleLogin = async (e) => {
@@ -2940,6 +3063,9 @@ export default function EvaluateApp() {
               <div className={`side-nav-tab ${lecturerTab === 'students' ? 'active' : ''}`} onClick={() => { setLecturerTab('students'); setIsMobileMenuOpen(false); }}>
                 <Users size={18} style={{ marginRight: '6px' }} /> Student Management
               </div>
+              <div className={`side-nav-tab ${lecturerTab === 'manual' ? 'active' : ''}`} onClick={() => { setLecturerTab('manual'); setIsMobileMenuOpen(false); }}>
+                <Edit3 size={18} style={{ marginRight: '6px' }} /> Manual Marking
+              </div>
               <div className={`side-nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => { setLecturerTab('results'); setIsMobileMenuOpen(false); }}>
                 <FileText size={18} style={{ marginRight: '6px' }} /> Grading Desk
                 {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
@@ -2971,6 +3097,7 @@ export default function EvaluateApp() {
               <>
                 <div className={`nav-tab ${lecturerTab === 'build' ? 'active' : ''}`} onClick={() => setLecturerTab('build')}>Assessment Builder</div>
                 <div className={`nav-tab ${lecturerTab === 'students' ? 'active' : ''}`} onClick={() => setLecturerTab('students')}>Student Management</div>
+                <div className={`nav-tab ${lecturerTab === 'manual' ? 'active' : ''}`} onClick={() => setLecturerTab('manual')}>Manual Marking</div>
                 <div className={`nav-tab ${lecturerTab === 'results' ? 'active' : ''}`} onClick={() => setLecturerTab('results')}>
                   Grading Desk
                   {retakeRequests.filter(r => r.status === 'pending').length > 0 && (
@@ -3603,6 +3730,56 @@ const text = document.getElementById('bulkStudCSV').value;
                   </table>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {lecturerTab === 'manual' && (
+          <div style={{ display: 'grid', gap: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ margin: 0, fontFamily: 'var(--font-heading)', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Edit3 size={24} color="var(--primary)" /> Manual Marking
+              </h2>
+            </div>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>
+              Select a student submission below to manually assign marks per question on a 0-5 scale. This mode is completely independent of AI grading.
+            </p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+              {submissions.map(sub => {
+                const ass = assessments.find(a => a.id == sub.assessmentId);
+                if (!ass) return null;
+                const totalScore = (sub.results || []).reduce((acc, r) => acc + (r.score || 0), 0);
+                const maxScore = ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0);
+                const percent = Math.round((totalScore / maxScore) * 100) || 0;
+                
+                return (
+                  <div key={sub.id} className="glass-panel hover-card" style={{ padding: '20px', borderRadius: '12px', display: 'flex', flexDirection: 'column', cursor: 'pointer' }} onClick={() => setManualSub(sub)}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <span className="badge" style={{ background: 'rgba(255,255,255,0.1)' }}>{ass.title}</span>
+                      <span className={`badge ${percent >= 50 ? 'badge-success' : 'badge-danger'}`}>{percent}%</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                      <div className="avatar">{sub.studentName?.[0] || 'S'}</div>
+                      <div>
+                        <div style={{ fontWeight: 'bold' }}>{sub.studentName || 'Student'}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{sub.studentId}</div>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 'auto', textAlign: 'right' }}>
+                      <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={(e) => { e.stopPropagation(); setManualSub(sub); }}>
+                        Mark Manually <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              {submissions.length === 0 && (
+                <div style={{ gridColumn: '1 / -1', padding: '40px', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed var(--panel-border)' }}>
+                  <Inbox size={48} style={{ margin: '0 auto 16px auto', opacity: 0.5 }} />
+                  No submissions available for marking.
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -4709,6 +4886,7 @@ const StudentLoginScreen = () => {
           {role === 'Student' && StudentDashboard()}
         </main>
         {selectedSub && DetailedCorrectionsModal()}
+        {manualSub && ManualMarkingModal()}
         {loginModalRole && RoleLoginModal()}
         
         <div className="toast-container" style={{ position: 'fixed', right: '24px', bottom: globalProgress.active ? '72px' : '24px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '10px', transition: 'bottom 0.3s ease' }}>
