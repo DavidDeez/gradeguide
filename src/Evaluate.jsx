@@ -776,9 +776,9 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         fullAns += `[Answer ${idx+1}] ${studAns}\n\n`;
         totalMax += (qObj.maxScore || qObj.maxMarks || 10);
         
-        if (prevRes && prevRes.score !== undefined) {
-          totalLecScore += prevRes.score;
-          if (prevRes.feedback) allLecFeedback += `[Q${idx+1}] ${prevRes.feedback} `;
+        if (prevRes && prevRes.manualScore !== undefined) {
+          totalLecScore += prevRes.manualScore;
+          if (prevRes.manualFeedback) allLecFeedback += `[Q${idx+1}] ${prevRes.manualFeedback} `;
         }
       });
 
@@ -2652,7 +2652,7 @@ export default function EvaluateApp() {
     if (!ass) return null;
     const results = manualSub.results || [];
     const answers = manualSub.answers || {};
-    const totalScore = results.reduce((acc, r) => acc + (r.score || 0), 0);
+    const totalScore = results.reduce((acc, r) => acc + (r.manualScore || 0), 0);
     const maxScore = ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0);
     const totalPercent = Math.round((totalScore / maxScore) * 100) || 0;
 
@@ -2679,8 +2679,8 @@ export default function EvaluateApp() {
 
           <div style={{ display: 'grid', gap: '32px' }}>
             {ass.questions.map((qObj, index) => {
-              const res = results[index] || { score: 0, feedback: 'Manually Graded' };
-              const currentScore = res.score || 0;
+              const res = results[index] || { manualScore: 0, manualFeedback: 'Manually Graded' };
+              const currentScore = res.manualScore || 0;
               const questionMax = qObj.maxMarks || 10;
               const qPercent = Math.round((currentScore / questionMax) * 100) || 0;
 
@@ -2733,10 +2733,10 @@ export default function EvaluateApp() {
                               onClick={async () => {
                                 const newResults = [...results];
                                 if (!newResults[index]) {
-                                  newResults[index] = { score: 0, feedback: '', improvements: [] };
+                                  newResults[index] = { score: 0, feedback: '', improvements: [], manualScore: 0, manualFeedback: '' };
                                 }
-                                newResults[index].score = mappedScore;
-                                newResults[index].feedback = `Manually Graded: ${percent}%`;
+                                newResults[index].manualScore = mappedScore;
+                                newResults[index].manualFeedback = `Manually Graded: ${percent}%`;
                                 
                                 const newSub = { ...manualSub, results: newResults };
                                 setManualSub(newSub);
