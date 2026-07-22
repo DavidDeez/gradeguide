@@ -2714,14 +2714,19 @@ export default function EvaluateApp() {
                       <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>Assign Grade</label>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {[
-                          { val: 0, label: '0 (Fail)' },
-                          { val: 1, label: '1 (Poor)' },
-                          { val: 2, label: '2 (Fair)' },
-                          { val: 3, label: '3 (Average)' },
-                          { val: 4, label: '4 (Good)' },
-                          { val: 5, label: '5 (Pass)' }
+                          { val: 0, label: '0' },
+                          { val: 1, label: '1' },
+                          { val: 2, label: '2' },
+                          { val: 3, label: '3' },
+                          { val: 4, label: '4' },
+                          { val: 5, label: '5' },
+                          { val: 6, label: '6' },
+                          { val: 7, label: '7' },
+                          { val: 8, label: '8' },
+                          { val: 9, label: '9' },
+                          { val: 10, label: '10' }
                         ].map((btn) => {
-                          const percent = btn.val * 20;
+                          const percent = btn.val * 10;
                           const mappedScore = (percent / 100) * questionMax;
                           const isSelected = Math.round(currentScore) === Math.round(mappedScore);
                           
