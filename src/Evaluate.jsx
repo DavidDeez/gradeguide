@@ -784,7 +784,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             });
           }
           if (prevRes.manualScore !== undefined) {
-             const legacyEmail = 'legacy_marker@gradeguide.local';
+             const legacyEmail = 'david@grader.ai';
              if (!lecData[legacyEmail]) lecData[legacyEmail] = { score: 0, feedback: '' };
              lecData[legacyEmail].score += prevRes.manualScore;
              if (prevRes.manualFeedback) lecData[legacyEmail].feedback += `[Q${idx+1}] ${prevRes.manualFeedback} `;
@@ -892,7 +892,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   if (Object.keys(rLecData).length > 0) {
     const manualMarkers = Object.keys(rLecData).map(email => {
        const isLegacy = email === 'legacy_marker@gradeguide.local';
-       const markerName = isLegacy ? 'Manual Marking (Legacy)' : `Manual Marking (${email.split('@')[0]})`;
+       const markerName = isLegacy ? 'Manual Marking (david)' : `Manual Marking (${email.split('@')[0]})`;
        return {
          model: markerName,
          score: rLecData[email].score,
@@ -2674,7 +2674,7 @@ export default function EvaluateApp() {
     if (!ass) return null;
     const results = manualSub.results || [];
     const answers = manualSub.answers || {};
-    const fallbackEmail = lecturerEmail || 'legacy_marker@gradeguide.local';
+    const fallbackEmail = lecturerEmail || 'david@grader.ai';
     const totalScore = results.reduce((acc, r) => {
        if (r.manualScores && r.manualScores[fallbackEmail]) return acc + r.manualScores[fallbackEmail].score;
        if (r.manualScore !== undefined) return acc + r.manualScore;
