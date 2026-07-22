@@ -1740,6 +1740,10 @@ export default function EvaluateApp() {
           setRetakeRequests(d.retakeRequests || []);
           setStudentMessages(d.studentMessages || []);
           const loadedSettings = d.settings || {};
+          // Prevent empty cloud keys from wiping out valid local keys
+          ['fireworksKey', 'geminiKey', 'anthropicKey', 'openrouterKey', 'hfToken'].forEach(k => {
+            if (loadedSettings[k] === '') delete loadedSettings[k];
+          });
           if (loadedSettings.openrouterModel === 'google/gemini-flash-1.5-free' || loadedSettings.openrouterModel === 'google/gemma-4-26b-a4b-it:free' || loadedSettings.openrouterModel === 'google/gemma-4-31b-it:free') {
             loadedSettings.openrouterModel = 'google/gemma-4-31b-it:free';
           }
@@ -1786,16 +1790,21 @@ export default function EvaluateApp() {
   useEffect(() => {
     if (isLoaded) {
       setDbSyncing(true);
-      // NOTE: submissions, assessments, and students are now stored in dedicated SQL tables
-      const payload = { settings: aiSettings, retakeRequests, studentMessages };
-      supabase.from('app_state').upsert({ id: 1, data: payload })
-        .then(({error}) => { 
-          if (error) {
-            console.error("Error saving to Supabase:", error);
-            window.showToast("CRITICAL DATABASE ERROR: Supabase rejected the save! Your Row Level Security (RLS) policies are blocking writes. Please run the SQL script to disable RLS restrictions.");
-          }
-        })
-        .finally(() => setTimeout(() => setDbSyncing(false), 800));
+      
+      // Debounce the save to prevent race conditions when typing API keys rapidly
+      const timerId = setTimeout(() => {
+        const payload = { settings: aiSettings, retakeRequests, studentMessages };
+        supabase.from('app_state').upsert({ id: 1, data: payload })
+          .then(({error}) => { 
+            if (error) {
+              console.error("Error saving to Supabase:", error);
+              if (window.showToast) window.showToast("CRITICAL DATABASE ERROR: Supabase rejected the save! Your Row Level Security (RLS) policies are blocking writes. Please run the SQL script to disable RLS restrictions.");
+            }
+          })
+          .finally(() => setTimeout(() => setDbSyncing(false), 800));
+      }, 1000);
+      
+      return () => clearTimeout(timerId);
     }
   }, [isLoaded, aiSettings, retakeRequests, studentMessages]);
 
