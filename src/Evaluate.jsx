@@ -892,7 +892,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   if (Object.keys(rLecData).length > 0) {
     const manualMarkers = Object.keys(rLecData).map(email => {
        const isLegacy = email === 'legacy_marker@gradeguide.local';
-       const markerName = isLegacy ? 'Manual Marking (david)' : `Manual Marking (${email.split('@')[0]})`;
+       const markerName = isLegacy ? 'Manual Marking (david@grader.ai)' : `Manual Marking (${email})`;
        return {
          model: markerName,
          score: rLecData[email].score,
