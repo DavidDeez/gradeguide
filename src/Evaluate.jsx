@@ -2728,7 +2728,7 @@ export default function EvaluateApp() {
                         ].map((btn) => {
                           const percent = btn.val * 10;
                           const mappedScore = (percent / 100) * questionMax;
-                          const isSelected = Math.round(currentScore) === Math.round(mappedScore);
+                          const isSelected = Math.abs(currentScore - mappedScore) < 0.001;
                           
                           return (
                             <button
