@@ -2700,7 +2700,7 @@ export default function EvaluateApp() {
 
                   <div style={{ padding: '24px' }}>
                     <div style={{ marginBottom: '20px' }}>
-                      <p style={{ margin: '0 0 16px 0', fontSize: '1.05rem', lineHeight: '1.6' }}>{qObj.question}</p>
+                      <p style={{ margin: '0 0 16px 0', fontSize: '1.05rem', lineHeight: '1.6' }}>{qObj.text}</p>
                       
                       <div style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '16px', borderRadius: '8px' }}>
                         <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'block' }}>Student's Answer</span>
