@@ -722,8 +722,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const [rMarkScheme, setRMarkScheme] = React.useState('');
   const [rAnswer,     setRAnswer]     = React.useState('');
   const [rMaxScore,   setRMaxScore]   = React.useState(10);
-  const [rLecScore,   setRLecScore]   = React.useState('');
-  const [rLecFeedback,setRLecFeedback]= React.useState('');
+  const [rLecData,    setRLecData]    = React.useState({});
+
   const [rDelay,      setRDelay]      = React.useState(1500);
   const [rResults,    setRResults]    = React.useState([]);
   const [rRunning,    setRRunning]    = React.useState(false);
@@ -761,8 +761,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       let fullMS = '';
       let fullAns = '';
       let totalMax = 0;
-      let totalLecScore = 0;
-      let allLecFeedback = '';
+      let lecData = {};
       let hasAnswers = false;
 
       ass.questions.forEach((qObj, idx) => {
@@ -776,9 +775,20 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         fullAns += `[Answer ${idx+1}] ${studAns}\n\n`;
         totalMax += (qObj.maxScore || qObj.maxMarks || 10);
         
-        if (prevRes && prevRes.manualScore !== undefined) {
-          totalLecScore += prevRes.manualScore;
-          if (prevRes.manualFeedback) allLecFeedback += `[Q${idx+1}] ${prevRes.manualFeedback} `;
+        if (prevRes) {
+          if (prevRes.manualScores) {
+            Object.keys(prevRes.manualScores).forEach(email => {
+              if (!lecData[email]) lecData[email] = { score: 0, feedback: '' };
+              lecData[email].score += prevRes.manualScores[email].score;
+              if (prevRes.manualScores[email].feedback) lecData[email].feedback += `[Q${idx+1}] ${prevRes.manualScores[email].feedback} `;
+            });
+          }
+          if (prevRes.manualScore !== undefined) {
+             const legacyEmail = 'legacy_marker@gradeguide.local';
+             if (!lecData[legacyEmail]) lecData[legacyEmail] = { score: 0, feedback: '' };
+             lecData[legacyEmail].score += prevRes.manualScore;
+             if (prevRes.manualFeedback) lecData[legacyEmail].feedback += `[Q${idx+1}] ${prevRes.manualFeedback} `;
+          }
         }
       });
 
@@ -791,8 +801,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
           ms: fullMS.trim(),
           ans: fullAns.trim(),
           max: totalMax,
-          lec: totalLecScore,
-          lecFeedback: allLecFeedback.trim()
+          lecData: lecData
         });
       }
     });
@@ -856,9 +865,9 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     }
   };
 
-  const runComparison = async (q = rQuestion, ms = rMarkScheme, ans = rAnswer, maxS = rMaxScore, lecS = rLecScore, lecFb = rLecFeedback) => {
+  const runComparison = async (q = rQuestion, ms = rMarkScheme, ans = rAnswer, maxS = rMaxScore, lecDataObj = rLecData) => {
     if (!q || !ans) return;
-    setRQuestion(q); setRMarkScheme(ms); setRAnswer(ans); setRMaxScore(maxS); setRLecScore(lecS); setRLecFeedback(lecFb);
+    setRQuestion(q); setRMarkScheme(ms); setRAnswer(ans); setRMaxScore(maxS); setRLecData(lecDataObj);
     setRResults([]); setRRunning(true);
     setRProgress(`Querying all ${COMPARISON_MODELS.length} models in parallel...`);
     
@@ -879,13 +888,27 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   };
 
   const maxScoreNum = parseFloat(rMaxScore) || 10;
-  const displayResults = rLecScore !== '' && !isNaN(parseFloat(rLecScore)) 
-    ? [{ model: 'Manual Marking', score: (parseFloat(rLecScore) / 100) * maxScoreNum, grade: '—', feedback: rLecFeedback || 'Score assigned via Manual Marking.', authenticity: null, time: 0, error: false, isHuman: true }, ...rResults]
-    : [...rResults];
+  let displayResults = [...rResults];
+  if (Object.keys(rLecData).length > 0) {
+    const manualMarkers = Object.keys(rLecData).map(email => {
+       const isLegacy = email === 'legacy_marker@gradeguide.local';
+       const markerName = isLegacy ? 'Manual Marking (Legacy)' : `Manual Marking (${email.split('@')[0]})`;
+       return {
+         model: markerName,
+         score: rLecData[email].score,
+         grade: '—',
+         feedback: rLecData[email].feedback || 'Score assigned via Manual Marking.',
+         authenticity: null,
+         time: 0,
+         error: false,
+         isHuman: true
+       };
+    });
+    displayResults = [...manualMarkers, ...displayResults];
+  }
   const successResults = displayResults.filter(r => !r.error && r.score !== null);
   const avgScore = successResults.length ? parseFloat((successResults.reduce((s,r)=>s+r.score,0)/successResults.length).toFixed(1)) : null;
   const avgPct = avgScore !== null ? Math.round((avgScore / maxScoreNum) * 100) : null;
-  const lecNum = parseFloat(rLecScore);
 
   const exportCSV = () => {
     const q = (v) => { const s = String(v ?? ''); return '"' + s.replace(/"/g, '""') + '"'; };
@@ -981,7 +1004,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
               onClick={() => { 
                 if(!rRunning) {
                   setRQuestion(demo.q); setRMarkScheme(demo.ms); setRAnswer(demo.ans); 
-                  setRMaxScore(demo.max); setRLecScore(demo.lec); setRLecFeedback(demo.lecFeedback);
+                  setRMaxScore(demo.max); setRLecData(demo.lecData);
                   setRResults([]);
                 }
               }}
@@ -1070,7 +1093,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
           </div>
           <div>
             <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>HUMAN BENCHMARK SCORE (%)</span>
-            <input type="number" className="input-field" value={rLecScore} onChange={e => setRLecScore(e.target.value)} style={{ width: '180px', borderColor: 'var(--warning)', borderWidth: '2px' }} placeholder="Enter human score %..." />
+            <input type="number" className="input-field" value={rLecData['Manual Override']?.score || ''} onChange={e => setRLecData({ ...rLecData, 'Manual Override': { score: parseFloat(e.target.value) || 0, feedback: 'Manual Override' }})} style={{ width: '180px', borderColor: 'var(--warning)', borderWidth: '2px' }} placeholder="Enter human score..." />
           </div>
           <div style={{ flex: 1 }}>
             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -1473,6 +1496,15 @@ export default function EvaluateApp() {
     if (loginModalRole) localStorage.setItem('gg_role', loginModalRole);
     else localStorage.removeItem('gg_role');
   }, [loginModalRole]);
+
+  const [lecturerEmail, setLecturerEmail] = useState(() => {
+    return localStorage.getItem('gg_lecturer_email') || null;
+  });
+  
+  useEffect(() => {
+    if (lecturerEmail) localStorage.setItem('gg_lecturer_email', lecturerEmail);
+    else localStorage.removeItem('gg_lecturer_email');
+  }, [lecturerEmail]);
 
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
@@ -2652,7 +2684,12 @@ export default function EvaluateApp() {
     if (!ass) return null;
     const results = manualSub.results || [];
     const answers = manualSub.answers || {};
-    const totalScore = results.reduce((acc, r) => acc + (r.manualScore || 0), 0);
+    const fallbackEmail = lecturerEmail || 'legacy_marker@gradeguide.local';
+    const totalScore = results.reduce((acc, r) => {
+       if (r.manualScores && r.manualScores[fallbackEmail]) return acc + r.manualScores[fallbackEmail].score;
+       if (r.manualScore !== undefined) return acc + r.manualScore;
+       return acc;
+    }, 0);
     const maxScore = ass.questions.reduce((acc, q) => acc + (q.maxMarks || 10), 0);
     const totalPercent = Math.round((totalScore / maxScore) * 100) || 0;
 
@@ -2679,8 +2716,13 @@ export default function EvaluateApp() {
 
           <div style={{ display: 'grid', gap: '32px' }}>
             {ass.questions.map((qObj, index) => {
-              const res = results[index] || { manualScore: 0, manualFeedback: 'Manually Graded' };
-              const currentScore = res.manualScore || 0;
+              const res = results[index] || {};
+              let currentScore = 0;
+              if (res.manualScores && res.manualScores[fallbackEmail]) {
+                currentScore = res.manualScores[fallbackEmail].score;
+              } else if (res.manualScore !== undefined) {
+                currentScore = res.manualScore;
+              }
               const questionMax = qObj.maxMarks || 10;
               const qPercent = Math.round((currentScore / questionMax) * 100) || 0;
 
@@ -2738,10 +2780,21 @@ export default function EvaluateApp() {
                               onClick={async () => {
                                 const newResults = [...results];
                                 if (!newResults[index]) {
-                                  newResults[index] = { score: 0, feedback: '', improvements: [], manualScore: 0, manualFeedback: '' };
+                                  newResults[index] = { score: 0, feedback: '', improvements: [] };
                                 }
-                                newResults[index].manualScore = mappedScore;
-                                newResults[index].manualFeedback = `Manually Graded: ${percent}%`;
+                                if (!newResults[index].manualScores) {
+                                  newResults[index].manualScores = {};
+                                }
+                                newResults[index].manualScores[fallbackEmail] = {
+                                  score: mappedScore,
+                                  feedback: `Manually Graded: ${percent}%`
+                                };
+                                
+                                // Clean up legacy to avoid collision if they migrate it over
+                                if (newResults[index].manualScore !== undefined) {
+                                  delete newResults[index].manualScore;
+                                  delete newResults[index].manualFeedback;
+                                }
                                 
                                 const newSub = { ...manualSub, results: newResults };
                                 setManualSub(newSub);
@@ -2797,6 +2850,7 @@ export default function EvaluateApp() {
         setLoginError('Invalid login details. Please try again.');
       } else {
         setRole('FacultyHub');
+        if (data.user && data.user.email) setLecturerEmail(data.user.email);
         setLoginModalRole(null);
       }
       setAuthLoading(false);
@@ -3093,6 +3147,15 @@ export default function EvaluateApp() {
             <div className={`side-nav-tab ${lecturerTab === 'research' ? 'active' : ''}`} onClick={() => { setLecturerTab('research'); setIsMobileMenuOpen(false); }}><Activity size={18} style={{ marginRight: '6px' }} /> Model Comparison</div>
           )}
           <div className={`side-nav-tab ${lecturerTab === 'audit' ? 'active' : ''}`} onClick={() => setLecturerTab('audit')}><Settings size={18} style={{ marginRight: '6px' }} /> System Audit & Engine</div>
+          
+          {lecturerEmail && (
+            <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid var(--panel-border)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                <Users size={14} color="var(--primary)" /> <strong>Logged in as</strong>
+              </div>
+              <div style={{ wordBreak: 'break-all' }}>{lecturerEmail}</div>
+            </div>
+          )}
         </div>
 
         {/* Main Content Area */}
