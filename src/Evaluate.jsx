@@ -732,7 +732,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
 
   const COMPARISON_MODELS = [
     { label: 'Gemini 2.0 Flash',        type: 'gemini',     id: 'gemini-2.0-flash' },
-    { label: 'Gemini 1.5 Flash',        type: 'gemini',     id: 'gemini-1.5-flash-latest' },
+    { label: 'Gemini 1.5 Flash',        type: 'gemini',     id: 'gemini-flash-latest' },
     { label: 'Qwen 2.5 72B (OR)',       type: 'openrouter', id: 'qwen/qwen-2.5-72b-instruct' },
     { label: 'Mistral Nemo (OR)',       type: 'openrouter', id: 'mistralai/mistral-nemo' },
     { label: 'Llama 3.1 8B (OR)',       type: 'openrouter', id: 'meta-llama/llama-3.1-8b-instruct' },
@@ -2032,14 +2032,14 @@ export default function EvaluateApp() {
 
     if (aiSettings.provider === 'gemini') {
       attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
-      attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-1.5-flash') });
+      attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-flash-latest') });
       FREE_OR_MODELS.forEach(m => attempts.push({ label: m, fn: () => tryOpenRouter(m) }));
       attempts.push({ label: 'DeepSeek V4 Pro (FW)', fn: () => tryFireworks('accounts/fireworks/models/deepseek-v4-pro') });
     } else if (aiSettings.provider === 'openrouter') {
       const preferred = aiSettings.openrouterModel || 'meta-llama/llama-3.1-8b-instruct:free';
       attempts.push({ label: preferred,          fn: () => tryOpenRouter(preferred) });
       attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
-      attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-1.5-flash') });
+      attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-flash-latest') });
       FREE_OR_MODELS.filter(m => m !== preferred).forEach(m =>
         attempts.push({ label: m, fn: () => tryOpenRouter(m) }));
       attempts.push({ label: 'DeepSeek V4 Pro (FW)', fn: () => tryFireworks('accounts/fireworks/models/deepseek-v4-pro') });
@@ -2047,7 +2047,7 @@ export default function EvaluateApp() {
       const preferred = aiSettings.fireworksModel || 'accounts/fireworks/models/deepseek-v4-pro';
       attempts.push({ label: preferred,          fn: () => tryFireworks(preferred) });
       attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
-      attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-1.5-flash') });
+      attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-flash-latest') });
       FREE_OR_MODELS.forEach(m => attempts.push({ label: m, fn: () => tryOpenRouter(m) }));
     } else {
       attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
