@@ -739,11 +739,11 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     { label: 'Nvidia Nemotron (OR)',    type: 'openrouter', id: 'nvidia/nemotron-3-super-120b-a12b:free' },
     { label: 'DeepSeek V4 Pro (FW)',    type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v4-pro' },
     { label: 'Kimi K2.6 (FW)',          type: 'fireworks',  id: 'accounts/fireworks/models/kimi-k2p6' },
-    { label: 'Llama 4 Maverick (FW)',   type: 'fireworks',  id: 'accounts/fireworks/models/llama-v4-maverick' },
-    { label: 'Qwen 3.6 Plus (FW)',      type: 'fireworks',  id: 'accounts/fireworks/models/qwen3p6-plus' },
+    { label: 'Llama 4 Maverick (FW)',   type: 'fireworks',  id: 'accounts/fireworks/models/llama4-maverick-instruct-basic' },
+    { label: 'Llama 3.1 8B (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/llama-v3p1-8b-instruct' },
     { label: 'MiniMax M2.7 (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/minimax-m2p7' },
-    { label: 'Step 3.7 Flash (FW)',     type: 'fireworks',  id: 'accounts/fireworks/models/step-3p7-flash' },
-    { label: 'Llama 4 Scout (FW)',      type: 'fireworks',  id: 'accounts/fireworks/models/llama-v4-scout' },
+    { label: 'Llama 3.1 70B (FW)',      type: 'fireworks',  id: 'accounts/fireworks/models/llama-v3p1-70b-instruct' },
+    { label: 'Llama 4 Scout (FW)',      type: 'fireworks',  id: 'accounts/fireworks/models/llama4-scout-instruct-basic' },
     { label: 'DeepSeek V4 Flash (FW)',  type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v4-flash' }
   ];
 
@@ -811,6 +811,15 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     const systemPrompt = `You are an academic grader. Grade the student answer strictly against the marking scheme. Max score is ${maxS}. Return ONLY raw JSON: {"score":<number>, "grade":"<A/B/C/D/F>", "feedback":"<string>", "authenticity":<0-100>}. No markdown.`;
     const userPrompt   = `Question: ${q}\nMarking Scheme: ${ms}\nStudent Answer: ${ans}`;
 
+    const parseAIJson = (txt) => {
+      let cleaned = txt.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      if (match) {
+        return JSON.parse(match[0]);
+      }
+      return JSON.parse(cleaned);
+    };
+
     if (model.type === 'gemini') {
       if (!activeGeminiKey) throw new Error('No Gemini key');
       const body = {
@@ -822,7 +831,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       const data = await res.json();
       if (data.error) throw new Error(data.error.message.includes('Quota exceeded') ? 'Google API Free Tier Quota Exceeded. Please upgrade to a paid API key.' : data.error.message);
       const txt = data.candidates?.[0]?.content?.parts?.find(p=>p.text)?.text || '';
-      return JSON.parse(txt.replace(/```json|```/gi,'').trim());
+      return parseAIJson(txt);
     } else if (model.type === 'fireworks') {
       let activeFWKey = aiSettings.fireworksKey?.trim() || '';
       if (activeFWKey.toLowerCase().startsWith('bearer ')) activeFWKey = activeFWKey.slice(7).trim();
@@ -838,7 +847,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
           const data = await res.json();
           if (data.error) throw new Error(`Fireworks Error: ${data.error.message || 'Unknown error'}`);
           const txt = data.choices?.[0]?.message?.content || '';
-          return JSON.parse(txt.replace(/```json|```/gi, '').trim());
+          return parseAIJson(txt);
         } catch (err) {
           lastErr = err;
           if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
@@ -855,7 +864,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
           const data = await res.json();
           if (data.error) throw new Error(data.error.message || data.error.metadata?.message);
           const txt  = data.choices?.[0]?.message?.content || '';
-          return JSON.parse(txt.replace(/```json|```/gi,'').trim());
+          return parseAIJson(txt);
         } catch (err) {
           lastErr = err;
           if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
@@ -3934,8 +3943,8 @@ const text = document.getElementById('bulkStudCSV').value;
                   <select className="input-field" value={aiSettings.fireworksModel || 'accounts/fireworks/models/deepseek-v4-pro'} onChange={e => setAiSettings({...aiSettings, fireworksModel: e.target.value})}>
                     <option value="accounts/fireworks/models/deepseek-v4-pro">DeepSeek V4 Pro</option>
                     <option value="accounts/fireworks/models/kimi-k2p6">Kimi K2.6</option>
-                    <option value="accounts/fireworks/models/llama-v4-maverick">Llama 4 Maverick</option>
-                    <option value="accounts/fireworks/models/qwen3p6-plus">Qwen 3.6 Plus</option>
+                    <option value="accounts/fireworks/models/llama4-maverick-instruct-basic">Llama 4 Maverick</option>
+                    <option value="accounts/fireworks/models/llama-v3p1-8b-instruct">Llama 3.1 8B</option>
                   </select>
                 </div>
               )}
