@@ -803,8 +803,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   }
 
   const gradeWithModel = async (model, q, ms, ans, maxS) => {
-    const systemPrompt = `You are an academic grader. Grade the student answer strictly against the marking scheme. Max score is ${maxS}. Return ONLY raw JSON: {"score":<number>, "grade":"<A/B/C/D/F>", "feedback":"<string>", "authenticity":<0-100>}. No markdown.`;
-    const userPrompt   = `Question: ${q}\nMarking Scheme: ${ms}\nStudent Answer: ${ans}`;
+    const systemPrompt = `You are an academic grader. Grade the student answer strictly against the marking scheme. Max score is ${maxS}. Return ONLY a JSON object: {"score":<number>, "grade":"<A/B/C/D/F>", "feedback":"<string>", "authenticity":<0-100>}. Do not use markdown blocks.`;
+    const userPrompt   = `Question: ${q}\nMarking Scheme: ${ms}\nStudent Answer: ${ans}\n\nCRITICAL INSTRUCTION: Output ONLY a valid JSON object starting with '{' and ending with '}'. Absolutely no conversational text or markdown.`;
 
     const parseAIJson = (txt) => {
       let cleaned = txt.replace(/```json/gi, '').replace(/```/g, '').trim();
