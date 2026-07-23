@@ -737,14 +737,14 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     { label: 'GPT-OSS 120B (OR)',       type: 'openrouter', id: 'openai/gpt-oss-120b:free' },
     { label: 'Llama 3.1 8B (OR)',       type: 'openrouter', id: 'meta-llama/llama-3.1-8b-instruct' },
     { label: 'Nvidia Nemotron (OR)',    type: 'openrouter', id: 'nvidia/nemotron-3-super-120b-a12b:free' },
-    { label: 'Llama 3.3 70B (FW)',      type: 'fireworks',  id: 'accounts/fireworks/models/llama-v3p3-70b-instruct' },
-    { label: 'Llama 3.1 8B (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/llama-v3p1-8b-instruct' },
-    { label: 'Mixtral 8x22B (FW)',      type: 'fireworks',  id: 'accounts/fireworks/models/mixtral-8x22b-instruct' },
-    { label: 'Qwen 2.5 72B (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/qwen2p5-72b-instruct' },
-    { label: 'DeepSeek V3 (FW)',        type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v3' },
-    { label: 'DeepSeek R1 (FW)',        type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-r1' },
-    { label: 'Llama 3.2 3B (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/llama-v3p2-3b-instruct' },
-    { label: 'Llama 3.1 405B (FW)',     type: 'fireworks',  id: 'accounts/fireworks/models/llama-v3p1-405b-instruct' }
+    { label: 'DeepSeek V4 Pro (FW)',    type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v4-pro' },
+    { label: 'Kimi K2.6 (FW)',          type: 'fireworks',  id: 'accounts/fireworks/models/kimi-k2p6' },
+    { label: 'Llama 4 Maverick (FW)',   type: 'fireworks',  id: 'accounts/fireworks/models/llama-v4-maverick' },
+    { label: 'Qwen 3.6 Plus (FW)',      type: 'fireworks',  id: 'accounts/fireworks/models/qwen3p6-plus' },
+    { label: 'MiniMax M2.7 (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/minimax-m2p7' },
+    { label: 'Step 3.7 Flash (FW)',     type: 'fireworks',  id: 'accounts/fireworks/models/step-3p7-flash' },
+    { label: 'Llama 4 Scout (FW)',      type: 'fireworks',  id: 'accounts/fireworks/models/llama-v4-scout' },
+    { label: 'DeepSeek V4 Flash (FW)',  type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v4-flash' }
   ];
 
   const activeGeminiKey  = aiSettings.geminiKey;
@@ -1423,7 +1423,7 @@ export default function EvaluateApp() {
       openrouterKey: OBFUSCATED_OPENROUTER_KEY,
       openrouterModel: 'google/gemma-4-31b-it:free',
       fireworksKey: '',
-      fireworksModel: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
+      fireworksModel: 'accounts/fireworks/models/deepseek-v4-pro',
       emailjsPublicKey: 'OFoJSMtD5Dy663OcN',
       emailjsServiceId: 'service_669uej4',
       emailjsOtpTemplateId: 'template_ywnb23v',
@@ -2030,7 +2030,7 @@ export default function EvaluateApp() {
       attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
       attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-1.5-flash') });
       FREE_OR_MODELS.forEach(m => attempts.push({ label: m, fn: () => tryOpenRouter(m) }));
-      attempts.push({ label: 'Llama 3.3 70B (FW)', fn: () => tryFireworks('accounts/fireworks/models/llama-v3p3-70b-instruct') });
+      attempts.push({ label: 'DeepSeek V4 Pro (FW)', fn: () => tryFireworks('accounts/fireworks/models/deepseek-v4-pro') });
     } else if (aiSettings.provider === 'openrouter') {
       const preferred = aiSettings.openrouterModel || 'google/gemma-4-31b-it:free';
       attempts.push({ label: preferred,          fn: () => tryOpenRouter(preferred) });
@@ -2038,9 +2038,9 @@ export default function EvaluateApp() {
       attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-1.5-flash') });
       FREE_OR_MODELS.filter(m => m !== preferred).forEach(m =>
         attempts.push({ label: m, fn: () => tryOpenRouter(m) }));
-      attempts.push({ label: 'Llama 3.3 70B (FW)', fn: () => tryFireworks('accounts/fireworks/models/llama-v3p3-70b-instruct') });
+      attempts.push({ label: 'DeepSeek V4 Pro (FW)', fn: () => tryFireworks('accounts/fireworks/models/deepseek-v4-pro') });
     } else if (aiSettings.provider === 'fireworks') {
-      const preferred = aiSettings.fireworksModel || 'accounts/fireworks/models/llama-v3p3-70b-instruct';
+      const preferred = aiSettings.fireworksModel || 'accounts/fireworks/models/deepseek-v4-pro';
       attempts.push({ label: preferred,          fn: () => tryFireworks(preferred) });
       attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
       attempts.push({ label: 'Gemini 1.5 Flash', fn: () => tryGemini('gemini-1.5-flash') });
@@ -2048,7 +2048,7 @@ export default function EvaluateApp() {
     } else {
       attempts.push({ label: 'Gemini 2.0 Flash', fn: () => tryGemini('gemini-2.0-flash') });
       FREE_OR_MODELS.forEach(m => attempts.push({ label: m, fn: () => tryOpenRouter(m) }));
-      attempts.push({ label: 'Llama 3.3 70B (FW)', fn: () => tryFireworks('accounts/fireworks/models/llama-v3p3-70b-instruct') });
+      attempts.push({ label: 'DeepSeek V4 Pro (FW)', fn: () => tryFireworks('accounts/fireworks/models/deepseek-v4-pro') });
     }
 
     // In Model Comparison mode, override the attempts array with the single selected model
@@ -3931,11 +3931,11 @@ const text = document.getElementById('bulkStudCSV').value;
               {aiSettings.provider === 'fireworks' && (
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 'bold' }}>Fireworks Model</label>
-                  <select className="input-field" value={aiSettings.fireworksModel || 'accounts/fireworks/models/llama-v3p3-70b-instruct'} onChange={e => setAiSettings({...aiSettings, fireworksModel: e.target.value})}>
-                    <option value="accounts/fireworks/models/llama-v3p3-70b-instruct">Llama 3.3 70B Instruct</option>
-                    <option value="accounts/fireworks/models/llama-v3-8b-instruct">Llama 3 8B Instruct</option>
-                    <option value="accounts/fireworks/models/mixtral-8x7b-instruct">Mixtral 8x7B Instruct</option>
-                    <option value="accounts/fireworks/models/qwen2-72b-instruct">Qwen2 72B Instruct</option>
+                  <select className="input-field" value={aiSettings.fireworksModel || 'accounts/fireworks/models/deepseek-v4-pro'} onChange={e => setAiSettings({...aiSettings, fireworksModel: e.target.value})}>
+                    <option value="accounts/fireworks/models/deepseek-v4-pro">DeepSeek V4 Pro</option>
+                    <option value="accounts/fireworks/models/kimi-k2p6">Kimi K2.6</option>
+                    <option value="accounts/fireworks/models/llama-v4-maverick">Llama 4 Maverick</option>
+                    <option value="accounts/fireworks/models/qwen3p6-plus">Qwen 3.6 Plus</option>
                   </select>
                 </div>
               )}
