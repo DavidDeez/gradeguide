@@ -723,6 +723,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const [rAnswer,     setRAnswer]     = React.useState('');
   const [rMaxScore,   setRMaxScore]   = React.useState(10);
   const [rLecData,    setRLecData]    = React.useState({});
+  const [rRawQuestions, setRRawQuestions] = React.useState(null);
+  const [rRawSubmission, setRRawSubmission] = React.useState(null);
 
   const [rDelay,      setRDelay]      = React.useState(1500);
   const [rResults,    setRResults]    = React.useState([]);
@@ -796,7 +798,9 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
           ms: fullMS.trim(),
           ans: fullAns.trim(),
           max: totalMax,
-          lecData: lecData
+          lecData: lecData,
+          rawQuestions: ass.questions,
+          rawSubmission: sub
         });
       }
     });
@@ -924,12 +928,29 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     csv += row('GRADER.ai — AI Model Comparison Report');
     csv += row('Generated', new Date().toLocaleString());
     csv += '\r\n';
-    csv += row('=== SUBMISSION DETAILS ===');
-    csv += row('Question', rQuestion);
-    csv += row('Student Answer', rAnswer);
-    csv += row('Marking Scheme / Context', rMarkScheme || 'N/A');
-    csv += row('Max Possible Score', maxScoreNum);
-    csv += row('Official Grading AI', graderName);
+    csv += row('=== INDIVIDUAL QUESTION SCORES (Manual Marking) ===');
+    csv += row('Question #', 'Question Text', 'Student Answer', 'Manual Score', 'Max Score', 'Feedback');
+    
+    if (rRawQuestions && rRawSubmission) {
+      rRawQuestions.forEach((qObj, idx) => {
+        const studAns = rRawSubmission.answers?.[qObj.id] || rRawSubmission.answers?.[idx] || '';
+        let mScore = 'N/A';
+        let mFeedback = '';
+        const prevRes = rRawSubmission.results?.find(r => r.questionId === qObj.id || r.questionId === idx);
+        
+        if (prevRes) {
+           const emails = Object.keys(prevRes.manualScores || {});
+           if (emails.length > 0) {
+             mScore = prevRes.manualScores[emails[0]].score;
+             mFeedback = prevRes.manualScores[emails[0]].feedback;
+           } else if (prevRes.manualScore !== undefined) {
+             mScore = prevRes.manualScore;
+             mFeedback = prevRes.manualFeedback || '';
+           }
+        }
+        csv += row(`Q${idx+1}`, qObj.text, studAns, mScore, qObj.maxMarks || 10, mFeedback);
+      });
+    }
     csv += '\r\n';
     csv += row('=== COMPARISON SUMMARY ===');
     csv += row('Consensus Average', avgPct !== null ? avgPct + '%' : 'N/A');
@@ -1009,6 +1030,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
                 if(!rRunning) {
                   setRQuestion(demo.q); setRMarkScheme(demo.ms); setRAnswer(demo.ans); 
                   setRMaxScore(demo.max); setRLecData(demo.lecData);
+                  setRRawQuestions(demo.rawQuestions); setRRawSubmission(demo.rawSubmission);
                   setRResults([]);
                 }
               }}
