@@ -2707,19 +2707,31 @@ export default function EvaluateApp() {
               
               {fallbackEmail === 'david@grader.ai' && (
                 <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }} onClick={async () => {
+                  const percentStr = window.prompt("Enter percentage to bulk grade (0-100):", "100");
+                  if (percentStr === null) return;
+                  const percent = parseFloat(percentStr);
+                  if (isNaN(percent) || percent < 0 || percent > 100) {
+                    alert("Please enter a valid percentage between 0 and 100.");
+                    return;
+                  }
+                  
                   const newResults = [...results];
                   ass.questions.forEach((qObj, index) => {
                     if (!newResults[index]) newResults[index] = { score: 0, feedback: '', improvements: [] };
                     if (!newResults[index].manualScores) newResults[index].manualScores = {};
+                    
+                    const qMax = qObj.maxMarks || 10;
+                    const mappedScore = (percent / 100) * qMax;
+                    
                     newResults[index].manualScores[fallbackEmail] = {
-                      score: qObj.maxMarks || 10,
-                      feedback: 'Manually Graded: 100%'
+                      score: mappedScore,
+                      feedback: `Manually Graded: ${percent}%`
                     };
                   });
                   setResults(newResults);
                   await saveAssessmentToDB(activeAssessment.id, newResults);
                 }}>
-                  Auto-Grade 100%
+                  Bulk Auto-Grade
                 </button>
               )}
 
