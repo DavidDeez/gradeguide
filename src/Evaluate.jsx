@@ -806,91 +806,141 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     });
   }
 
-  const gradeWithModel = async (model, q, ms, ans, maxS) => {
-    const systemPrompt = `You are an academic grader. Grade the student answer strictly against the marking scheme. Max score is ${maxS}. Return ONLY a JSON object: {"score":<number>, "grade":"<A/B/C/D/F>", "feedback":"<string>", "authenticity":<0-100>}. Do not use markdown blocks.`;
-    const userPrompt   = `Question: ${q}\nMarking Scheme: ${ms}\nStudent Answer: ${ans}\n\nCRITICAL INSTRUCTION: Output ONLY a valid JSON object starting with '{' and ending with '}'. Absolutely no conversational text or markdown.`;
-
-    const parseAIJson = (txt) => {
+  const gradeWithModel = async (model, rawQ, rawSub, onProgress) => {
+    const CHUNK_SIZE = 10;
+    const individualScores = [];
+    let totalScore = 0;
+    
+    const parseArrayJson = (txt) => {
       let cleaned = txt.replace(/```json/gi, '').replace(/```/g, '').trim();
-      const match = cleaned.match(/\{[\s\S]*\}/);
-      if (match) {
-        return JSON.parse(match[0]);
-      }
+      const match = cleaned.match(/\[[\s\S]*\]/);
+      if (match) return JSON.parse(match[0]);
       return JSON.parse(cleaned);
     };
 
-    if (model.type === 'gemini') {
-      if (!activeGeminiKey) throw new Error('No Gemini key');
-      const body = {
-        contents: [{ role:'user', parts:[{ text: userPrompt }] }],
-        generationConfig: { responseMimeType:'application/json', maxOutputTokens:2000, temperature: 0 },
-        system_instruction: { parts:[{ text: systemPrompt }] }
-      };
-      const res  = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent?key=${activeGeminiKey}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error.message.includes('Quota exceeded') ? 'Google API Free Tier Quota Exceeded. Please upgrade to a paid API key.' : data.error.message);
-      const txt = data.candidates?.[0]?.content?.parts?.find(p=>p.text)?.text || '';
-      return parseAIJson(txt);
-    } else if (model.type === 'fireworks') {
-      let activeFWKey = aiSettings.fireworksKey?.trim() || '';
-      if (activeFWKey.toLowerCase().startsWith('bearer ')) activeFWKey = activeFWKey.slice(7).trim();
-      if (!activeFWKey) throw new Error('No Fireworks API key configured in Settings');
-      let lastErr = null;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          const res = await fetch("https://api.fireworks.ai/inference/v1/chat/completions", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${activeFWKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ model: model.id, temperature: 0, max_tokens: 1000, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] })
-          });
-          const data = await res.json();
-          if (data.error) throw new Error(`Fireworks Error: ${data.error.message || 'Unknown error'}`);
-          const txt = data.choices?.[0]?.message?.content || '';
-          return parseAIJson(txt);
-        } catch (err) {
-          lastErr = err;
-          if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
+    for (let i = 0; i < rawQ.length; i += CHUNK_SIZE) {
+      const chunk = rawQ.slice(i, i + CHUNK_SIZE);
+      const chunkNum = Math.floor(i/CHUNK_SIZE) + 1;
+      const totalChunks = Math.ceil(rawQ.length/CHUNK_SIZE);
+      if (totalChunks > 1) onProgress(`Chunk ${chunkNum} of ${totalChunks}...`);
+      
+      let chunkQ = '';
+      let chunkAns = '';
+      let maxS = 0;
+      chunk.forEach((qObj, idx) => {
+        const realIdx = i + idx;
+        const studAns = rawSub.answers?.[qObj.id] || rawSub.answers?.[realIdx] || '';
+        chunkQ += `[Q${realIdx+1}] ${qObj.text}\nMarking Scheme: ${qObj.context || 'Standard evaluation'}\n\n`;
+        chunkAns += `[Answer ${realIdx+1}] ${studAns}\n\n`;
+        maxS += (qObj.maxMarks || 10);
+      });
+
+      const systemPrompt = `You are an academic grader. You will receive ${chunk.length} questions and answers. Max possible total score is ${maxS}. Return ONLY a JSON array of exactly ${chunk.length} objects corresponding to each question: [{"score":<number>, "feedback":"<string>"}, ...]. Do not use markdown blocks.`;
+      const userPrompt   = `${chunkQ}\n\nStudent Answers:\n${chunkAns}\n\nCRITICAL INSTRUCTION: Output ONLY a valid JSON array starting with '[' and ending with ']'.`;
+
+      let txt = '';
+      if (model.type === 'gemini') {
+        if (!activeGeminiKey) throw new Error('No Gemini key');
+        const body = {
+          contents: [{ role:'user', parts:[{ text: userPrompt }] }],
+          generationConfig: { responseMimeType:'application/json', maxOutputTokens:8192, temperature: 0 },
+          system_instruction: { parts:[{ text: systemPrompt }] }
+        };
+        const res  = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent?key=${activeGeminiKey}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message.includes('Quota exceeded') ? 'Google API Free Tier Quota Exceeded. Please upgrade to a paid API key.' : data.error.message);
+        txt = data.candidates?.[0]?.content?.parts?.find(p=>p.text)?.text || '';
+      } else if (model.type === 'fireworks') {
+        let activeFWKey = aiSettings.fireworksKey?.trim() || '';
+        if (activeFWKey.toLowerCase().startsWith('bearer ')) activeFWKey = activeFWKey.slice(7).trim();
+        if (!activeFWKey) throw new Error('No Fireworks API key configured in Settings');
+        let lastErr = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const res = await fetch("https://api.fireworks.ai/inference/v1/chat/completions", {
+              method: "POST",
+              headers: { "Authorization": `Bearer ${activeFWKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ model: model.id, temperature: 0, max_tokens: 2000, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] })
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(`Fireworks Error: ${data.error.message || 'Unknown error'}`);
+            txt = data.choices?.[0]?.message?.content || '';
+            break;
+          } catch (err) {
+            lastErr = err;
+            if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
+          }
         }
-      }
-      throw lastErr;
-    } else {
-      const activeORKeyTrimmed = activeORKey?.trim();
-      if (!activeORKeyTrimmed) throw new Error('No OpenRouter key');
-      let lastErr = null;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          const res  = await fetch('https://openrouter.ai/api/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${activeORKeyTrimmed}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'GRADER.ai Research'}, body:JSON.stringify({ model:model.id, temperature:0, max_tokens:1000, messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}] }) });
-          const data = await res.json();
-          if (data.error) throw new Error(data.error.message || data.error.metadata?.message);
-          const txt  = data.choices?.[0]?.message?.content || '';
-          return parseAIJson(txt);
-        } catch (err) {
-          lastErr = err;
-          if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
+        if (!txt) throw lastErr;
+      } else {
+        const activeORKeyTrimmed = activeORKey?.trim();
+        if (!activeORKeyTrimmed) throw new Error('No OpenRouter key');
+        let lastErr = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const res  = await fetch('https://openrouter.ai/api/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${activeORKeyTrimmed}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'GRADER.ai Research'}, body:JSON.stringify({ model:model.id, temperature:0, max_tokens:2000, messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}] }) });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error.message || data.error.metadata?.message);
+            txt  = data.choices?.[0]?.message?.content || '';
+            break;
+          } catch (err) {
+            lastErr = err;
+            if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
+          }
         }
+        if (!txt) throw lastErr;
       }
-      throw lastErr;
+
+      const arr = parseArrayJson(txt);
+      if (!Array.isArray(arr)) throw new Error('Model did not return a JSON array');
+      
+      chunk.forEach((qObj, idx) => {
+         const obj = arr[idx] || { score: 0, feedback: 'Missing from model output' };
+         totalScore += (parseFloat(obj.score) || 0);
+         individualScores.push({ score: parseFloat(obj.score) || 0, feedback: obj.feedback || '' });
+      });
+      
+      if (i + CHUNK_SIZE < rawQ.length) await new Promise(r => setTimeout(r, 1000)); 
     }
+
+    const totalMax = rawQ.reduce((a, q) => a + (q.maxMarks || 10), 0);
+    const overallGrade = totalScore >= (totalMax * 0.7) ? 'A' : (totalScore >= (totalMax * 0.6) ? 'B' : (totalScore >= (totalMax * 0.5) ? 'C' : 'F'));
+
+    return {
+      score: totalScore,
+      grade: overallGrade,
+      feedback: 'Aggregated from individual chunk feedback.',
+      authenticity: 100,
+      individualScores: individualScores
+    };
   };
 
-  const runComparison = async (q = rQuestion, ms = rMarkScheme, ans = rAnswer, maxS = rMaxScore, lecDataObj = rLecData) => {
-    if (!q || !ans) return;
+  const runComparison = async (q = rQuestion, ms = rMarkScheme, ans = rAnswer, maxS = rMaxScore, lecDataObj = rLecData, rawQ = rRawQuestions, rawSub = rRawSubmission) => {
+    if (!rawQ || !rawSub) {
+      window.showToast?.('Error: Raw questions or submission not loaded.', 'error');
+      return;
+    }
     setRQuestion(q); setRMarkScheme(ms); setRAnswer(ans); setRMaxScore(maxS); setRLecData(lecDataObj);
     setRResults([]); setRRunning(true);
-    setRProgress(`Querying all ${COMPARISON_MODELS.length} models in parallel...`);
     
     const out = [];
-    await Promise.all(COMPARISON_MODELS.map(async (m) => {
+    
+    for (let mIndex = 0; mIndex < COMPARISON_MODELS.length; mIndex++) {
+      const m = COMPARISON_MODELS[mIndex];
+      setRProgress(`Evaluating Model ${mIndex + 1}/${COMPARISON_MODELS.length}: ${m.label}...`);
+      
       try {
         const start = performance.now();
-        const r = await gradeWithModel(m, q, ms, ans, maxS);
+        const r = await gradeWithModel(m, rawQ, rawSub, (progressText) => {
+           setRProgress(`Model ${mIndex + 1}/${COMPARISON_MODELS.length} (${m.label}): ${progressText}`);
+        });
         const latency = performance.now() - start;
-        out.push({ model: m.label, score: r.score, grade: r.grade, feedback: r.feedback, authenticity: r.authenticity, time: latency, error: false });
+        out.push({ model: m.label, score: r.score, grade: r.grade, feedback: r.feedback, authenticity: r.authenticity, time: latency, error: false, individualScores: r.individualScores, isHuman: false });
       } catch(e) {
-        out.push({ model: m.label, score: null, grade:'—', feedback: e.message, authenticity: null, time: null, error: true });
+        out.push({ model: m.label, score: null, grade:'—', feedback: e.message, authenticity: null, time: null, error: true, individualScores: [], isHuman: false });
       }
       setRResults([...out]);
-    }));
+    }
 
     setRRunning(false); setRProgress('Comparison complete!');
   };
@@ -928,8 +978,13 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     csv += row('GRADER.ai — AI Model Comparison Report');
     csv += row('Generated', new Date().toLocaleString());
     csv += '\r\n';
-    csv += row('=== INDIVIDUAL QUESTION SCORES (Manual Marking) ===');
-    csv += row('Question #', 'Question Text', 'Student Answer', 'Manual Score', 'Max Score', 'Feedback');
+    csv += row('=== INDIVIDUAL QUESTION SCORES ===');
+    const aiModels = displayResults.filter(r => !r.isHuman && !r.error && r.individualScores);
+    const headerCols = ['Question #', 'Question Text', 'Student Answer', 'Max Score', 'Manual Score', 'Manual Feedback'];
+    aiModels.forEach(m => {
+      headerCols.push(`${m.model} Score`, `${m.model} Feedback`);
+    });
+    csv += row(...headerCols);
     
     if (rRawQuestions && rRawSubmission) {
       rRawQuestions.forEach((qObj, idx) => {
@@ -948,7 +1003,18 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
              mFeedback = prevRes.manualFeedback || '';
            }
         }
-        csv += row(`Q${idx+1}`, qObj.text, studAns, mScore, qObj.maxMarks || 10, mFeedback);
+        
+        const rowData = [`Q${idx+1}`, qObj.text, studAns, qObj.maxMarks || 10, mScore, mFeedback];
+        aiModels.forEach(m => {
+          const aiScoreObj = m.individualScores[idx];
+          if (aiScoreObj) {
+            rowData.push(aiScoreObj.score, aiScoreObj.feedback);
+          } else {
+            rowData.push('N/A', 'N/A');
+          }
+        });
+        
+        csv += row(...rowData);
       });
     }
     csv += '\r\n';
