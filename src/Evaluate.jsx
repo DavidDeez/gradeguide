@@ -1145,8 +1145,9 @@ if baseline:
     mae_results = {}
 
     for model in models:
-        if df[baseline].notnull().all() and df[f'{model} Score'].notnull().all():
-            mae = (df[f'{model} Score'] - df[baseline]).abs().mean()
+        valid_mask = df[baseline].notnull() & df[f'{model} Score'].notnull()
+        if valid_mask.any():
+            mae = (df.loc[valid_mask, f'{model} Score'] - df.loc[valid_mask, baseline]).abs().mean()
             mae_results[model] = mae
 
     print("\\n=== AI Model Performance (Mean Absolute Error) ===")
