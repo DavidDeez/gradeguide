@@ -1166,6 +1166,7 @@ if baseline:
     plt.title(f'Score Variance per Question: AI vs {baseline}')
     plt.xlabel('Question Number')
     plt.ylabel('Score')
+    plt.xticks(ticks=range(0, len(df['Question']), max(1, len(df['Question'])//20)), rotation=45)
     plt.legend(loc='upper right', bbox_to_anchor=(1.25, 1))
     plt.tight_layout()
     plt.show()
