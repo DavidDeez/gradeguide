@@ -980,7 +980,12 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     csv += '\r\n';
     csv += row('=== INDIVIDUAL QUESTION SCORES ===');
     const aiModels = displayResults.filter(r => !r.isHuman && !r.error && r.individualScores);
-    const headerCols = ['Question #', 'Question Text', 'Student Answer', 'Max Score', 'Manual Score', 'Manual Feedback'];
+    const manualMarkers = displayResults.filter(r => r.isHuman);
+    const headerCols = ['Question #', 'Question Text', 'Student Answer', 'Max Score'];
+    
+    manualMarkers.forEach(m => {
+      headerCols.push(`${m.model} Score`, `${m.model} Feedback`);
+    });
     aiModels.forEach(m => {
       headerCols.push(`${m.model} Score`, `${m.model} Feedback`);
     });
@@ -989,22 +994,29 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     if (rRawQuestions && rRawSubmission) {
       rRawQuestions.forEach((qObj, idx) => {
         const studAns = rRawSubmission.answers?.[qObj.id] || rRawSubmission.answers?.[idx] || '';
-        let mScore = 'N/A';
-        let mFeedback = '';
         const prevRes = rRawSubmission.results?.find(r => r.questionId === qObj.id || r.questionId === idx);
         
-        if (prevRes) {
-           const emails = Object.keys(prevRes.manualScores || {});
-           if (emails.length > 0) {
-             mScore = prevRes.manualScores[emails[0]].score;
-             mFeedback = prevRes.manualScores[emails[0]].feedback;
-           } else if (prevRes.manualScore !== undefined) {
-             mScore = prevRes.manualScore;
-             mFeedback = prevRes.manualFeedback || '';
-           }
-        }
+        const rowData = [`Q${idx+1}`, qObj.text, studAns, qObj.maxMarks || 10];
         
-        const rowData = [`Q${idx+1}`, qObj.text, studAns, qObj.maxMarks || 10, mScore, mFeedback];
+        manualMarkers.forEach(m => {
+          let mScore = 'N/A';
+          let mFeedback = '';
+          if (prevRes) {
+             const isLegacy = m.model.includes('david@grader.ai');
+             if (isLegacy && prevRes.manualScore !== undefined) {
+               mScore = prevRes.manualScore;
+               mFeedback = prevRes.manualFeedback || '';
+             } else {
+               const email = m.model.match(/\((.*?)\)/)?.[1];
+               if (email && prevRes.manualScores?.[email]) {
+                 mScore = prevRes.manualScores[email].score;
+                 mFeedback = prevRes.manualScores[email].feedback || '';
+               }
+             }
+          }
+          rowData.push(mScore, mFeedback);
+        });
+        
         aiModels.forEach(m => {
           const aiScoreObj = m.individualScores[idx];
           if (aiScoreObj) {
@@ -1062,23 +1074,33 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
 
   const exportPython = () => {
     const aiModels = displayResults.filter(r => !r.isHuman && !r.error && r.individualScores);
+    const manualMarkers = displayResults.filter(r => r.isHuman);
     if (!aiModels.length || !rRawQuestions || !rRawSubmission) return;
 
     const data = [];
     rRawQuestions.forEach((qObj, idx) => {
-      let mScore = null;
       const prevRes = rRawSubmission.results?.find(r => r.questionId === qObj.id || r.questionId === idx);
-      if (prevRes) {
-         const emails = Object.keys(prevRes.manualScores || {});
-         if (emails.length > 0) mScore = prevRes.manualScores[emails[0]].score;
-         else if (prevRes.manualScore !== undefined) mScore = prevRes.manualScore;
-      }
       
       const row = {
         "Question": `Q${idx+1}`,
-        "Max Score": qObj.maxMarks || 10,
-        "Manual Score": mScore !== null ? mScore : null
+        "Max Score": qObj.maxMarks || 10
       };
+      
+      manualMarkers.forEach(m => {
+        let mScore = null;
+        if (prevRes) {
+           const isLegacy = m.model.includes('david@grader.ai');
+           if (isLegacy && prevRes.manualScore !== undefined) {
+             mScore = prevRes.manualScore;
+           } else {
+             const email = m.model.match(/\((.*?)\)/)?.[1];
+             if (email && prevRes.manualScores?.[email]) {
+               mScore = prevRes.manualScores[email].score;
+             }
+           }
+        }
+        row[`${m.model} Score`] = mScore !== null ? mScore : null;
+      });
       
       aiModels.forEach(m => {
         const aiScoreObj = m.individualScores[idx];
@@ -1105,34 +1127,48 @@ df = pd.DataFrame(data)
 # Replace None with NaN
 df.fillna(value=np.nan, inplace=True)
 
-# Calculate Mean Absolute Error (MAE) against Manual Score
-models = [col.replace(' Score', '') for col in df.columns if 'Score' in col and col not in ['Max Score', 'Manual Score']]
-mae_results = {}
+# Identify Manual Score columns
+manual_cols = [col for col in df.columns if 'Manual Marking' in col and 'Score' in col]
 
-for model in models:
-    if df['Manual Score'].notnull().all() and df[f'{model} Score'].notnull().all():
-        mae = (df[f'{model} Score'] - df['Manual Score']).abs().mean()
-        mae_results[model] = mae
+if len(manual_cols) > 1:
+    df['Consensus Manual Score'] = df[manual_cols].mean(axis=1)
+    baseline = 'Consensus Manual Score'
+elif len(manual_cols) == 1:
+    baseline = manual_cols[0]
+else:
+    print("No Manual Scores found!")
+    baseline = None
 
-print("\\n=== AI Model Performance (Mean Absolute Error) ===")
-print("Lower MAE means the AI grades closer to the human marker.\\n")
-for model, mae in sorted(mae_results.items(), key=lambda item: item[1]):
-    print(f"{model}: {mae:.2f}")
+if baseline:
+    # Calculate Mean Absolute Error (MAE) against Baseline Score
+    models = [col.replace(' Score', '') for col in df.columns if 'Score' in col and col not in ['Max Score', baseline] + manual_cols]
+    mae_results = {}
 
-# Visualizations
-plt.style.use('dark_background')
-plt.figure(figsize=(12, 6))
-plt.plot(df['Question'], df['Manual Score'], label='Manual Score', color='white', linewidth=2, marker='o')
+    for model in models:
+        if df[baseline].notnull().all() and df[f'{model} Score'].notnull().all():
+            mae = (df[f'{model} Score'] - df[baseline]).abs().mean()
+            mae_results[model] = mae
 
-for model in models:
-    plt.plot(df['Question'], df[f'{model} Score'], label=model, linestyle='--', alpha=0.7)
+    print("\\n=== AI Model Performance (Mean Absolute Error) ===")
+    print(f"Baseline: {baseline}")
+    print("Lower MAE means the AI grades closer to the baseline.\\n")
+    for model, mae in sorted(mae_results.items(), key=lambda item: item[1]):
+        print(f"{model}: {mae:.2f}")
 
-plt.title('Score Variance per Question: AI vs Manual')
-plt.xlabel('Question Number')
-plt.ylabel('Score')
-plt.legend(loc='upper right', bbox_to_anchor=(1.25, 1))
-plt.tight_layout()
-plt.show()
+    # Visualizations
+    plt.style.use('dark_background')
+    plt.figure(figsize=(12, 6))
+    plt.plot(df['Question'], df[baseline], label=baseline, color='white', linewidth=2, marker='o')
+
+    for model in models:
+        plt.plot(df['Question'], df[f'{model} Score'], label=model, linestyle='--', alpha=0.7)
+
+    plt.title(f'Score Variance per Question: AI vs {baseline}')
+    plt.xlabel('Question Number')
+    plt.ylabel('Score')
+    plt.legend(loc='upper right', bbox_to_anchor=(1.25, 1))
+    plt.tight_layout()
+    plt.show()
 `;
 
     const blob = new Blob([pyCode], { type: 'text/x-python;charset=utf-8;' });
