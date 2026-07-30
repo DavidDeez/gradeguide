@@ -735,10 +735,10 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const COMPARISON_MODELS = [
     { label: 'Gemini 2.0 Flash',        type: 'gemini',     id: 'gemini-2.0-flash' },
     { label: 'Gemini 1.5 Flash',        type: 'gemini',     id: 'gemini-flash-latest' },
-    { label: 'Qwen 2.5 72B (OR)',       type: 'openrouter', id: 'qwen/qwen-2.5-72b-instruct' },
-    { label: 'Mistral Nemo (OR)',       type: 'openrouter', id: 'mistralai/mistral-nemo' },
-    { label: 'Llama 3.1 8B (OR)',       type: 'openrouter', id: 'meta-llama/llama-3.1-8b-instruct' },
-    { label: 'Nvidia Nemotron (OR)',    type: 'openrouter', id: 'nvidia/nemotron-3-super-120b-a12b' },
+    { label: 'Qwen 2.5 72B (OR)',       type: 'openrouter', id: 'qwen/qwen-2.5-72b-instruct:free' },
+    { label: 'Mistral Nemo (OR)',       type: 'openrouter', id: 'mistralai/mistral-nemo:free' },
+    { label: 'Llama 3.1 8B (OR)',       type: 'openrouter', id: 'meta-llama/llama-3.1-8b-instruct:free' },
+    { label: 'Nvidia Nemotron (OR)',    type: 'openrouter', id: 'nvidia/llama-3.1-nemotron-70b-instruct:free' },
     { label: 'DeepSeek V4 Pro (FW)',    type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v4-pro' },
     { label: 'MiniMax M2.7 (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/minimax-m2p7' },
     { label: 'DeepSeek V4 Flash (FW)',  type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v4-flash' }
@@ -853,10 +853,20 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
           generationConfig: { responseMimeType:'application/json', maxOutputTokens:8192, temperature: 0 },
           system_instruction: { parts:[{ text: systemPrompt }] }
         };
-        const res  = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent?key=${activeGeminiKey}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message.includes('Quota exceeded') ? 'Google API Free Tier Quota Exceeded. Please upgrade to a paid API key.' : data.error.message);
-        txt = data.candidates?.[0]?.content?.parts?.find(p=>p.text)?.text || '';
+        let lastErr = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const res  = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent?key=${activeGeminiKey}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error.message.includes('Quota exceeded') ? 'Google API Free Tier Quota Exceeded. Please upgrade to a paid API key.' : data.error.message);
+            txt = data.candidates?.[0]?.content?.parts?.find(p=>p.text)?.text || '';
+            break;
+          } catch (err) {
+            lastErr = err;
+            if (attempt < 3) await new Promise(r => setTimeout(r, 2000));
+          }
+        }
+        if (!txt) throw lastErr;
       } else if (model.type === 'fireworks') {
         let activeFWKey = aiSettings.fireworksKey?.trim() || '';
         if (activeFWKey.toLowerCase().startsWith('bearer ')) activeFWKey = activeFWKey.slice(7).trim();
@@ -867,7 +877,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             const res = await fetch("https://api.fireworks.ai/inference/v1/chat/completions", {
               method: "POST",
               headers: { "Authorization": `Bearer ${activeFWKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ model: model.id, temperature: 0, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] })
+              body: JSON.stringify({ model: model.id, temperature: 0, max_tokens: 1500, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] })
             });
             const data = await res.json();
             if (data.error) throw new Error(`Fireworks Error: ${data.error.message || 'Unknown error'}`);
@@ -885,7 +895,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         let lastErr = null;
         for (let attempt = 1; attempt <= 3; attempt++) {
           try {
-            const res  = await fetch('https://openrouter.ai/api/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${activeORKeyTrimmed}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'GRADER.ai Research'}, body:JSON.stringify({ model:model.id, temperature:0, messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}] }) });
+            const res  = await fetch('https://openrouter.ai/api/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${activeORKeyTrimmed}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'GRADER.ai Research'}, body:JSON.stringify({ model:model.id, temperature:0, max_tokens: 1500, messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}] }) });
             const data = await res.json();
             if (data.error) throw new Error(data.error.message || data.error.metadata?.message);
             txt  = data.choices?.[0]?.message?.content || '';
