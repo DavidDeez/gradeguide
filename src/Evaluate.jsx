@@ -735,10 +735,10 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const COMPARISON_MODELS = [
     { label: 'Gemini 2.0 Flash',        type: 'gemini',     id: 'gemini-2.0-flash' },
     { label: 'Gemini 1.5 Flash',        type: 'gemini',     id: 'gemini-flash-latest' },
-    { label: 'Qwen 2.5 72B (OR)',       type: 'openrouter', id: 'qwen/qwen-2.5-72b-instruct:free' },
-    { label: 'Mistral Nemo (OR)',       type: 'openrouter', id: 'mistralai/mistral-nemo:free' },
-    { label: 'Llama 3.1 8B (OR)',       type: 'openrouter', id: 'meta-llama/llama-3.1-8b-instruct:free' },
-    { label: 'Nvidia Nemotron (OR)',    type: 'openrouter', id: 'nvidia/llama-3.1-nemotron-70b-instruct:free' },
+    { label: 'Qwen 2.5 72B (OR)',       type: 'openrouter', id: 'qwen/qwen-2.5-72b-instruct' },
+    { label: 'Mistral Nemo (OR)',       type: 'openrouter', id: 'mistralai/mistral-nemo' },
+    { label: 'Llama 3.1 8B (OR)',       type: 'openrouter', id: 'meta-llama/llama-3.1-8b-instruct' },
+    { label: 'Nvidia Nemotron (OR)',    type: 'openrouter', id: 'nvidia/nemotron-3-super-120b-a12b' },
     { label: 'DeepSeek V4 Pro (FW)',    type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v4-pro' },
     { label: 'MiniMax M2.7 (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/minimax-m2p7' },
     { label: 'DeepSeek V4 Flash (FW)',  type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v4-flash' }
