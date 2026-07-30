@@ -813,9 +813,16 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     
     const parseArrayJson = (txt) => {
       let cleaned = txt.replace(/```json/gi, '').replace(/```/g, '').trim();
-      const match = cleaned.match(/\[[\s\S]*\]/);
-      if (match) return JSON.parse(match[0]);
-      return JSON.parse(cleaned);
+      const startIdx = cleaned.indexOf('[');
+      let endIdx = cleaned.lastIndexOf(']');
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        cleaned = cleaned.substring(startIdx, endIdx + 1);
+      } else if (startIdx !== -1) {
+        cleaned = cleaned.substring(startIdx) + '}]'; // Attempt to close cut-off JSON
+      }
+      try { return JSON.parse(cleaned); } catch(e) {
+        try { return JSON.parse(cleaned.replace(/,\s*]/g, ']')); } catch(e2) { return []; }
+      }
     };
 
     for (let i = 0; i < rawQ.length; i += CHUNK_SIZE) {
@@ -860,7 +867,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
             const res = await fetch("https://api.fireworks.ai/inference/v1/chat/completions", {
               method: "POST",
               headers: { "Authorization": `Bearer ${activeFWKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ model: model.id, temperature: 0, max_tokens: 2000, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] })
+              body: JSON.stringify({ model: model.id, temperature: 0, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] })
             });
             const data = await res.json();
             if (data.error) throw new Error(`Fireworks Error: ${data.error.message || 'Unknown error'}`);
@@ -878,7 +885,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         let lastErr = null;
         for (let attempt = 1; attempt <= 3; attempt++) {
           try {
-            const res  = await fetch('https://openrouter.ai/api/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${activeORKeyTrimmed}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'GRADER.ai Research'}, body:JSON.stringify({ model:model.id, temperature:0, max_tokens:2000, messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}] }) });
+            const res  = await fetch('https://openrouter.ai/api/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${activeORKeyTrimmed}`,'Content-Type':'application/json','HTTP-Referer':window.location.origin,'X-Title':'GRADER.ai Research'}, body:JSON.stringify({ model:model.id, temperature:0, messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}] }) });
             const data = await res.json();
             if (data.error) throw new Error(data.error.message || data.error.metadata?.message);
             txt  = data.choices?.[0]?.message?.content || '';
@@ -900,7 +907,10 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
          individualScores.push({ score: parseFloat(obj.score) || 0, feedback: obj.feedback || '' });
       });
       
-      if (i + CHUNK_SIZE < rawQ.length) await new Promise(r => setTimeout(r, 1000)); 
+      if (i + CHUNK_SIZE < rawQ.length) {
+        const delayMs = model.type === 'gemini' ? 4500 : 1500; // Gemini free tier allows 15 RPM (1 req per 4s)
+        await new Promise(r => setTimeout(r, delayMs)); 
+      }
     }
 
     const totalMax = rawQ.reduce((a, q) => a + (q.maxMarks || 10), 0);
