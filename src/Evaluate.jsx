@@ -991,48 +991,44 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     csv += row('=== INDIVIDUAL QUESTION SCORES ===');
     const aiModels = displayResults.filter(r => !r.isHuman && !r.error && r.individualScores);
     const manualMarkers = displayResults.filter(r => r.isHuman);
-    const headerCols = ['Question #', 'Question Text', 'Student Answer', 'Max Score'];
+    const headerCols = ['Question #', 'Max Score'];
     
     manualMarkers.forEach(m => {
-      headerCols.push(`${m.model} Score`, `${m.model} Feedback`);
+      headerCols.push(`${m.model} Score`);
     });
     aiModels.forEach(m => {
-      headerCols.push(`${m.model} Score`, `${m.model} Feedback`);
+      headerCols.push(`${m.model} Score`);
     });
     csv += row(...headerCols);
     
     if (rRawQuestions && rRawSubmission) {
       rRawQuestions.forEach((qObj, idx) => {
-        const studAns = rRawSubmission.answers?.[qObj.id] || rRawSubmission.answers?.[idx] || '';
         const prevRes = rRawSubmission.results?.find(r => r.questionId === qObj.id || r.questionId === idx);
         
-        const rowData = [`Q${idx+1}`, qObj.text, studAns, qObj.maxMarks || 10];
+        const rowData = [`Q${idx+1}`, qObj.maxMarks || 10];
         
         manualMarkers.forEach(m => {
           let mScore = 'N/A';
-          let mFeedback = '';
           if (prevRes) {
              const isLegacy = m.model.includes('david@grader.ai');
              if (isLegacy && prevRes.manualScore !== undefined) {
                mScore = prevRes.manualScore;
-               mFeedback = prevRes.manualFeedback || '';
              } else {
                const email = m.model.match(/\((.*?)\)/)?.[1];
                if (email && prevRes.manualScores?.[email]) {
                  mScore = prevRes.manualScores[email].score;
-                 mFeedback = prevRes.manualScores[email].feedback || '';
                }
              }
           }
-          rowData.push(mScore, mFeedback);
+          rowData.push(mScore);
         });
         
         aiModels.forEach(m => {
           const aiScoreObj = m.individualScores[idx];
           if (aiScoreObj) {
-            rowData.push(aiScoreObj.score, aiScoreObj.feedback);
+            rowData.push(aiScoreObj.score);
           } else {
-            rowData.push('N/A', 'N/A');
+            rowData.push('N/A');
           }
         });
         
