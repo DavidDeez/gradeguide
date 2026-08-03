@@ -733,15 +733,10 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const [chartType,   setChartType]   = React.useState('both'); // 'bars' | 'curve' | 'both'
 
   const COMPARISON_MODELS = [
-    { label: 'Gemini 2.0 Flash',        type: 'gemini',     id: 'gemini-2.0-flash' },
-    { label: 'Gemini 1.5 Flash',        type: 'gemini',     id: 'gemini-flash-latest' },
     { label: 'Qwen 2.5 7B (OR)',        type: 'openrouter', id: 'qwen/qwen-2.5-7b-instruct:free' },
     { label: 'Mistral 7B (OR)',         type: 'openrouter', id: 'mistralai/mistral-7b-instruct:free' },
-    { label: 'Llama 3.2 3B (OR)',       type: 'openrouter', id: 'meta-llama/llama-3.2-3b-instruct:free' },
-    { label: 'Gemma 2 9B (OR)',         type: 'openrouter', id: 'google/gemma-2-9b-it:free' },
     { label: 'DeepSeek V4 Pro (FW)',    type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v4-pro' },
-    { label: 'MiniMax M2.7 (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/minimax-m2p7' },
-    { label: 'DeepSeek V4 Flash (FW)',  type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v4-flash' }
+    { label: 'MiniMax M2.7 (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/minimax-m2p7' }
   ];
 
   const activeGeminiKey  = aiSettings.geminiKey;
@@ -935,31 +930,24 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     };
   };
 
-  const runComparison = async (batch = 1, q = rQuestion, ms = rMarkScheme, ans = rAnswer, maxS = rMaxScore, lecDataObj = rLecData, rawQ = rRawQuestions, rawSub = rRawSubmission) => {
+  const runComparison = async (q = rQuestion, ms = rMarkScheme, ans = rAnswer, maxS = rMaxScore, lecDataObj = rLecData, rawQ = rRawQuestions, rawSub = rRawSubmission) => {
     if (!rawQ || !rawSub) {
       window.showToast?.('Error: Raw questions or submission not loaded.', 'error');
       return;
     }
     setRQuestion(q); setRMarkScheme(ms); setRAnswer(ans); setRMaxScore(maxS); setRLecData(lecDataObj);
+    setRResults([]); setRRunning(true);
     
-    // Only clear results if starting fresh with Batch 1
-    if (batch === 1) setRResults([]); 
-    setRRunning(true);
+    const out = [];
     
-    let targetModels = COMPARISON_MODELS;
-    if (batch === 1) targetModels = COMPARISON_MODELS.slice(0, 5); // First 5 models
-    if (batch === 2) targetModels = COMPARISON_MODELS.slice(5);    // Remaining 4 models
-    
-    const out = batch === 2 ? [...rResults] : [];
-    
-    for (let mIndex = 0; mIndex < targetModels.length; mIndex++) {
-      const m = targetModels[mIndex];
-      setRProgress(`Evaluating Model ${mIndex + 1}/${targetModels.length} (Batch ${batch}): ${m.label}...`);
+    for (let mIndex = 0; mIndex < COMPARISON_MODELS.length; mIndex++) {
+      const m = COMPARISON_MODELS[mIndex];
+      setRProgress(`Evaluating Model ${mIndex + 1}/${COMPARISON_MODELS.length}: ${m.label}...`);
       
       try {
         const start = performance.now();
         const r = await gradeWithModel(m, rawQ, rawSub, (progressText) => {
-           setRProgress(`Model ${mIndex + 1}/${targetModels.length} (Batch ${batch} - ${m.label}): ${progressText}`);
+           setRProgress(`Model ${mIndex + 1}/${COMPARISON_MODELS.length} (${m.label}): ${progressText}`);
         });
         const latency = performance.now() - start;
         out.push({ model: m.label, score: r.score, grade: r.grade, feedback: r.feedback, authenticity: r.authenticity, time: latency, error: false, individualScores: r.individualScores, isHuman: false });
@@ -1279,60 +1267,33 @@ if baseline:
             <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '8px' }}>STUDENT ANSWERS (Read Only)</label>
             <textarea className="input-field" rows={6} value={rAnswer && rAnswer.length > 800 ? rAnswer.substring(0, 800) + '...\n\n[TRUNCATED FOR DISPLAY - FULL EXAM WILL BE GRADED]' : rAnswer} readOnly style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'var(--primary)', borderWidth: '2px', fontSize: '0.75rem' }} />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', marginTop: '1rem' }}>
-            <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
-              <button 
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.75rem',
-                  padding: '1rem',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.5px',
-                  background: rRunning ? 'rgba(255,255,255,0.05)' : 'var(--primary)',
-                  color: rRunning ? 'var(--text-muted)' : '#000',
-                  border: rRunning ? '1px solid rgba(255,255,255,0.1)' : 'none',
-                  borderRadius: '6px',
-                  boxShadow: rRunning ? 'none' : '0 0 20px rgba(240, 246, 252, 0.15)',
-                  cursor: rRunning ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                disabled={rRunning}
-                onClick={() => runComparison(1)}
-              >
-                <Play size={16} fill={rRunning ? "var(--text-muted)" : "#000"} /> 
-                RUN BATCH 1 (Models 1-5)
-              </button>
-
-              <button 
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.75rem',
-                  padding: '1rem',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.5px',
-                  background: rRunning ? 'rgba(255,255,255,0.05)' : 'var(--primary)',
-                  color: rRunning ? 'var(--text-muted)' : '#000',
-                  border: rRunning ? '1px solid rgba(255,255,255,0.1)' : 'none',
-                  borderRadius: '6px',
-                  boxShadow: rRunning ? 'none' : '0 0 20px rgba(240, 246, 252, 0.15)',
-                  cursor: rRunning ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                disabled={rRunning}
-                onClick={() => runComparison(2)}
-              >
-                <Play size={16} fill={rRunning ? "var(--text-muted)" : "#000"} /> 
-                RUN BATCH 2 (Models 6-9)
-              </button>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignSelf: 'flex-start', width: '100%', maxWidth: '320px', marginTop: '8px' }}>
+            <button 
+              className="btn" 
+              style={{ 
+                padding: '14px 24px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                gap: '10px', 
+                fontSize: '0.95rem',
+                fontWeight: '600',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                fontFamily: 'var(--font-mono)',
+                background: rRunning ? 'rgba(255,255,255,0.05)' : 'var(--primary)',
+                color: rRunning ? 'var(--text-muted)' : '#000',
+                border: rRunning ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                borderRadius: '6px',
+                boxShadow: rRunning ? 'none' : '0 0 20px rgba(240, 246, 252, 0.15)',
+                transition: 'all 0.3s ease'
+              }}
+              disabled={rRunning}
+              onClick={() => runComparison()}
+            >
+              <Play size={16} fill={rRunning ? "var(--text-muted)" : "#000"} /> 
+              {rRunning ? 'COMPARING MODELS...' : 'START MODEL COMPARISON'}
+            </button>
             {rRunning && (
               <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
                 <div style={{ 
