@@ -1059,7 +1059,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
     csv += row('Models Failed', displayResults.filter(r => r.error).length + ' / ' + displayResults.length);
     csv += '\r\n';
     csv += row('=== MODEL RESULTS ===');
-    csv += row('Rank','Model','Status','Score %','Grade','Authenticity %','Response Time (s)','Deviation from Consensus','vs Consensus %','Feedback');
+    csv += row('Rank','Model','Status','Score %','Grade','Authenticity %','Response Time (s)','Deviation from Consensus','vs Consensus %');
     
     const sorted = [...displayResults].sort((a,b) => {
       if (a.error && !b.error) return 1;
@@ -1084,8 +1084,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         r.error ? 'ERR' : pct + '%',
         r.error ? '—' : (r.grade||'—'),
         r.error ? '—' : (r.authenticity??'—')+'%',
-        timeStr, dev, agr,
-        r.feedback || ''
+        timeStr, dev, agr
       );
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
