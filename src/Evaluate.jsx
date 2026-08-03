@@ -804,7 +804,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   }
 
   const gradeWithModel = async (model, rawQ, rawSub, onProgress) => {
-    const CHUNK_SIZE = 10;
+    const CHUNK_SIZE = 50;
     const individualScores = [];
     let totalScore = 0;
     
@@ -815,7 +815,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
         cleaned = cleaned.substring(startIdx, endIdx + 1);
       } else if (startIdx !== -1) {
-        cleaned = cleaned.substring(startIdx) + '}]'; // Attempt to close cut-off JSON
+        cleaned = cleaned.substring(startIdx) + ']'; // Attempt to close cut-off JSON
       }
       try { return JSON.parse(cleaned); } catch(e) {
         try { return JSON.parse(cleaned.replace(/,\s*]/g, ']')); } catch(e2) { return []; }
@@ -839,8 +839,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         maxS += (qObj.maxMarks || 10);
       });
 
-      const systemPrompt = `You are an academic grader. You will receive ${chunk.length} questions and answers. Max possible total score is ${maxS}. Return ONLY a JSON array of exactly ${chunk.length} objects corresponding to each question: [{"score":<number>, "feedback":"<string>"}, ...]. Do not use markdown blocks.`;
-      const userPrompt   = `${chunkQ}\n\nStudent Answers:\n${chunkAns}\n\nCRITICAL INSTRUCTION: Output ONLY a valid JSON array starting with '[' and ending with ']'.`;
+      const systemPrompt = `You are an academic grader. You will receive ${chunk.length} questions and answers. Max possible total score is ${maxS}. Return ONLY a JSON array of exactly ${chunk.length} objects corresponding to each question: [{"score":<number>}]. Do not use markdown blocks.`;
+      const userPrompt   = `${chunkQ}\n\nStudent Answers:\n${chunkAns}\n\nCRITICAL INSTRUCTION: Output ONLY a valid JSON array starting with '[' and ending with ']'. No explanation.`;
 
       let txt = '';
       if (model.type === 'gemini') {
@@ -909,9 +909,9 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       if (!Array.isArray(arr)) throw new Error('Model did not return a JSON array');
       
       chunk.forEach((qObj, idx) => {
-         const obj = arr[idx] || { score: 0, feedback: 'Missing from model output' };
+         const obj = arr[idx] || { score: 0 };
          totalScore += (parseFloat(obj.score) || 0);
-         individualScores.push({ score: parseFloat(obj.score) || 0, feedback: obj.feedback || '' });
+         individualScores.push({ score: parseFloat(obj.score) || 0, feedback: obj.feedback || 'Evaluated in bulk' });
       });
       
       if (i + CHUNK_SIZE < rawQ.length) {
