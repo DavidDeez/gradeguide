@@ -733,9 +733,9 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   const [chartType,   setChartType]   = React.useState('both'); // 'bars' | 'curve' | 'both'
 
   const COMPARISON_MODELS = [
-    { label: 'Llama 3.1 8B (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/llama-v3p1-8b-instruct' },
-    { label: 'Qwen 2.5 72B (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/qwen2p5-72b-instruct' },
-    { label: 'Mixtral 8x7B (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/mixtral-8x7b-instruct' },
+    { label: 'Gemini 2.0 Flash',        type: 'gemini',     id: 'gemini-2.0-flash' },
+    { label: 'Gemini 1.5 Flash',        type: 'gemini',     id: 'gemini-1.5-flash' },
+    { label: 'Gemini 1.5 Pro',          type: 'gemini',     id: 'gemini-1.5-pro' },
     { label: 'DeepSeek V4 Pro (FW)',    type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v4-pro' },
     { label: 'MiniMax M2.7 (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/minimax-m2p7' },
     { label: 'DeepSeek V4 Flash (FW)',  type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v4-flash' }
@@ -804,7 +804,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
   }
 
   const gradeWithModel = async (model, rawQ, rawSub, onProgress) => {
-    const CHUNK_SIZE = 50;
+    const CHUNK_SIZE = 15;
     const individualScores = [];
     let totalScore = 0;
     
@@ -815,7 +815,7 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
         cleaned = cleaned.substring(startIdx, endIdx + 1);
       } else if (startIdx !== -1) {
-        cleaned = cleaned.substring(startIdx) + ']'; // Attempt to close cut-off JSON
+        cleaned = cleaned.substring(startIdx) + '}]'; // Attempt to close cut-off JSON
       }
       try { return JSON.parse(cleaned); } catch(e) {
         try { return JSON.parse(cleaned.replace(/,\s*]/g, ']')); } catch(e2) { return []; }
@@ -839,8 +839,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
         maxS += (qObj.maxMarks || 10);
       });
 
-      const systemPrompt = `You are an academic grader. You will receive ${chunk.length} questions and answers. Max possible total score is ${maxS}. Return ONLY a JSON array of exactly ${chunk.length} objects corresponding to each question: [{"score":<number>}]. Do not use markdown blocks.`;
-      const userPrompt   = `${chunkQ}\n\nStudent Answers:\n${chunkAns}\n\nCRITICAL INSTRUCTION: Output ONLY a valid JSON array starting with '[' and ending with ']'. No explanation.`;
+      const systemPrompt = `You are an academic grader. You will receive ${chunk.length} questions and answers. Max possible total score is ${maxS}. Return ONLY a JSON array of exactly ${chunk.length} objects corresponding to each question: [{"score":<number>, "feedback":"<string>"}]. Do not use markdown blocks.`;
+      const userPrompt   = `${chunkQ}\n\nStudent Answers:\n${chunkAns}\n\nCRITICAL INSTRUCTION: Output ONLY a valid JSON array starting with '[' and ending with ']'. Provide brief reasoning in feedback.`;
 
       let txt = '';
       if (model.type === 'gemini') {
@@ -909,9 +909,9 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
       if (!Array.isArray(arr)) throw new Error('Model did not return a JSON array');
       
       chunk.forEach((qObj, idx) => {
-         const obj = arr[idx] || { score: 0 };
+         const obj = arr[idx] || { score: 0, feedback: 'Missing from model output' };
          totalScore += (parseFloat(obj.score) || 0);
-         individualScores.push({ score: parseFloat(obj.score) || 0, feedback: obj.feedback || 'Evaluated in bulk' });
+         individualScores.push({ score: parseFloat(obj.score) || 0, feedback: obj.feedback || '' });
       });
       
       if (i + CHUNK_SIZE < rawQ.length) {
