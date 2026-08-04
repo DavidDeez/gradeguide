@@ -734,8 +734,8 @@ const ModelComparisonLab = ({ aiSettings, assessments, submissions }) => {
 
   const COMPARISON_MODELS = [
     { label: 'Gemini 2.0 Flash',        type: 'gemini',     id: 'gemini-2.0-flash' },
-    { label: 'Gemini 1.5 Flash',        type: 'gemini',     id: 'gemini-1.5-flash' },
-    { label: 'Gemini 1.5 Pro',          type: 'gemini',     id: 'gemini-1.5-pro' },
+    { label: 'Gemini 1.5 Flash',        type: 'gemini',     id: 'gemini-1.5-flash-latest' },
+    { label: 'Gemini 1.5 Pro',          type: 'gemini',     id: 'gemini-1.5-pro-latest' },
     { label: 'DeepSeek V4 Pro (FW)',    type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v4-pro' },
     { label: 'MiniMax M2.7 (FW)',       type: 'fireworks',  id: 'accounts/fireworks/models/minimax-m2p7' },
     { label: 'DeepSeek V4 Flash (FW)',  type: 'fireworks',  id: 'accounts/fireworks/models/deepseek-v4-flash' }
